@@ -140,6 +140,31 @@
         </profile>
 
         <profile>
+            <id>autoInstallBundle</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <build>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <groupId>org.apache.sling</groupId>
+                            <artifactId>sling-maven-plugin</artifactId>
+                            <executions>
+                                <execution>
+                                    <id>install-bundle</id>
+                                    <goals>
+                                        <goal>install</goal>
+                                    </goals>
+                                </execution>
+                            </executions>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+            </build>
+        </profile>
+
+        <profile>
             <id>autoInstallPackage</id>
             <activation>
                 <activeByDefault>false</activeByDefault>
@@ -160,8 +185,8 @@
                             </executions>
                         </plugin>
                         <plugin>
-                            <groupId>com.day.jcr.vault</groupId>
-                            <artifactId>content-package-maven-plugin</artifactId>
+                            <groupId>io.wcm.maven.plugins</groupId>
+                            <artifactId>wcmio-content-package-maven-plugin</artifactId>
                             <executions>
                                 <execution>
                                     <id>install-package</id>
@@ -169,7 +194,7 @@
                                         <goal>install</goal>
                                     </goals>
                                     <configuration>
-                                        <targetURL>http://${aem.host}:${aem.port}/crx/packmgr/service.jsp</targetURL>
+                                        <serviceURL>http://${aem.host}:${aem.port}/crx/packmgr/service.jsp</serviceURL>
                                     </configuration>
                                 </execution>
                             </executions>
@@ -200,8 +225,8 @@
                             </executions>
                         </plugin>
                         <plugin>
-                            <groupId>com.day.jcr.vault</groupId>
-                            <artifactId>content-package-maven-plugin</artifactId>
+                            <groupId>io.wcm.maven.plugins</groupId>
+                            <artifactId>wcmio-content-package-maven-plugin</artifactId>
                             <executions>
                                 <execution>
                                     <id>install-package-publish</id>
@@ -209,7 +234,9 @@
                                         <goal>install</goal>
                                     </goals>
                                     <configuration>
-                                        <targetURL>http://${aem.publish.host}:${aem.publish.port}/crx/packmgr/service.jsp</targetURL>
+                                        <serviceURL>
+                                            http://${aem.publish.host}:${aem.publish.port}/crx/packmgr/service.jsp
+                                        </serviceURL>
                                     </configuration>
                                 </execution>
                             </executions>
@@ -320,6 +347,15 @@
                     <version>2.8.2</version>
                 </plugin>
                 <plugin>
+                    <groupId>org.apache.sling</groupId>
+                    <artifactId>sling-maven-plugin</artifactId>
+                    <version>2.4.0</version>
+                    <configuration>
+                        <slingUrl>http://${aem.host}:${aem.port}/system/console</slingUrl>
+                        <deploymentMethod>WebConsole</deploymentMethod>
+                    </configuration>
+                </plugin>
+                <plugin>
                     <groupId>org.apache.jackrabbit</groupId>
                     <artifactId>filevault-package-maven-plugin</artifactId>
                     <extensions>true</extensions>
@@ -349,12 +385,10 @@
                 </plugin>
                 <!-- Content Package Plugin -->
                 <plugin>
-                    <groupId>com.day.jcr.vault</groupId>
-                    <artifactId>content-package-maven-plugin</artifactId>
-                    <version>1.0.2</version>
+                    <groupId>io.wcm.maven.plugins</groupId>
+                    <artifactId>wcmio-content-package-maven-plugin</artifactId>
+                    <version>2.1.2</version>
                     <configuration>
-                        <targetURL>http://${aem.host}:${aem.port}/crx/packmgr/service.jsp</targetURL>
-                        <failOnError>true</failOnError>
                         <userId>${vault.user}</userId>
                         <password>${vault.password}</password>
                     </configuration>
@@ -365,6 +399,13 @@
 
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>org.jetbrains</groupId>
+                <artifactId>annotations</artifactId>
+                <version>23.0.0</version>
+                <scope>provided</scope>
+            </dependency>
+
             <!-- groovy -->
             <dependency>
                 <groupId>org.codehaus.groovy</groupId>
@@ -389,10 +430,11 @@
 
             <!-- SDK included last to allow other dependencies to override included versions -->
             <dependency>
-                <groupId>com.adobe.aem</groupId>
-                <artifactId>aem-sdk-api</artifactId>
-                <version>${aem.sdk.version}</version>
-                <scope>provided</scope>
+                <groupId>io.wcm.maven</groupId>
+                <artifactId>io.wcm.maven.aem-cloud-dependencies</artifactId>
+                <version>${aem.sdk.version}.0000</version>
+                <type>pom</type>
+                <scope>import</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>

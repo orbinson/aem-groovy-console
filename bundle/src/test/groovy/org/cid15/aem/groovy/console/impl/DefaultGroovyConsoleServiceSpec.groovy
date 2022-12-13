@@ -4,14 +4,14 @@ import com.day.cq.commons.jcr.JcrConstants
 import com.day.cq.replication.Replicator
 import com.day.cq.search.QueryBuilder
 import com.google.common.base.Charsets
+import com.icfolson.aem.prosper.specs.ProsperSpec
+import org.apache.sling.event.jobs.JobManager
+import org.apache.sling.jcr.resource.api.JcrResourceConstants
 import org.cid15.aem.groovy.console.GroovyConsoleService
 import org.cid15.aem.groovy.console.api.impl.RequestScriptContext
 import org.cid15.aem.groovy.console.api.impl.RequestScriptData
-import org.cid15.aem.groovy.console.configuration.ConfigurationService
-import com.icfolson.aem.prosper.specs.ProsperSpec
-import org.apache.sling.event.jobs.JobManager
-import org.apache.sling.jcr.resource.JcrResourceConstants
 import org.cid15.aem.groovy.console.audit.AuditService
+import org.cid15.aem.groovy.console.configuration.ConfigurationService
 import org.cid15.aem.groovy.console.constants.GroovyConsoleConstants
 import org.cid15.aem.groovy.console.extension.impl.DefaultBindingExtensionProvider
 import org.cid15.aem.groovy.console.extension.impl.DefaultExtensionService
@@ -52,11 +52,11 @@ class DefaultGroovyConsoleServiceSpec extends ProsperSpec {
         def outputStream = new ByteArrayOutputStream()
 
         def scriptContext = new RequestScriptContext(
-            request: request,
-            response: response,
-            outputStream: outputStream,
-            printStream: new PrintStream(outputStream, true, Charsets.UTF_8.name()),
-            script: scriptAsString
+                request: request,
+                response: response,
+                outputStream: outputStream,
+                printStream: new PrintStream(outputStream, true, Charsets.UTF_8.name()),
+                script: scriptAsString
         )
 
         when:
@@ -87,7 +87,7 @@ class DefaultGroovyConsoleServiceSpec extends ProsperSpec {
         assertNodeExists(PATH_SCRIPTS_FOLDER, JcrConstants.NT_FOLDER)
         assertNodeExists(PATH_FILE, JcrConstants.NT_FILE)
         assertNodeExists(PATH_FILE_CONTENT, JcrConstants.NT_RESOURCE,
-            [(JcrConstants.JCR_MIMETYPE): "application/octet-stream"])
+                [(JcrConstants.JCR_MIMETYPE): "application/octet-stream"])
 
         and:
         assert session.getNode(PATH_FILE_CONTENT).get(JcrConstants.JCR_DATA).stream.text == scriptAsString
