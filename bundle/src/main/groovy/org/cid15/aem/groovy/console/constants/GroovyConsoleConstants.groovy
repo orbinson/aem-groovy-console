@@ -9,7 +9,7 @@ class GroovyConsoleConstants {
 
     public static final String PATH_CONSOLE_ROOT = "/var/groovyconsole"
 
-    public static final String PATH_SCRIPTS_FOLDER = "$PATH_CONSOLE_ROOT/scripts"
+    public static final String PATH_SCRIPTS_FOLDER = "/conf/groovyconsole/scripts"
 
     public static final String EXTENSION_GROOVY = ".groovy"
 
