@@ -18,7 +18,6 @@ import javax.jcr.Session
 
 import static com.google.common.base.Preconditions.checkNotNull
 
-// TODO: Use const references for properties
 @Component(property = [
         "resource.paths=/conf/groovyconsole/replication",
         "resource.change.types=ADDED"
@@ -33,10 +32,11 @@ public class ReplicatedScriptListener implements ResourceChangeListener {
 
     @Override
     public void onChange(@NotNull List<ResourceChange> list) {
-        // TODO: Only run on publish
+        // TODO: only run on publish
         list.each { change ->
             resourceResolverFactory.getServiceResourceResolver(null).withCloseable { resourceResolver ->
-                LOG.info("Detected replicated script on path '{}'", change.path)
+                // FIXME: more robust detection if Groovy script is found
+                LOG.debug("Detected replicated script on path '{}'", change.path)
                 consoleService.runScript(getScriptContext(resourceResolver, change.path));
             }
         }
@@ -53,6 +53,7 @@ public class ReplicatedScriptListener implements ResourceChangeListener {
         )
     }
 
+    // FIXME: extract to service that can be shared between services and servlets
     private String loadScript(ResourceResolver resourceResolver, String scriptPath) {
         def session = resourceResolver.adaptTo(Session)
 

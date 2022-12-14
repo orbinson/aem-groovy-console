@@ -40,7 +40,7 @@ class ReplicateScriptServlet extends AbstractJsonResponseServlet {
             if (script) {
                 LOG.info("Replicate script")
                 createScriptResource(script)
-                // TODO: replicate script, cleanup
+                // TODO: replicate script, cleanup and provide response code
             } else {
                 LOG.warn("Script should not be empty")
                 response.status = SC_BAD_REQUEST
@@ -56,6 +56,7 @@ class ReplicateScriptServlet extends AbstractJsonResponseServlet {
             Map<String, Object> properties = new HashMap<>()
 
             properties.put(JcrConstants.JCR_PRIMARYTYPE, JcrConstants.NT_FILE)
+            // TODO: generate file name script-<unix-timestamp>.groovy
             def scriptResource = resourceResolver.create(parent, "script.groovy", properties)
 
             properties.clear()
