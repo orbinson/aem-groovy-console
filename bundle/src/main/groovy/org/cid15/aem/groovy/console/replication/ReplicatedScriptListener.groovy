@@ -19,7 +19,7 @@ import javax.jcr.Session
 import static com.google.common.base.Preconditions.checkNotNull
 
 @Component(property = [
-        "resource.paths=/conf/groovyconsole/replication",
+        "resource.paths=glob:/conf/groovyconsole/replication/*.groovy",
         "resource.change.types=ADDED"
 ])
 @Slf4j("LOG")
@@ -35,9 +35,8 @@ public class ReplicatedScriptListener implements ResourceChangeListener {
         // TODO: only run on publish
         list.each { change ->
             resourceResolverFactory.getServiceResourceResolver(null).withCloseable { resourceResolver ->
-                // FIXME: more robust detection if Groovy script is found
-                LOG.debug("Detected replicated script on path '{}'", change.path)
-                consoleService.runScript(getScriptContext(resourceResolver, change.path));
+                LOG.info("Detected replicated script on path '{}'", change.path)
+                consoleService.runScript(getScriptContext(resourceResolver, change.path))
             }
         }
     }
