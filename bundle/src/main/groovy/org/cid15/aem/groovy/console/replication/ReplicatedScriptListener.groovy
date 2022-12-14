@@ -17,8 +17,9 @@ import javax.jcr.Session
 
 import static com.google.common.base.Preconditions.checkNotNull
 
-@Component(service = ResourceChangeListener.class, property = [
-        "resource.paths=/var/groovyconsole/replication/**/*.groovy",
+// TODO: Use const references for properties
+@Component(property = [
+        "resource.paths=/conf/groovyconsole/distribution",
         "resource.change.types=ADDED"
 ])
 public class ReplicatedScriptListener implements ResourceChangeListener {
@@ -51,6 +52,7 @@ public class ReplicatedScriptListener implements ResourceChangeListener {
     private String loadScript(ResourceResolver resourceResolver, String scriptPath) {
         def session = resourceResolver.adaptTo(Session)
 
+        // FIXME: use adaptTo(InputStream.class) to get binary data
         def binary = session.getNode(scriptPath)
                 .getNode(JcrConstants.JCR_CONTENT)
                 .getProperty(JcrConstants.JCR_DATA)

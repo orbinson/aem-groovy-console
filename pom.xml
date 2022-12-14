@@ -85,7 +85,7 @@
         <package.group>aem-groovy-console</package.group>
 
         <!-- versions -->
-        <aem.sdk.version>2020.12.4676.20201216T130744Z-201201</aem.sdk.version>
+        <aem.sdk.version>2022.10.9398.20221020T071514Z-220800</aem.sdk.version>
     </properties>
 
     <profiles>
