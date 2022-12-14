@@ -2,6 +2,7 @@ package org.cid15.aem.groovy.console.replication
 
 import com.day.cq.commons.jcr.JcrConstants
 import com.google.common.base.Charsets
+import groovy.util.logging.Slf4j
 import org.apache.sling.api.resource.ResourceResolver
 import org.apache.sling.api.resource.ResourceResolverFactory
 import org.apache.sling.api.resource.observation.ResourceChange
@@ -22,6 +23,7 @@ import static com.google.common.base.Preconditions.checkNotNull
         "resource.paths=/conf/groovyconsole/distribution",
         "resource.change.types=ADDED"
 ])
+@Slf4j("LOG")
 public class ReplicatedScriptListener implements ResourceChangeListener {
     @Reference
     private GroovyConsoleService consoleService;
@@ -31,8 +33,10 @@ public class ReplicatedScriptListener implements ResourceChangeListener {
 
     @Override
     public void onChange(@NotNull List<ResourceChange> list) {
+        // TODO: Only run on publish
         list.each { change ->
             resourceResolverFactory.getServiceResourceResolver(null).withCloseable { resourceResolver ->
+                LOG.info("Detected replicated script on path '{}'", change.path)
                 consoleService.runScript(getScriptContext(resourceResolver, change.path));
             }
         }
