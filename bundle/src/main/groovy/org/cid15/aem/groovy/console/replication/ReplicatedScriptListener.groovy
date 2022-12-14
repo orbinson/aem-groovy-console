@@ -20,7 +20,7 @@ import static com.google.common.base.Preconditions.checkNotNull
 
 // TODO: Use const references for properties
 @Component(property = [
-        "resource.paths=/conf/groovyconsole/distribution",
+        "resource.paths=/conf/groovyconsole/replication",
         "resource.change.types=ADDED"
 ])
 @Slf4j("LOG")

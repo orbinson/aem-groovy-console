@@ -11,6 +11,8 @@ class GroovyConsoleConstants {
 
     public static final String PATH_SCRIPTS_FOLDER = "/conf/groovyconsole/scripts"
 
+    public static final String PATH_REPLICATION_FOLDER = "/conf/groovyconsole/replication"
+
     public static final String EXTENSION_GROOVY = ".groovy"
 
     public static final String CHARSET = Charsets.UTF_8.name()
