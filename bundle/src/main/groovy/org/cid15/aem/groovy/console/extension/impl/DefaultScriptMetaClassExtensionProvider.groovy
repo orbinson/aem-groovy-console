@@ -128,6 +128,10 @@ class DefaultScriptMetaClassExtensionProvider implements ScriptMetaClassExtensio
                 queryBuilder.createQuery(PredicateGroup.create(predicates), session)
             }
 
+            delegate.xpathQuery { String query ->
+                session.workspace.queryManager.createQuery(query, "xpath").execute().nodes
+            }
+
             delegate.table = { Closure closure ->
                 def table = new Table()
 
