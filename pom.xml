@@ -165,6 +165,34 @@
         </profile>
 
         <profile>
+            <id>autoInstallBundlePublish</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <build>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <groupId>org.apache.sling</groupId>
+                            <artifactId>sling-maven-plugin</artifactId>
+                            <configuration>
+                                <slingUrl>http://${aem.publish.host}:${aem.publish.port}/system/console</slingUrl>
+                            </configuration>
+                            <executions>
+                                <execution>
+                                    <id>install-bundle</id>
+                                    <goals>
+                                        <goal>install</goal>
+                                    </goals>
+                                </execution>
+                            </executions>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+            </build>
+        </profile>
+
+        <profile>
             <id>autoInstallPackage</id>
             <activation>
                 <activeByDefault>false</activeByDefault>
