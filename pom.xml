@@ -393,6 +393,12 @@
                         <password>${vault.password}</password>
                     </configuration>
                 </plugin>
+                <plugin>
+                    <groupId>com.adobe.aem</groupId>
+                    <artifactId>aemanalyser-maven-plugin</artifactId>
+                    <version>1.5.8</version>
+                    <extensions>true</extensions>
+                </plugin>
             </plugins>
         </pluginManagement>
     </build>
