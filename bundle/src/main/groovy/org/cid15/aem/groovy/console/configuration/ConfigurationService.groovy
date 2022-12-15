@@ -62,7 +62,7 @@ interface ConfigurationService {
     /**
      * Check if distributed replication is enabled. In this way scripts can be replicated and auto executed on replication.
      *
-     * @retyrn true is distributed replication is enabled
+     * @return true is distributed replication is enabled
      */
     boolean isDistributedReplicationEnabled()
 
