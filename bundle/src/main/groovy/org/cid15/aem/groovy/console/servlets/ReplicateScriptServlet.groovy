@@ -39,12 +39,12 @@ class ReplicateScriptServlet extends AbstractJsonResponseServlet {
 
     @Override
     protected void doPost(@NotNull SlingHttpServletRequest request, @NotNull SlingHttpServletResponse response) throws ServletException, IOException {
-        if (configurationService.hasPermission(request)) {
+        if (configurationService.hasPermission(request) && configurationService.isDistributedReplicationEnabled()) {
             def script = request.getRequestParameter(SCRIPT)?.getString(Charsets.UTF_8.name())
             if (script) {
                 def resourceResolver = request.resourceResolver
                 def scriptName = createScriptResource(script)
-                LOG.info("Replicate script '{}'", scriptName)
+                LOG.debug("Replicate script '{}'", scriptName)
                 def session = resourceResolver.adaptTo(Session)
                 replicator.replicate(session, ReplicationActionType.ACTIVATE, "${PATH_REPLICATION_FOLDER}/${scriptName}")
                 // TODO: provide response code

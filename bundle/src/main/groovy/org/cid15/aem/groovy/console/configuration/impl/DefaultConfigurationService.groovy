@@ -7,6 +7,7 @@ import org.apache.jackrabbit.api.security.user.UserManager
 import org.apache.sling.api.SlingHttpServletRequest
 import org.apache.sling.api.resource.ResourceResolverFactory
 import org.cid15.aem.groovy.console.configuration.ConfigurationService
+import org.osgi.framework.BundleContext
 import org.osgi.service.component.annotations.Activate
 import org.osgi.service.component.annotations.Component
 import org.osgi.service.component.annotations.Modified
@@ -34,6 +35,10 @@ class DefaultConfigurationService implements ConfigurationService {
     private boolean displayAllAuditRecords
 
     private long threadTimeout
+
+    private boolean distributedExecutionEnabled
+
+    private boolean author
 
     @Override
     boolean hasPermission(SlingHttpServletRequest request) {
@@ -70,10 +75,20 @@ class DefaultConfigurationService implements ConfigurationService {
         threadTimeout
     }
 
+    @Override
+    boolean isDistributedReplicationEnabled() {
+        distributedExecutionEnabled
+    }
+
+    @Override
+    boolean isAuthor() {
+        return author
+    }
+
     @Activate
     @Modified
     @Synchronized
-    void activate(ConfigurationServiceProperties properties) {
+    void activate(ConfigurationServiceProperties properties, BundleContext bundleContext) {
         emailEnabled = properties.emailEnabled()
         emailRecipients = (properties.emailRecipients() ?: []).findAll() as Set
         allowedGroups = (properties.allowedGroups() ?: []).findAll() as Set
@@ -81,6 +96,8 @@ class DefaultConfigurationService implements ConfigurationService {
         auditDisabled = properties.auditDisabled()
         displayAllAuditRecords = properties.auditDisplayAll()
         threadTimeout = properties.threadTimeout()
+        distributedExecutionEnabled = properties.distributedExecutionEnabled()
+        author = bundleContext.getProperty("sling.run.modes").contains("author")
     }
 
     private boolean isAdminOrAllowedGroupMember(SlingHttpServletRequest request, Set<String> groupIds) {

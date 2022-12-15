@@ -10,6 +10,7 @@ import org.apache.sling.api.resource.observation.ResourceChangeListener
 import org.cid15.aem.groovy.console.GroovyConsoleService
 import org.cid15.aem.groovy.console.api.context.ScriptContext
 import org.cid15.aem.groovy.console.api.impl.ResourceScriptContext
+import org.cid15.aem.groovy.console.configuration.ConfigurationService
 import org.jetbrains.annotations.NotNull
 import org.osgi.service.component.annotations.Component
 import org.osgi.service.component.annotations.Reference
@@ -30,13 +31,17 @@ public class ReplicatedScriptListener implements ResourceChangeListener {
     @Reference
     private ResourceResolverFactory resourceResolverFactory;
 
+    @Reference
+    private ConfigurationService configurationService;
+
     @Override
     public void onChange(@NotNull List<ResourceChange> list) {
-        // TODO: only run on publish
-        list.each { change ->
-            resourceResolverFactory.getServiceResourceResolver(null).withCloseable { resourceResolver ->
-                LOG.info("Detected replicated script on path '{}'", change.path)
-                consoleService.runScript(getScriptContext(resourceResolver, change.path))
+        if (!configurationService.isAuthor() && configurationService.isDistributedReplicationEnabled()) {
+            list.each { change ->
+                resourceResolverFactory.getServiceResourceResolver(null).withCloseable { resourceResolver ->
+                    LOG.debug("Detected replicated script on path '{}'", change.path)
+                    consoleService.runScript(getScriptContext(resourceResolver, change.path))
+                }
             }
         }
     }

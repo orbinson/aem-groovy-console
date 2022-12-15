@@ -32,10 +32,15 @@ public @interface ConfigurationServiceProperties {
     boolean auditDisabled() default false;
 
     @AttributeDefinition(name = "Display All Audit Records?",
-        description = "If enabled, all audit records (including records for other users) will be displayed in the console history.")
+            description = "If enabled, all audit records (including records for other users) will be displayed in the console history.")
     boolean auditDisplayAll() default false;
 
     @AttributeDefinition(name = "Thread Timeout",
-        description = "Time in seconds that scripts are allowed to execute before being interrupted.  If 0, no timeout is enforced.")
+            description = "Time in seconds that scripts are allowed to execute before being interrupted.  If 0, no timeout is enforced.")
     long threadTimeout() default 0;
+
+    @AttributeDefinition(name = "Distributed execution enabled?",
+            description = "If enabled, a script will be able to be replicated from an author and executed on all default replication agents."
+    )
+    boolean distributedExecutionEnabled() default false;
 }
