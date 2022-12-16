@@ -11,6 +11,7 @@ import org.apache.sling.api.SlingHttpServletRequest
 import org.apache.sling.api.SlingHttpServletResponse
 import org.apache.sling.api.resource.ResourceResolverFactory
 import org.cid15.aem.groovy.console.configuration.ConfigurationService
+import org.cid15.aem.groovy.console.response.impl.DefaultReplicateScriptResponse
 import org.jetbrains.annotations.NotNull
 import org.osgi.service.component.annotations.Component
 import org.osgi.service.component.annotations.Reference
@@ -39,15 +40,16 @@ class ReplicateScriptServlet extends AbstractJsonResponseServlet {
 
     @Override
     protected void doPost(@NotNull SlingHttpServletRequest request, @NotNull SlingHttpServletResponse response) throws ServletException, IOException {
-        if (configurationService.hasPermission(request) && configurationService.isDistributedReplicationEnabled()) {
+        if (configurationService.hasPermission(request) && configurationService.isDistributedExecutionEnabled()) {
             def script = request.getRequestParameter(SCRIPT)?.getString(Charsets.UTF_8.name())
             if (script) {
                 def resourceResolver = request.resourceResolver
                 def scriptName = createScriptResource(script)
                 LOG.debug("Replicate script '{}'", scriptName)
                 def session = resourceResolver.adaptTo(Session)
-                replicator.replicate(session, ReplicationActionType.ACTIVATE, "${PATH_REPLICATION_FOLDER}/${scriptName}")
-                // TODO: provide response code
+                def scriptPath = "${PATH_REPLICATION_FOLDER}/${scriptName}"
+                replicator.replicate(session, ReplicationActionType.ACTIVATE, "${scriptPath}")
+                writeJsonResponse(response, new DefaultReplicateScriptResponse("Replicated script on path '${scriptPath}'"))
             } else {
                 LOG.warn("Script should not be empty")
                 response.status = SC_BAD_REQUEST

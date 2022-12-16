@@ -36,7 +36,7 @@ public class ReplicatedScriptListener implements ResourceChangeListener {
 
     @Override
     public void onChange(@NotNull List<ResourceChange> list) {
-        if (!configurationService.isAuthor() && configurationService.isDistributedReplicationEnabled()) {
+        if (!configurationService.isAuthor() && configurationService.isDistributedExecutionEnabled()) {
             list.each { change ->
                 resourceResolverFactory.getServiceResourceResolver(null).withCloseable { resourceResolver ->
                     LOG.debug("Detected replicated script on path '{}'", change.path)

@@ -76,7 +76,7 @@ class DefaultConfigurationService implements ConfigurationService {
     }
 
     @Override
-    boolean isDistributedReplicationEnabled() {
+    boolean isDistributedExecutionEnabled() {
         distributedExecutionEnabled
     }
 

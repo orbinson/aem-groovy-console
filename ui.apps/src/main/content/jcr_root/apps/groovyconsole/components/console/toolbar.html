@@ -1,8 +1,18 @@
-<div class="btn-toolbar" role="toolbar">
+<div class="btn-toolbar" role="toolbar" data-sly-use.toolbar="org.cid15.aem.groovy.console.components.Toolbar">
     <div class="btn-group">
         <button type="button" class="btn btn-success" id="run-script">
             <span class="glyphicon glyphicon-play"></span> <span id="run-script-text">Run Script</span>
         </button>
+        <sly data-sly-test="${toolbar.distributedExecutionEnabled}">
+            <button type="button" class="btn btn-success dropdown-toggle" data-toggle="dropdown" aria-haspopup="true"
+                    aria-expanded="false">
+                <span class="caret"></span>
+                <span class="sr-only">Toggle Dropdown</span>
+            </button>
+            <ul class="dropdown-menu">
+                <li><a id="distribute-script-publish" href="#">Run script on all publish instances</a></li>
+            </ul>
+        </sly>
     </div>
 
     <div class="btn-group">
