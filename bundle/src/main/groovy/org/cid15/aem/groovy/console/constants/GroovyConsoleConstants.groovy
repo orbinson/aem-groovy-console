@@ -5,11 +5,13 @@ import com.google.common.net.MediaType
 
 class GroovyConsoleConstants {
 
-    public static final String SYSTEM_USER_NAME = "groovy-console-system-user"
+    public static final String SYSTEM_USER_NAME = "aem-groovy-console-service"
 
     public static final String PATH_CONSOLE_ROOT = "/var/groovyconsole"
 
-    public static final String PATH_SCRIPTS_FOLDER = "$PATH_CONSOLE_ROOT/scripts"
+    public static final String PATH_SCRIPTS_FOLDER = "/conf/groovyconsole/scripts"
+
+    public static final String PATH_REPLICATION_FOLDER = "/conf/groovyconsole/replication"
 
     public static final String EXTENSION_GROOVY = ".groovy"
 

@@ -58,4 +58,18 @@ interface ConfigurationService {
      * @return thread timeout
      */
     long getThreadTimeout()
+
+    /**
+     * Check if distributed execution is enabled. In this way scripts can be replicated and auto executed on replication.
+     *
+     * @return true is distributed execution is enabled
+     */
+    boolean isDistributedExecutionEnabled()
+
+    /**
+     * Check if the service is running on an author instance
+     *
+     * @return true if the author runmode is present
+     */
+    boolean isAuthor()
 }

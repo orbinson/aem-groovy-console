@@ -61,11 +61,11 @@ Saved scripts can be remotely executed by sending a POST request to the console 
 
 ### Single Script
 
-    curl -d "scriptPath=/var/groovyconsole/scripts/samples/JcrSearch.groovy" -X POST -u admin:admin http://localhost:4502/bin/groovyconsole/post.json
+    curl -d "scriptPath=/conf/groovyconsole/scripts/samples/JcrSearch.groovy" -X POST -u admin:admin http://localhost:4502/bin/groovyconsole/post.json
 
 ### Multiple Scripts
 
-    curl -d "scriptPaths=/var/groovyconsole/scripts/samples/JcrSearch.groovy&scriptPaths=/var/groovyconsole/scripts/samples/FulltextQuery.groovy" -X POST -u admin:admin http://localhost:4502/bin/groovyconsole/post.json
+    curl -d "scriptPaths=/conf/groovyconsole/scripts/samples/JcrSearch.groovy&scriptPaths=/conf/groovyconsole/scripts/samples/FulltextQuery.groovy" -X POST -u admin:admin http://localhost:4502/bin/groovyconsole/post.json
 
 ## Extensions
 

@@ -4,3 +4,4 @@
           xmlns:rep="internal"
           jcr:mixinTypes="[rep:AccessControllable]"
           jcr:primaryType="sling:Folder"/>
+<!-- FIXME: Add optional package for samples -->
