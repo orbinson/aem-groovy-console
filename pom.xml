@@ -7,7 +7,7 @@
     <groupId>be.orbinson.aem</groupId>
     <artifactId>aem-groovy-console</artifactId>
     <packaging>pom</packaging>
-    <version>17.1.0-SNAPSHOT</version>
+    <version>18.0.0-SNAPSHOT</version>
     <name>AEM Groovy Console</name>
     <description>
         The AEM Groovy Console provides an interface for running Groovy scripts in the AEM container. Scripts can be
@@ -33,7 +33,7 @@
         </developer>
         <developer>
             <name>Barry d'Hoine</name>
-            <email>barry.dhoine@gmail.com</email>
+            <email>barrydhoine@gmail.com</email>
         </developer>
         <developer>
             <name>Roy Teeuwen</name>

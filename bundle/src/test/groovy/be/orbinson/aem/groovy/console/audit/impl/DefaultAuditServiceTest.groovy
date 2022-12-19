@@ -31,7 +31,6 @@ class DefaultAuditServiceTest {
     }
 
     @Test
-    //"create audit record for script with result and output"
     void createAuditRecordForScriptWithResultAndOutput() {
         def request = context.request()
         def response = context.response()
