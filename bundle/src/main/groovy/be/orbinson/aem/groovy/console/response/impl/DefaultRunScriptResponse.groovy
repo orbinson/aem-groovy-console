@@ -15,7 +15,15 @@ import org.apache.commons.lang3.exception.ExceptionUtils
 import org.apache.sling.api.resource.Resource
 import org.apache.sling.api.resource.ResourceUtil
 
-import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.*
+import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.DATA
+import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.DATE_FORMAT_FILE_NAME
+import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.EXCEPTION_STACK_TRACE
+import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.JOB_ID
+import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.MEDIA_TYPE_EXTENSIONS
+import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.OUTPUT
+import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.RESULT
+import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.RUNNING_TIME
+import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.SCRIPT
 
 @TupleConstructor
 class DefaultRunScriptResponse implements RunScriptResponse {

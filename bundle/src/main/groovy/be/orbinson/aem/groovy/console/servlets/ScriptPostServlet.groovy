@@ -16,7 +16,10 @@ import javax.jcr.Session
 import javax.servlet.Servlet
 import javax.servlet.ServletException
 
-import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.*
+import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.SCRIPT
+import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.SCRIPT_PATH
+import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.SCRIPT_PATHS
+
 import static com.google.common.base.Preconditions.checkNotNull
 import static javax.servlet.http.HttpServletResponse.SC_FORBIDDEN
 

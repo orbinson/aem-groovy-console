@@ -25,8 +25,7 @@ import javax.jcr.Session
 
 import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.PATH_SCRIPTS_FOLDER
 import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.SCRIPT
-import static org.junit.jupiter.api.Assertions.assertNotNull
-import static org.junit.jupiter.api.Assertions.assertTrue
+import static org.junit.jupiter.api.Assertions.*
 import static org.mockito.Mockito.mock
 
 @ExtendWith(AemContextExtension.class)
@@ -96,10 +95,10 @@ class DefaultGroovyConsoleServiceTest {
     }
 
     void assertScriptResult(map) {
-        assert !map.result
-        assert map.output == "BEER" + System.getProperty("line.separator")
-        assert !map.exceptionStackTrace
-        assert map.runningTime
+        assertNull(map.result)
+        assertEquals("BEER" + System.lineSeparator(), map.output)
+        assertEquals("",map.exceptionStackTrace)
+        assertNotNull(map.runningTime)
     }
 
     private String getScriptAsString() {

@@ -6,7 +6,16 @@ import org.apache.sling.api.SlingHttpServletRequest
 import org.apache.sling.api.resource.ValueMap
 import org.apache.sling.event.jobs.Job
 
-import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.*
+import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.CRON_EXPRESSION
+import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.DATA
+import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.DATE_CREATED
+import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.EMAIL_TO
+import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.JOB_DESCRIPTION
+import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.JOB_PROPERTIES
+import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.JOB_TITLE
+import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.MEDIA_TYPE
+import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.SCHEDULED_JOB_ID
+import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.SCRIPT
 
 @TupleConstructor
 class JobProperties {

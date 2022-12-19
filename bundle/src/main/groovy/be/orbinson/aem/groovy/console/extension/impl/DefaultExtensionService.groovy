@@ -1,6 +1,11 @@
 package be.orbinson.aem.groovy.console.extension.impl
 
-import be.orbinson.aem.groovy.console.api.*
+import be.orbinson.aem.groovy.console.api.BindingExtensionProvider
+import be.orbinson.aem.groovy.console.api.BindingVariable
+import be.orbinson.aem.groovy.console.api.CompilationCustomizerExtensionProvider
+import be.orbinson.aem.groovy.console.api.ScriptMetaClassExtensionProvider
+import be.orbinson.aem.groovy.console.api.StarImport
+import be.orbinson.aem.groovy.console.api.StarImportExtensionProvider
 import be.orbinson.aem.groovy.console.api.context.ScriptContext
 import be.orbinson.aem.groovy.console.extension.ExtensionService
 import groovy.transform.Synchronized

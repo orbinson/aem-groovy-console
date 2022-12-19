@@ -35,7 +35,10 @@ import javax.jcr.Node
 import javax.jcr.Session
 import java.util.concurrent.CopyOnWriteArrayList
 
-import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.*
+import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.CHARSET
+import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.FORMAT_RUNNING_TIME
+import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.PATH_SCRIPTS_FOLDER
+import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.TIME_ZONE_RUNNING_TIME
 
 @Component(service = GroovyConsoleService, immediate = true)
 @Slf4j("LOG")

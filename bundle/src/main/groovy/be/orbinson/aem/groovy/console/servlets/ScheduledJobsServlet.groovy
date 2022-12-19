@@ -19,7 +19,10 @@ import org.osgi.service.component.annotations.Reference
 import javax.servlet.Servlet
 import javax.servlet.ServletException
 
-import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.*
+import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.DATE_CREATED
+import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.SCHEDULED_JOB_ID
+import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.SCRIPT
+
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST
 import static javax.servlet.http.HttpServletResponse.SC_FORBIDDEN
 
