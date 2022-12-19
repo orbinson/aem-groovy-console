@@ -1,6 +1,7 @@
 package be.orbinson.aem.groovy.console.servlets
 
 import be.orbinson.aem.groovy.console.configuration.ConfigurationService
+import be.orbinson.aem.groovy.console.response.impl.DefaultReplicateScriptResponse
 import com.day.cq.commons.jcr.JcrConstants
 import com.day.cq.replication.ReplicationActionType
 import com.day.cq.replication.Replicator
@@ -11,7 +12,6 @@ import org.apache.commons.io.IOUtils
 import org.apache.sling.api.SlingHttpServletRequest
 import org.apache.sling.api.SlingHttpServletResponse
 import org.apache.sling.api.resource.ResourceResolverFactory
-import be.orbinson.aem.groovy.console.response.impl.DefaultReplicateScriptResponse
 import org.jetbrains.annotations.NotNull
 import org.osgi.service.component.annotations.Component
 import org.osgi.service.component.annotations.Reference
@@ -20,9 +20,9 @@ import javax.jcr.Session
 import javax.servlet.Servlet
 import javax.servlet.ServletException
 
+import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.*
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST
 import static javax.servlet.http.HttpServletResponse.SC_FORBIDDEN
-import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.*
 
 @Component(service = Servlet, immediate = true, property = [
         "sling.servlet.paths=/bin/groovyconsole/replicate"

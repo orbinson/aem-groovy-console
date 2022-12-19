@@ -1,11 +1,11 @@
 package be.orbinson.aem.groovy.console.servlets
 
+import be.orbinson.aem.groovy.console.GroovyConsoleService
 import be.orbinson.aem.groovy.console.api.context.ScriptContext
 import be.orbinson.aem.groovy.console.api.impl.RequestScriptContext
 import be.orbinson.aem.groovy.console.configuration.ConfigurationService
 import com.day.cq.commons.jcr.JcrConstants
 import com.google.common.base.Charsets
-import be.orbinson.aem.groovy.console.GroovyConsoleService
 import groovy.util.logging.Slf4j
 import org.apache.sling.api.SlingHttpServletRequest
 import org.apache.sling.api.SlingHttpServletResponse
@@ -16,14 +16,12 @@ import javax.jcr.Session
 import javax.servlet.Servlet
 import javax.servlet.ServletException
 
+import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.*
 import static com.google.common.base.Preconditions.checkNotNull
-import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.SCRIPT
-import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.SCRIPT_PATH
-import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.SCRIPT_PATHS
 import static javax.servlet.http.HttpServletResponse.SC_FORBIDDEN
 
 @Component(service = Servlet, immediate = true, property = [
-    "sling.servlet.paths=/bin/groovyconsole/post"
+        "sling.servlet.paths=/bin/groovyconsole/post"
 ])
 @Slf4j("LOG")
 class ScriptPostServlet extends AbstractJsonResponseServlet {
@@ -36,7 +34,7 @@ class ScriptPostServlet extends AbstractJsonResponseServlet {
 
     @Override
     protected void doPost(SlingHttpServletRequest request, SlingHttpServletResponse response) throws
-        ServletException, IOException {
+            ServletException, IOException {
         if (configurationService.hasPermission(request)) {
             def scriptPaths = request.getParameterValues(SCRIPT_PATHS)
 
@@ -70,11 +68,11 @@ class ScriptPostServlet extends AbstractJsonResponseServlet {
         def outputStream = new ByteArrayOutputStream()
 
         new RequestScriptContext(
-            request: request,
-            response: response,
-            outputStream: outputStream,
-            printStream: new PrintStream(outputStream, true, Charsets.UTF_8.name()),
-            script: checkNotNull(getScript(request, scriptPath), "Script cannot be empty.")
+                request: request,
+                response: response,
+                outputStream: outputStream,
+                printStream: new PrintStream(outputStream, true, Charsets.UTF_8.name()),
+                script: checkNotNull(getScript(request, scriptPath), "Script cannot be empty.")
         )
     }
 
@@ -90,9 +88,9 @@ class ScriptPostServlet extends AbstractJsonResponseServlet {
         def session = request.resourceResolver.adaptTo(Session)
 
         def binary = session.getNode(scriptPath)
-            .getNode(JcrConstants.JCR_CONTENT)
-            .getProperty(JcrConstants.JCR_DATA)
-            .binary
+                .getNode(JcrConstants.JCR_CONTENT)
+                .getProperty(JcrConstants.JCR_DATA)
+                .binary
 
         def script = binary.stream.text
 

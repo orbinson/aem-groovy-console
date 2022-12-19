@@ -1,10 +1,10 @@
 package be.orbinson.aem.groovy.console.api
 
+import be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants
 import be.orbinson.aem.groovy.console.utils.GroovyScriptUtils
 import groovy.transform.Memoized
 import groovy.transform.TupleConstructor
 import org.apache.sling.event.jobs.Job
-import be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants
 
 @TupleConstructor
 class ActiveJob {

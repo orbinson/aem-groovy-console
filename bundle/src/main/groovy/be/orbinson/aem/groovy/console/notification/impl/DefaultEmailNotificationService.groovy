@@ -1,17 +1,17 @@
 package be.orbinson.aem.groovy.console.notification.impl
 
+import be.orbinson.aem.groovy.console.configuration.ConfigurationService
+import be.orbinson.aem.groovy.console.notification.EmailNotificationService
 import be.orbinson.aem.groovy.console.notification.NotificationService
+import be.orbinson.aem.groovy.console.response.RunScriptResponse
 import com.day.cq.mailer.MailService
 import com.google.common.base.Charsets
 import com.google.common.net.MediaType
-import be.orbinson.aem.groovy.console.notification.EmailNotificationService
 import groovy.text.GStringTemplateEngine
 import groovy.util.logging.Slf4j
 import org.apache.commons.mail.Email
 import org.apache.commons.mail.HtmlEmail
 import org.apache.commons.mail.MultiPartEmail
-import be.orbinson.aem.groovy.console.configuration.ConfigurationService
-import be.orbinson.aem.groovy.console.response.RunScriptResponse
 import org.osgi.service.component.annotations.Component
 import org.osgi.service.component.annotations.Reference
 import org.osgi.service.component.annotations.ReferenceCardinality
@@ -48,7 +48,7 @@ class DefaultEmailNotificationService implements EmailNotificationService {
 
     @Override
     void notify(RunScriptResponse response, Set<String> recipients, String successTemplate,
-        String failureTemplate, boolean attachOutput) {
+                String failureTemplate, boolean attachOutput) {
         if (configurationService.emailEnabled && mailService) {
             if (recipients) {
                 def email = createEmail(response, recipients, successTemplate, failureTemplate, attachOutput)
@@ -65,7 +65,7 @@ class DefaultEmailNotificationService implements EmailNotificationService {
     }
 
     private Email createEmail(RunScriptResponse response, Set<String> recipients, String successTemplate,
-        String failureTemplate, boolean attachOutput) {
+                              String failureTemplate, boolean attachOutput) {
         def email = attachOutput ? new MultiPartEmail() : new HtmlEmail()
 
         recipients.each { name ->
@@ -81,7 +81,7 @@ class DefaultEmailNotificationService implements EmailNotificationService {
             (email as MultiPartEmail).addPart(message, MediaType.HTML_UTF_8.toString())
 
             def dataSource = new ByteArrayDataSource(response.output.getBytes(Charsets.UTF_8.name()),
-                MediaType.parse(response.mediaType).toString())
+                    MediaType.parse(response.mediaType).toString())
 
             // attach output file
             (email as MultiPartEmail).attach(dataSource, response.outputFileName, null)
@@ -102,28 +102,28 @@ class DefaultEmailNotificationService implements EmailNotificationService {
         }
 
         new GStringTemplateEngine()
-            .createTemplate(template)
-            .make(createBinding(response))
-            .toString()
+                .createTemplate(template)
+                .make(createBinding(response))
+                .toString()
     }
 
     private Map<String, String> createBinding(RunScriptResponse response) {
         def binding = [
-            username: response.userId,
-            timestamp: new Date().format(FORMAT_TIMESTAMP),
-            script: response.script
+                username : response.userId,
+                timestamp: new Date().format(FORMAT_TIMESTAMP),
+                script   : response.script
         ]
 
         if (response.exceptionStackTrace) {
             binding.putAll([
-                stackTrace: response.exceptionStackTrace,
-                output: response.output
+                    stackTrace: response.exceptionStackTrace,
+                    output    : response.output
             ])
         } else {
             binding.putAll([
-                result: response.result,
-                output: response.output,
-                runningTime: response.runningTime
+                    result     : response.result,
+                    output     : response.output,
+                    runningTime: response.runningTime
             ])
         }
 

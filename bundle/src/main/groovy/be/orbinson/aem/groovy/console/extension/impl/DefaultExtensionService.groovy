@@ -1,11 +1,6 @@
 package be.orbinson.aem.groovy.console.extension.impl
 
-import be.orbinson.aem.groovy.console.api.BindingExtensionProvider
-import be.orbinson.aem.groovy.console.api.BindingVariable
-import be.orbinson.aem.groovy.console.api.CompilationCustomizerExtensionProvider
-import be.orbinson.aem.groovy.console.api.ScriptMetaClassExtensionProvider
-import be.orbinson.aem.groovy.console.api.StarImport
-import be.orbinson.aem.groovy.console.api.StarImportExtensionProvider
+import be.orbinson.aem.groovy.console.api.*
 import be.orbinson.aem.groovy.console.api.context.ScriptContext
 import be.orbinson.aem.groovy.console.extension.ExtensionService
 import groovy.transform.Synchronized
@@ -30,7 +25,7 @@ class DefaultExtensionService implements ExtensionService {
     private volatile List<ScriptMetaClassExtensionProvider> scriptMetaClassExtensionProviders = new CopyOnWriteArrayList<>()
 
     private volatile List<CompilationCustomizerExtensionProvider> compilationCustomizerExtensionProviders =
-        new CopyOnWriteArrayList<>()
+            new CopyOnWriteArrayList<>()
 
     @Override
     Map<String, BindingVariable> getBindingVariables(ScriptContext scriptContext) {
@@ -40,7 +35,7 @@ class DefaultExtensionService implements ExtensionService {
             extension.getBindingVariables(scriptContext).each { name, variable ->
                 if (bindingVariables[name]) {
                     LOG.debug("binding variable {} is currently bound to value {}, overriding with value = {}", name,
-                        bindingVariables[name], variable.value)
+                            bindingVariables[name], variable.value)
                 }
 
                 bindingVariables[name] = variable

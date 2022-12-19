@@ -1,32 +1,30 @@
 package be.orbinson.aem.groovy.console.servlets
 
-import be.orbinson.aem.groovy.console.api.JobProperties
-import be.orbinson.aem.groovy.console.configuration.ConfigurationService
-import com.google.common.collect.ImmutableMap
 import be.orbinson.aem.groovy.console.GroovyConsoleService
+import be.orbinson.aem.groovy.console.api.JobProperties
 import be.orbinson.aem.groovy.console.audit.AuditRecord
 import be.orbinson.aem.groovy.console.audit.AuditService
+import be.orbinson.aem.groovy.console.configuration.ConfigurationService
+import be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants
 import be.orbinson.aem.groovy.console.utils.GroovyScriptUtils
+import com.google.common.collect.ImmutableMap
 import groovy.util.logging.Slf4j
 import org.apache.sling.api.SlingHttpServletRequest
 import org.apache.sling.api.SlingHttpServletResponse
 import org.apache.sling.event.jobs.JobManager
 import org.apache.sling.event.jobs.ScheduledJobInfo
-import be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants
 import org.osgi.service.component.annotations.Component
 import org.osgi.service.component.annotations.Reference
 
 import javax.servlet.Servlet
 import javax.servlet.ServletException
 
-import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.DATE_CREATED
-import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.SCHEDULED_JOB_ID
-import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.SCRIPT
+import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.*
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST
 import static javax.servlet.http.HttpServletResponse.SC_FORBIDDEN
 
 @Component(service = Servlet, immediate = true, property = [
-    "sling.servlet.paths=/bin/groovyconsole/jobs"
+        "sling.servlet.paths=/bin/groovyconsole/jobs"
 ])
 @Slf4j("LOG")
 class ScheduledJobsServlet extends AbstractJsonResponseServlet {
@@ -45,7 +43,7 @@ class ScheduledJobsServlet extends AbstractJsonResponseServlet {
 
     @Override
     protected void doGet(SlingHttpServletRequest request, SlingHttpServletResponse response)
-        throws ServletException, IOException {
+            throws ServletException, IOException {
         def scheduledJob = findScheduledJobById(request)
 
         if (scheduledJob) {
@@ -56,19 +54,19 @@ class ScheduledJobsServlet extends AbstractJsonResponseServlet {
 
             // list all jobs
             def scheduledJobs = jobManager.getScheduledJobs(GroovyConsoleConstants.JOB_TOPIC, 0, null)
-                .collect { scheduledJobInfo ->
-                    def auditRecords = scheduledJobAuditRecords.findAll { record ->
-                        isAuditRecordForScheduledJob(record, scheduledJobInfo)
-                    }
+                    .collect { scheduledJobInfo ->
+                        def auditRecords = scheduledJobAuditRecords.findAll { record ->
+                            isAuditRecordForScheduledJob(record, scheduledJobInfo)
+                        }
 
-                    new ImmutableMap.Builder<String, Object>()
-                        .putAll(scheduledJobInfo.jobProperties)
-                        .put("downloadUrl", (auditRecords ? auditRecords.last().downloadUrl : null) ?: "")
-                        .put("scriptPreview", GroovyScriptUtils.getScriptPreview(scheduledJobInfo.jobProperties[SCRIPT] as String))
-                        .put("nextExecutionDate", scheduledJobInfo.nextScheduledExecution.format(GroovyConsoleConstants.DATE_FORMAT_DISPLAY))
-                        .build()
-                }
-                .sort { properties -> properties[DATE_CREATED] }
+                        new ImmutableMap.Builder<String, Object>()
+                                .putAll(scheduledJobInfo.jobProperties)
+                                .put("downloadUrl", (auditRecords ? auditRecords.last().downloadUrl : null) ?: "")
+                                .put("scriptPreview", GroovyScriptUtils.getScriptPreview(scheduledJobInfo.jobProperties[SCRIPT] as String))
+                                .put("nextExecutionDate", scheduledJobInfo.nextScheduledExecution.format(GroovyConsoleConstants.DATE_FORMAT_DISPLAY))
+                                .build()
+                    }
+                    .sort { properties -> properties[DATE_CREATED] }
 
             writeJsonResponse(response, [data: scheduledJobs])
         }
@@ -76,7 +74,7 @@ class ScheduledJobsServlet extends AbstractJsonResponseServlet {
 
     @Override
     protected void doPost(SlingHttpServletRequest request, SlingHttpServletResponse response)
-        throws ServletException, IOException {
+            throws ServletException, IOException {
         if (configurationService.hasScheduledJobPermission(request)) {
             def scheduledJob = findScheduledJobById(request)
 
@@ -105,7 +103,7 @@ class ScheduledJobsServlet extends AbstractJsonResponseServlet {
 
     @Override
     protected void doDelete(SlingHttpServletRequest request, SlingHttpServletResponse response)
-        throws ServletException, IOException {
+            throws ServletException, IOException {
         if (configurationService.hasScheduledJobPermission(request)) {
             def scheduledJob = findScheduledJobById(request)
 

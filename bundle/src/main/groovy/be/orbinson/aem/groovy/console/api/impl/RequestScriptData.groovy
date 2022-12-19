@@ -1,13 +1,11 @@
 package be.orbinson.aem.groovy.console.api.impl
 
+import be.orbinson.aem.groovy.console.api.context.ScriptData
 import groovy.transform.TupleConstructor
 import org.apache.sling.api.SlingHttpServletRequest
 import org.apache.sling.api.resource.ResourceResolver
-import be.orbinson.aem.groovy.console.api.context.ScriptData
 
-import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.EXTENSION_GROOVY
-import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.FILE_NAME
-import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.SCRIPT
+import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.*
 
 @TupleConstructor
 class RequestScriptData implements ScriptData {

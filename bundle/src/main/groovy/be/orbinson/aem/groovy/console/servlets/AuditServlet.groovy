@@ -14,7 +14,7 @@ import org.osgi.service.component.annotations.Reference
 import javax.servlet.Servlet
 
 @Component(service = Servlet, immediate = true, property = [
-    "sling.servlet.paths=/bin/groovyconsole/audit"
+        "sling.servlet.paths=/bin/groovyconsole/audit"
 ])
 class AuditServlet extends AbstractJsonResponseServlet {
 
@@ -55,16 +55,16 @@ class AuditServlet extends AbstractJsonResponseServlet {
 
         [data: auditRecords.collect { auditRecord ->
             [
-                date: auditRecord.date.format(GroovyConsoleConstants.DATE_FORMAT_DISPLAY),
-                scriptPreview: GroovyScriptUtils.getScriptPreview(auditRecord.script),
-                jobTitle: auditRecord.jobProperties.jobTitle,
-                userId: auditRecord.userId,
-                script: auditRecord.script,
-                data: auditRecord.data,
-                exception: auditRecord.exception,
-                queryString: "?userId=${auditRecord.userId}&script=${auditRecord.relativePath}",
-                relativePath: auditRecord.relativePath,
-                downloadUrl: auditRecord.downloadUrl
+                    date         : auditRecord.date.format(GroovyConsoleConstants.DATE_FORMAT_DISPLAY),
+                    scriptPreview: GroovyScriptUtils.getScriptPreview(auditRecord.script),
+                    jobTitle     : auditRecord.jobProperties.jobTitle,
+                    userId       : auditRecord.userId,
+                    script       : auditRecord.script,
+                    data         : auditRecord.data,
+                    exception    : auditRecord.exception,
+                    queryString  : "?userId=${auditRecord.userId}&script=${auditRecord.relativePath}",
+                    relativePath : auditRecord.relativePath,
+                    downloadUrl  : auditRecord.downloadUrl
             ]
         }]
     }

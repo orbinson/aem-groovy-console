@@ -27,5 +27,5 @@ interface EmailNotificationService extends NotificationService {
      * @param attachOutput if true, attach the script output file
      */
     void notify(RunScriptResponse response, Set<String> recipients, String successTemplate,
-        String failureTemplate, boolean attachOutput)
+                String failureTemplate, boolean attachOutput)
 }

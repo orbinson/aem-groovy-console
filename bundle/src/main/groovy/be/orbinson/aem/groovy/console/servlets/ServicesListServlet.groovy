@@ -17,7 +17,7 @@ import static org.apache.sling.api.adapter.AdapterFactory.ADAPTER_CLASSES
 import static org.osgi.framework.Constants.OBJECTCLASS
 
 @Component(service = Servlet, immediate = true, property = [
-    "sling.servlet.paths=/bin/groovyconsole/services"
+        "sling.servlet.paths=/bin/groovyconsole/services"
 ])
 class ServicesListServlet extends AbstractJsonResponseServlet {
 
@@ -25,7 +25,7 @@ class ServicesListServlet extends AbstractJsonResponseServlet {
 
     @Override
     protected void doGet(SlingHttpServletRequest request,
-        SlingHttpServletResponse response) throws ServletException, IOException {
+                         SlingHttpServletResponse response) throws ServletException, IOException {
         writeJsonResponse(response, adaptersMap + servicesMap)
     }
 

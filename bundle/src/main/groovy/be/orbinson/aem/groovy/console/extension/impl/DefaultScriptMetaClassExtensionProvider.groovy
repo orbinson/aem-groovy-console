@@ -2,13 +2,13 @@ package be.orbinson.aem.groovy.console.extension.impl
 
 import be.orbinson.aem.groovy.console.api.ScriptMetaClassExtensionProvider
 import be.orbinson.aem.groovy.console.api.context.ScriptContext
+import be.orbinson.aem.groovy.console.table.Table
 import com.day.cq.replication.ReplicationActionType
 import com.day.cq.replication.ReplicationOptions
 import com.day.cq.replication.Replicator
 import com.day.cq.search.PredicateGroup
 import com.day.cq.search.QueryBuilder
 import com.day.cq.wcm.api.PageManager
-import be.orbinson.aem.groovy.console.table.Table
 import org.apache.sling.models.factory.ModelFactory
 import org.osgi.framework.BundleContext
 import org.osgi.service.component.annotations.Activate

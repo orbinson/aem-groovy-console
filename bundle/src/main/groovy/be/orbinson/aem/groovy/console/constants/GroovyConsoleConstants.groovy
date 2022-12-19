@@ -72,24 +72,24 @@ class GroovyConsoleConstants {
     public static final String JOB_TOPIC = "groovyconsole/job"
 
     public static final Set<String> JOB_PROPERTIES = [
-        JOB_TITLE,
-        JOB_DESCRIPTION,
-        SCRIPT,
-        DATA,
-        CRON_EXPRESSION,
-        EMAIL_TO,
-        MEDIA_TYPE
+            JOB_TITLE,
+            JOB_DESCRIPTION,
+            SCRIPT,
+            DATA,
+            CRON_EXPRESSION,
+            EMAIL_TO,
+            MEDIA_TYPE
     ] as Set
 
     // audit
 
     public static final Set<String> AUDIT_JOB_PROPERTIES = [
-        SCHEDULED_JOB_ID,
-        JOB_TITLE,
-        JOB_DESCRIPTION,
-        CRON_EXPRESSION,
-        EMAIL_TO,
-        MEDIA_TYPE
+            SCHEDULED_JOB_ID,
+            JOB_TITLE,
+            JOB_DESCRIPTION,
+            CRON_EXPRESSION,
+            EMAIL_TO,
+            MEDIA_TYPE
     ] as Set
 
     public static final String AUDIT_NODE_NAME = "audit"
@@ -99,10 +99,10 @@ class GroovyConsoleConstants {
     public static final String AUDIT_PATH = "$PATH_CONSOLE_ROOT/$AUDIT_NODE_NAME"
 
     public static final Map<String, String> MEDIA_TYPE_EXTENSIONS = [
-        (MediaType.CSV_UTF_8.withoutParameters().toString()): "csv",
-        (MediaType.PLAIN_TEXT_UTF_8.withoutParameters().toString()): "txt",
-        (MediaType.HTML_UTF_8.withoutParameters().toString()): "html",
-        (MediaType.XML_UTF_8.withoutParameters().toString()): "xml"
+            (MediaType.CSV_UTF_8.withoutParameters().toString())       : "csv",
+            (MediaType.PLAIN_TEXT_UTF_8.withoutParameters().toString()): "txt",
+            (MediaType.HTML_UTF_8.withoutParameters().toString())      : "html",
+            (MediaType.XML_UTF_8.withoutParameters().toString())       : "xml"
     ]
 
     private GroovyConsoleConstants() {

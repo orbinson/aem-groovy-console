@@ -4,26 +4,18 @@ import be.orbinson.aem.groovy.console.api.JobProperties
 import be.orbinson.aem.groovy.console.api.context.JobScriptContext
 import be.orbinson.aem.groovy.console.api.context.ScriptContext
 import be.orbinson.aem.groovy.console.response.RunScriptResponse
+import be.orbinson.aem.groovy.console.table.Table
 import com.day.cq.commons.jcr.JcrConstants
 import com.day.cq.commons.jcr.JcrUtil
 import com.day.text.Text
 import com.google.common.net.MediaType
-import be.orbinson.aem.groovy.console.table.Table
 import groovy.json.JsonBuilder
 import groovy.transform.TupleConstructor
 import org.apache.commons.lang3.exception.ExceptionUtils
 import org.apache.sling.api.resource.Resource
 import org.apache.sling.api.resource.ResourceUtil
 
-import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.DATA
-import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.DATE_FORMAT_FILE_NAME
-import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.EXCEPTION_STACK_TRACE
-import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.JOB_ID
-import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.MEDIA_TYPE_EXTENSIONS
-import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.OUTPUT
-import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.RESULT
-import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.RUNNING_TIME
-import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.SCRIPT
+import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.*
 
 @TupleConstructor
 class DefaultRunScriptResponse implements RunScriptResponse {
@@ -40,16 +32,16 @@ class DefaultRunScriptResponse implements RunScriptResponse {
         }
 
         new DefaultRunScriptResponse(
-            date: Calendar.instance,
-            script: scriptContext.script,
-            data: scriptContext.data,
-            result: resultString,
-            output: output,
-            exceptionStackTrace: "",
-            runningTime: runningTime,
-            userId: scriptContext.userId,
-            jobId: scriptContext instanceof JobScriptContext ? scriptContext.jobId : null,
-            jobProperties: scriptContext instanceof JobScriptContext ? scriptContext.jobProperties : null
+                date: Calendar.instance,
+                script: scriptContext.script,
+                data: scriptContext.data,
+                result: resultString,
+                output: output,
+                exceptionStackTrace: "",
+                runningTime: runningTime,
+                userId: scriptContext.userId,
+                jobId: scriptContext instanceof JobScriptContext ? scriptContext.jobId : null,
+                jobProperties: scriptContext instanceof JobScriptContext ? scriptContext.jobProperties : null
         )
     }
 
@@ -57,16 +49,16 @@ class DefaultRunScriptResponse implements RunScriptResponse {
         def exceptionStackTrace = ExceptionUtils.getStackTrace(throwable)
 
         new DefaultRunScriptResponse(
-            date: Calendar.instance,
-            script: scriptContext.script,
-            data: scriptContext.data,
-            result: "",
-            output: output,
-            exceptionStackTrace: exceptionStackTrace,
-            runningTime: "",
-            userId: scriptContext.userId,
-            jobId: scriptContext instanceof JobScriptContext ? scriptContext.jobId : null,
-            jobProperties: scriptContext instanceof JobScriptContext ? scriptContext.jobProperties : null
+                date: Calendar.instance,
+                script: scriptContext.script,
+                data: scriptContext.data,
+                result: "",
+                output: output,
+                exceptionStackTrace: exceptionStackTrace,
+                runningTime: "",
+                userId: scriptContext.userId,
+                jobId: scriptContext instanceof JobScriptContext ? scriptContext.jobId : null,
+                jobProperties: scriptContext instanceof JobScriptContext ? scriptContext.jobProperties : null
         )
     }
 
@@ -78,16 +70,16 @@ class DefaultRunScriptResponse implements RunScriptResponse {
         def userId = Text.getName(userIdResourcePath)
 
         new DefaultRunScriptResponse(
-            date: properties.get(JcrConstants.JCR_CREATED, Calendar),
-            script: properties.get(SCRIPT, ""),
-            data: properties.get(DATA, ""),
-            result: exceptionStackTrace ? "" : properties.get(RESULT, ""),
-            output: properties.get(OUTPUT, ""),
-            exceptionStackTrace: exceptionStackTrace ?: "",
-            runningTime: exceptionStackTrace ? "" : properties.get(RUNNING_TIME, ""),
-            userId: userId,
-            jobId: properties.get(JOB_ID, String),
-            jobProperties: JobProperties.fromValueMap(properties)
+                date: properties.get(JcrConstants.JCR_CREATED, Calendar),
+                script: properties.get(SCRIPT, ""),
+                data: properties.get(DATA, ""),
+                result: exceptionStackTrace ? "" : properties.get(RESULT, ""),
+                output: properties.get(OUTPUT, ""),
+                exceptionStackTrace: exceptionStackTrace ?: "",
+                runningTime: exceptionStackTrace ? "" : properties.get(RUNNING_TIME, ""),
+                userId: userId,
+                jobId: properties.get(JOB_ID, String),
+                jobProperties: JobProperties.fromValueMap(properties)
         )
     }
 
@@ -127,11 +119,11 @@ class DefaultRunScriptResponse implements RunScriptResponse {
     @Override
     String getOutputFileName() {
         new StringBuilder()
-            .append(outputFileNamePrefix)
-            .append(date.format(DATE_FORMAT_FILE_NAME))
-            .append(".")
-            .append(MEDIA_TYPE_EXTENSIONS[mediaType])
-            .toString()
+                .append(outputFileNamePrefix)
+                .append(date.format(DATE_FORMAT_FILE_NAME))
+                .append(".")
+                .append(MEDIA_TYPE_EXTENSIONS[mediaType])
+                .toString()
     }
 
     private String getOutputFileNamePrefix() {
@@ -139,7 +131,7 @@ class DefaultRunScriptResponse implements RunScriptResponse {
 
         if (jobProperties?.jobTitle) {
             outputFileNamePrefix = JcrUtil.createValidName(jobProperties.jobTitle,
-                JcrUtil.HYPHEN_LABEL_CHAR_MAPPING).toLowerCase() + "-"
+                    JcrUtil.HYPHEN_LABEL_CHAR_MAPPING).toLowerCase() + "-"
         } else {
             outputFileNamePrefix = "output-"
         }

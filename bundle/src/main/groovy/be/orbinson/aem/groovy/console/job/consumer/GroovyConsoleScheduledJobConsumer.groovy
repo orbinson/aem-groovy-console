@@ -1,9 +1,9 @@
 package be.orbinson.aem.groovy.console.job.consumer
 
+import be.orbinson.aem.groovy.console.GroovyConsoleService
 import be.orbinson.aem.groovy.console.api.JobProperties
 import be.orbinson.aem.groovy.console.api.impl.ScheduledJobScriptContext
 import com.google.common.base.Charsets
-import be.orbinson.aem.groovy.console.GroovyConsoleService
 import groovy.util.logging.Slf4j
 import org.apache.sling.api.resource.ResourceResolverFactory
 import org.apache.sling.event.jobs.Job
@@ -12,7 +12,7 @@ import org.osgi.service.component.annotations.Component
 import org.osgi.service.component.annotations.Reference
 
 @Component(service = JobConsumer, immediate = true, property = [
-    "job.topics=groovyconsole/job"
+        "job.topics=groovyconsole/job"
 ])
 @Slf4j("LOG")
 class GroovyConsoleScheduledJobConsumer implements JobConsumer {
@@ -33,11 +33,11 @@ class GroovyConsoleScheduledJobConsumer implements JobConsumer {
             def outputStream = new ByteArrayOutputStream()
 
             def scriptContext = new ScheduledJobScriptContext(
-                resourceResolver: resourceResolver,
-                outputStream: outputStream,
-                printStream: new PrintStream(outputStream, true, Charsets.UTF_8.name()),
-                jobId: job.id,
-                jobProperties: JobProperties.fromJob(job)
+                    resourceResolver: resourceResolver,
+                    outputStream: outputStream,
+                    printStream: new PrintStream(outputStream, true, Charsets.UTF_8.name()),
+                    jobId: job.id,
+                    jobProperties: JobProperties.fromJob(job)
             )
 
             groovyConsoleService.runScript(scriptContext)

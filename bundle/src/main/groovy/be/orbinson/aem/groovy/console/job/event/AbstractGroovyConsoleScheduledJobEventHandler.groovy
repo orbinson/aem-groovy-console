@@ -1,9 +1,9 @@
 package be.orbinson.aem.groovy.console.job.event
 
 import be.orbinson.aem.groovy.console.audit.AuditService
+import be.orbinson.aem.groovy.console.response.RunScriptResponse
 import groovy.util.logging.Slf4j
 import org.apache.sling.event.jobs.NotificationConstants
-import be.orbinson.aem.groovy.console.response.RunScriptResponse
 import org.osgi.service.event.Event
 import org.osgi.service.event.EventHandler
 
@@ -17,7 +17,7 @@ abstract class AbstractGroovyConsoleScheduledJobEventHandler implements EventHan
     @Override
     final void handleEvent(Event event) {
         LOG.debug("handling completed scheduled job with properties : {}", event.propertyNames
-            .collectEntries { propertyName -> [propertyName, event.getProperty(propertyName)] })
+                .collectEntries { propertyName -> [propertyName, event.getProperty(propertyName)] })
 
         def jobId = event.getProperty(NotificationConstants.NOTIFICATION_PROPERTY_JOB_ID) as String
         def auditRecord = getAuditService().getAuditRecord(jobId)

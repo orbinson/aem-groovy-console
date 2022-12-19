@@ -1,12 +1,11 @@
 package be.orbinson.aem.groovy.console.job.event.impl
 
-
 import be.orbinson.aem.groovy.console.audit.AuditService
 import be.orbinson.aem.groovy.console.job.event.AbstractGroovyConsoleScheduledJobEventHandler
 import be.orbinson.aem.groovy.console.notification.EmailNotificationService
+import be.orbinson.aem.groovy.console.response.RunScriptResponse
 import groovy.util.logging.Slf4j
 import org.apache.sling.event.jobs.NotificationConstants
-import be.orbinson.aem.groovy.console.response.RunScriptResponse
 import org.osgi.service.component.annotations.Component
 import org.osgi.service.component.annotations.Reference
 import org.osgi.service.event.EventHandler

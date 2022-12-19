@@ -1,9 +1,11 @@
 package be.orbinson.aem.groovy.console.impl
 
+import be.orbinson.aem.groovy.console.GroovyConsoleService
 import be.orbinson.aem.groovy.console.api.ActiveJob
 import be.orbinson.aem.groovy.console.api.JobProperties
 import be.orbinson.aem.groovy.console.api.context.ScriptContext
 import be.orbinson.aem.groovy.console.api.context.ScriptData
+import be.orbinson.aem.groovy.console.audit.AuditService
 import be.orbinson.aem.groovy.console.configuration.ConfigurationService
 import be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants
 import be.orbinson.aem.groovy.console.extension.ExtensionService
@@ -15,8 +17,6 @@ import be.orbinson.aem.groovy.console.response.impl.DefaultSaveScriptResponse
 import com.day.cq.commons.jcr.JcrConstants
 import com.day.cq.commons.jcr.JcrUtil
 import com.google.common.net.MediaType
-import be.orbinson.aem.groovy.console.GroovyConsoleService
-import be.orbinson.aem.groovy.console.audit.AuditService
 import groovy.transform.Synchronized
 import groovy.transform.TimedInterrupt
 import groovy.util.logging.Slf4j
@@ -35,10 +35,7 @@ import javax.jcr.Node
 import javax.jcr.Session
 import java.util.concurrent.CopyOnWriteArrayList
 
-import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.CHARSET
-import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.FORMAT_RUNNING_TIME
-import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.PATH_SCRIPTS_FOLDER
-import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.TIME_ZONE_RUNNING_TIME
+import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.*
 
 @Component(service = GroovyConsoleService, immediate = true)
 @Slf4j("LOG")
@@ -91,19 +88,19 @@ class DefaultGroovyConsoleService implements GroovyConsoleService {
             LOG.debug("script execution completed, running time : {}", runningTime)
 
             runScriptResponse = DefaultRunScriptResponse.fromResult(scriptContext, result,
-                scriptContext.outputStream.toString(CHARSET), runningTime)
+                    scriptContext.outputStream.toString(CHARSET), runningTime)
 
             auditAndNotify(runScriptResponse)
         } catch (MultipleCompilationErrorsException e) {
             LOG.error("script compilation error", e)
 
             runScriptResponse = DefaultRunScriptResponse.fromException(scriptContext,
-                scriptContext.outputStream.toString(CHARSET), e)
+                    scriptContext.outputStream.toString(CHARSET), e)
         } catch (Throwable t) {
             LOG.error("error running script", t)
 
             runScriptResponse = DefaultRunScriptResponse.fromException(scriptContext,
-                scriptContext.outputStream.toString(CHARSET), t)
+                    scriptContext.outputStream.toString(CHARSET), t)
 
             auditAndNotify(runScriptResponse)
         } finally {
@@ -143,10 +140,10 @@ class DefaultGroovyConsoleService implements GroovyConsoleService {
             LOG.info("adding scheduled job with properties : {}", jobProperties.toMap())
 
             jobManager.createJob(GroovyConsoleConstants.JOB_TOPIC)
-                .properties(jobProperties.toMap())
-                .schedule()
-                .cron(jobProperties.cronExpression)
-                .add()
+                    .properties(jobProperties.toMap())
+                    .schedule()
+                    .cron(jobProperties.cronExpression)
+                    .add()
         } else {
             LOG.info("adding immediate job with properties : {}", jobProperties.toMap())
 
@@ -200,11 +197,11 @@ class DefaultGroovyConsoleService implements GroovyConsoleService {
         }
 
         configuration.addCompilationCustomizers(extensionService.compilationCustomizers
-            as CompilationCustomizer[])
+                as CompilationCustomizer[])
     }
 
     private void saveFile(Session session, Node folderNode, String script, String fileName, Date date,
-        String mimeType) {
+                          String mimeType) {
         def fileNode = folderNode.addNode(Text.escapeIllegalJcrChars(fileName), JcrConstants.NT_FILE)
         def resourceNode = fileNode.addNode(JcrConstants.JCR_CONTENT, JcrConstants.NT_RESOURCE)
 
