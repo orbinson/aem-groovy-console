@@ -409,13 +409,6 @@
                 <version>4.0.6</version>
             </dependency>
 
-            <dependency>
-                <groupId>com.icfolson.aem.groovy.extension</groupId>
-                <artifactId>aem-groovy-extension-bundle</artifactId>
-                <version>7.0.0</version>
-                <scope>provided</scope>
-            </dependency>
-
             <!-- Testing -->
             <dependency>
                 <groupId>org.junit</groupId>

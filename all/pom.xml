@@ -58,12 +58,6 @@
                             <artifactId>groovy-dateutil</artifactId>
                             <target>/apps/aem-groovy-console-packages/content/install</target>
                         </embedded>
-                        <!-- TODO move the groovy extensions to this project, no use for having it separate -->
-<!--                        <embedded>-->
-<!--                            <groupId>com.icfolson.aem.groovy.extension</groupId>-->
-<!--                            <artifactId>aem-groovy-extension-bundle</artifactId>-->
-<!--                            <target>/apps/aem-groovy-console-packages/content/install</target>-->
-<!--                        </embedded>-->
                         <embedded>
                             <groupId>be.orbinson.aem</groupId>
                             <artifactId>aem-groovy-console-bundle</artifactId>
@@ -95,19 +89,6 @@
                 <artifactId>wcmio-content-package-maven-plugin</artifactId>
                 <extensions>true</extensions>
             </plugin>
-            <plugin>
-                <artifactId>maven-clean-plugin</artifactId>
-                <version>2.4.1</version>
-                <executions>
-                    <execution>
-                        <id>auto-clean</id>
-                        <phase>initialize</phase>
-                        <goals>
-                            <goal>clean</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
         </plugins>
     </build>
 
@@ -130,39 +111,6 @@
                                 </goals>
                                 <configuration>
                                     <serviceURL>http://${aem.host}:${aem.port}/crx/packmgr/service.jsp</serviceURL>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        <profile>
-            <id>autoInstallReplicateSinglePackage</id>
-            <activation>
-                <activeByDefault>false</activeByDefault>
-            </activation>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>io.wcm.maven.plugins</groupId>
-                        <artifactId>wcmio-content-package-maven-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>install-package</id>
-                                <phase>install</phase>
-                                <goals>
-                                    <goal>install</goal>
-                                </goals>
-                            </execution>
-                            <execution>
-                                <id>replicate-package</id>
-                                <phase>install</phase>
-                                <goals>
-                                    <goal>replicate</goal>
-                                </goals>
-                                <configuration>
-                                    <path>/etc/packages/${package.group}/${project.artifactId}-${project.version}.zip</path>
                                 </configuration>
                             </execution>
                         </executions>
@@ -215,10 +163,6 @@
             <artifactId>groovy-dateutil</artifactId>
         </dependency>
 
-        <dependency>
-            <groupId>com.icfolson.aem.groovy.extension</groupId>
-            <artifactId>aem-groovy-extension-bundle</artifactId>
-        </dependency>
         <dependency>
             <groupId>be.orbinson.aem</groupId>
             <artifactId>aem-groovy-console-bundle</artifactId>

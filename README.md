@@ -17,7 +17,9 @@ scripts are included in the package for reference.
 
 ## Compatibility
 
-We only support AEM as a Cloud Service. For AEM on premises, check the original [aem-groovy-console](https://github.com/CID15/aem-groovy-console)
+We only support AEM 6.5.10+ and AEM as a Cloud Service. 
+
+For older AEM on premises, check the original repo [aem-groovy-console](https://github.com/CID15/aem-groovy-console)
 
 ## Installation
 

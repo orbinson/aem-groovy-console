@@ -4,10 +4,10 @@ import be.orbinson.aem.groovy.console.api.BindingExtensionProvider
 import be.orbinson.aem.groovy.console.api.BindingVariable
 import be.orbinson.aem.groovy.console.api.context.ScriptContext
 import be.orbinson.aem.groovy.console.api.context.ServletScriptContext
+import be.orbinson.aem.groovy.console.builders.PageBuilder
+import be.orbinson.aem.groovy.console.builders.NodeBuilder
 import com.day.cq.search.QueryBuilder
 import com.day.cq.wcm.api.PageManager
-//import com.icfolson.aem.groovy.extension.builders.NodeBuilder
-//import com.icfolson.aem.groovy.extension.builders.PageBuilder
 import groovy.json.JsonException
 import groovy.json.JsonSlurper
 import org.apache.sling.api.SlingHttpServletRequest
@@ -46,12 +46,12 @@ class DefaultBindingExtensionProvider implements BindingExtensionProvider {
                 queryBuilder    : new BindingVariable(queryBuilder, QueryBuilder,
                         "https://helpx.adobe.com/experience-manager/6-4/sites/developing/using/reference-materials/javadoc" +
                                 "/com/day/cq/search/QueryBuilder.html"),
-//                nodeBuilder     : new BindingVariable(new NodeBuilder(session), NodeBuilder,
-//                        "http://code.digitalatolson.com/aem-groovy-extension/groovydocs/com/icfolson/aem/groovy/extension" +
-//                                "/builders/NodeBuilder.html"),
-//                pageBuilder     : new BindingVariable(new PageBuilder(session), PageBuilder,
-//                        "http://code.digitalatolson.com/aem-groovy-extension/groovydocs/com/icfolson/aem/groovy/extension" +
-//                                "/builders/PageBuilder.html"),
+                nodeBuilder     : new BindingVariable(new NodeBuilder(session), NodeBuilder,
+                        "http://code.digitalatolson.com/aem-groovy-extension/groovydocs/com/icfolson/aem/groovy/extension" +
+                                "/builders/NodeBuilder.html"),
+                pageBuilder     : new BindingVariable(new PageBuilder(session), PageBuilder,
+                        "http://code.digitalatolson.com/aem-groovy-extension/groovydocs/com/icfolson/aem/groovy/extension" +
+                                "/builders/PageBuilder.html"),
                 bundleContext   : new BindingVariable(bundleContext, BundleContext,
                         "http://www.osgi.org/javadoc/r4v43/core/org/osgi/framework/BundleContext.html"),
                 out             : new BindingVariable(scriptContext.printStream, PrintStream,
