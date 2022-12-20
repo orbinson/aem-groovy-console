@@ -3,9 +3,9 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>org.cid15.aem.groovy.console</groupId>
+        <groupId>be.orbinson.aem</groupId>
         <artifactId>aem-groovy-console</artifactId>
-        <version>17.1.0-SNAPSHOT</version>
+        <version>18.0.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>aem-groovy-console-ui.apps</artifactId>
@@ -29,7 +29,7 @@
                     </properties>
                     <repositoryStructurePackages>
                         <repositoryStructurePackage>
-                            <groupId>org.cid15.aem.groovy.console</groupId>
+                            <groupId>be.orbinson.aem</groupId>
                             <artifactId>aem-groovy-console-ui.apps.structure</artifactId>
                         </repositoryStructurePackage>
                     </repositoryStructurePackages>
@@ -50,12 +50,12 @@
 
     <dependencies>
         <dependency>
-            <groupId>org.cid15.aem.groovy.console</groupId>
+            <groupId>be.orbinson.aem</groupId>
             <artifactId>aem-groovy-console-bundle</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.cid15.aem.groovy.console</groupId>
+            <groupId>be.orbinson.aem</groupId>
             <artifactId>aem-groovy-console-ui.apps.structure</artifactId>
             <version>${project.version}</version>
             <type>zip</type>

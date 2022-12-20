@@ -4,9 +4,9 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>org.cid15.aem.groovy.console</groupId>
+        <groupId>be.orbinson.aem</groupId>
         <artifactId>aem-groovy-console</artifactId>
-        <version>17.1.0-SNAPSHOT</version>
+        <version>18.0.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>aem-groovy-console-all</artifactId>
@@ -37,38 +37,37 @@
                     <properties>
                         <cloudManagerTarget>all</cloudManagerTarget>
                     </properties>
-                    <!-- skip sub package validation for now as some vendor packages like CIF apps will not pass -->
-                    <skipSubPackageValidation>true</skipSubPackageValidation>
                     <embeddeds>
                         <embedded>
                             <groupId>org.codehaus.groovy</groupId>
                             <artifactId>groovy-all</artifactId>
                             <target>/apps/aem-groovy-console-packages/content/install</target>
                         </embedded>
+                        <!-- TODO move the groovy extensions to this project, no use for having it separate -->
                         <embedded>
                             <groupId>com.icfolson.aem.groovy.extension</groupId>
                             <artifactId>aem-groovy-extension-bundle</artifactId>
                             <target>/apps/aem-groovy-console-packages/content/install</target>
                         </embedded>
                         <embedded>
-                            <groupId>org.cid15.aem.groovy.console</groupId>
+                            <groupId>be.orbinson.aem</groupId>
                             <artifactId>aem-groovy-console-bundle</artifactId>
                             <target>/apps/aem-groovy-console-packages/application/install</target>
                         </embedded>
                         <embedded>
-                            <groupId>org.cid15.aem.groovy.console</groupId>
+                            <groupId>be.orbinson.aem</groupId>
                             <artifactId>aem-groovy-console-ui.apps</artifactId>
                             <type>zip</type>
                             <target>/apps/aem-groovy-console-packages/application/install</target>
                         </embedded>
                         <embedded>
-                            <groupId>org.cid15.aem.groovy.console</groupId>
+                            <groupId>be.orbinson.aem</groupId>
                             <artifactId>aem-groovy-console-ui.config</artifactId>
                             <type>zip</type>
                             <target>/apps/aem-groovy-console-packages/application/install</target>
                         </embedded>
                         <embedded>
-                            <groupId>org.cid15.aem.groovy.console</groupId>
+                            <groupId>be.orbinson.aem</groupId>
                             <artifactId>aem-groovy-console-ui.content</artifactId>
                             <type>zip</type>
                             <target>/apps/aem-groovy-console-packages/content/install</target>
@@ -193,24 +192,24 @@
             <artifactId>aem-groovy-extension-bundle</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.cid15.aem.groovy.console</groupId>
+            <groupId>be.orbinson.aem</groupId>
             <artifactId>aem-groovy-console-bundle</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.cid15.aem.groovy.console</groupId>
+            <groupId>be.orbinson.aem</groupId>
             <artifactId>aem-groovy-console-ui.apps</artifactId>
             <version>${project.version}</version>
             <type>zip</type>
         </dependency>
         <dependency>
-            <groupId>org.cid15.aem.groovy.console</groupId>
+            <groupId>be.orbinson.aem</groupId>
             <artifactId>aem-groovy-console-ui.config</artifactId>
             <version>${project.version}</version>
             <type>zip</type>
         </dependency>
         <dependency>
-            <groupId>org.cid15.aem.groovy.console</groupId>
+            <groupId>be.orbinson.aem</groupId>
             <artifactId>aem-groovy-console-ui.content</artifactId>
             <version>${project.version}</version>
             <type>zip</type>

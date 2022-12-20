@@ -2,7 +2,7 @@ import org.osgi.service.cm.ConfigurationAdmin
 
 def loggers = [
     "com.day.cq.dam": "dam",
-    "org.cid15.aem.groovy.console": "groovyconsole"
+    "be.orbinson..aem.groovy.console": "groovyconsole"
 ]
 
 def admin = getService(ConfigurationAdmin)
