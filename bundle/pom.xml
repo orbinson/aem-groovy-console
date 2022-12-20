@@ -177,9 +177,22 @@
 
         <!-- groovy -->
         <dependency>
-            <groupId>org.codehaus.groovy</groupId>
-            <artifactId>groovy-all</artifactId>
+            <groupId>org.apache.groovy</groupId>
+            <artifactId>groovy</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.apache.groovy</groupId>
+            <artifactId>groovy-json</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.groovy</groupId>
+            <artifactId>groovy-templates</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.groovy</groupId>
+            <artifactId>groovy-dateutil</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>com.icfolson.aem.groovy.extension</groupId>
             <artifactId>aem-groovy-extension-bundle</artifactId>
@@ -215,7 +228,7 @@
         <!-- SDK included last to allow other dependencies to override included versions -->
         <dependency>
             <groupId>com.adobe.aem</groupId>
-            <artifactId>aem-sdk-api</artifactId>
+            <artifactId>uber-jar</artifactId>
         </dependency>
     </dependencies>
 </project>

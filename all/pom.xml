@@ -39,16 +39,31 @@
                     </properties>
                     <embeddeds>
                         <embedded>
-                            <groupId>org.codehaus.groovy</groupId>
-                            <artifactId>groovy-all</artifactId>
+                            <groupId>org.apache.groovy</groupId>
+                            <artifactId>groovy</artifactId>
+                            <target>/apps/aem-groovy-console-packages/content/install</target>
+                        </embedded>
+                        <embedded>
+                            <groupId>org.apache.groovy</groupId>
+                            <artifactId>groovy-json</artifactId>
+                            <target>/apps/aem-groovy-console-packages/content/install</target>
+                        </embedded>
+                        <embedded>
+                            <groupId>org.apache.groovy</groupId>
+                            <artifactId>groovy-templates</artifactId>
+                            <target>/apps/aem-groovy-console-packages/content/install</target>
+                        </embedded>
+                        <embedded>
+                            <groupId>org.apache.groovy</groupId>
+                            <artifactId>groovy-dateutil</artifactId>
                             <target>/apps/aem-groovy-console-packages/content/install</target>
                         </embedded>
                         <!-- TODO move the groovy extensions to this project, no use for having it separate -->
-                        <embedded>
-                            <groupId>com.icfolson.aem.groovy.extension</groupId>
-                            <artifactId>aem-groovy-extension-bundle</artifactId>
-                            <target>/apps/aem-groovy-console-packages/content/install</target>
-                        </embedded>
+<!--                        <embedded>-->
+<!--                            <groupId>com.icfolson.aem.groovy.extension</groupId>-->
+<!--                            <artifactId>aem-groovy-extension-bundle</artifactId>-->
+<!--                            <target>/apps/aem-groovy-console-packages/content/install</target>-->
+<!--                        </embedded>-->
                         <embedded>
                             <groupId>be.orbinson.aem</groupId>
                             <artifactId>aem-groovy-console-bundle</artifactId>
@@ -184,9 +199,22 @@
 
     <dependencies>
         <dependency>
-            <groupId>org.codehaus.groovy</groupId>
-            <artifactId>groovy-all</artifactId>
+            <groupId>org.apache.groovy</groupId>
+            <artifactId>groovy</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.apache.groovy</groupId>
+            <artifactId>groovy-json</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.groovy</groupId>
+            <artifactId>groovy-templates</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.groovy</groupId>
+            <artifactId>groovy-dateutil</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>com.icfolson.aem.groovy.extension</groupId>
             <artifactId>aem-groovy-extension-bundle</artifactId>
