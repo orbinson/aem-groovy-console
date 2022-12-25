@@ -162,11 +162,6 @@ class DefaultAuditService implements AuditService {
         getAuditRecordsForDateRange(allScheduledJobAuditRecords, startDate, endDate)
     }
 
-    @Activate
-    void activate() {
-        checkAuditNode()
-    }
-
     @Synchronized
     private Node addAuditRecordNode(ResourceResolver resourceResolver, String userId) {
         def date = Calendar.instance
@@ -190,21 +185,6 @@ class DefaultAuditService implements AuditService {
         }
 
         auditRecordNode
-    }
-
-    private void checkAuditNode() {
-        withResourceResolver { ResourceResolver resourceResolver ->
-            def session = resourceResolver.adaptTo(Session)
-            def consoleRootNode = session.getNode(PATH_CONSOLE_ROOT)
-
-            if (!consoleRootNode.hasNode(AUDIT_NODE_NAME)) {
-                LOG.info("audit node does not exist, adding")
-
-                consoleRootNode.addNode(AUDIT_NODE_NAME, NT_UNSTRUCTURED)
-
-                session.save()
-            }
-        }
     }
 
     private void setAuditRecordNodeProperties(Node auditRecordNode, RunScriptResponse response) {
