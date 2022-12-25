@@ -215,7 +215,8 @@
         <!-- SDK included last to allow other dependencies to override included versions -->
         <dependency>
             <groupId>com.adobe.aem</groupId>
-            <artifactId>aem-sdk-api</artifactId>
+            <artifactId>uber-jar</artifactId>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
 </project>

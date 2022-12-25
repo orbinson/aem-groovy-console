@@ -87,8 +87,8 @@
         <vault.password>admin</vault.password>
         <package.group>aem-groovy-console</package.group>
 
-        <!-- versions -->
-        <aem.sdk.version>2022.10.9398.20221020T071514Z-220800</aem.sdk.version>
+        <!-- AEM minimum version -->
+        <aem.version>6.5.10</aem.version>
     </properties>
 
     <profiles>
@@ -435,11 +435,10 @@
 
             <!-- SDK included last to allow other dependencies to override included versions -->
             <dependency>
-                <groupId>io.wcm.maven</groupId>
-                <artifactId>io.wcm.maven.aem-cloud-dependencies</artifactId>
-                <version>${aem.sdk.version}.0000</version>
-                <type>pom</type>
-                <scope>import</scope>
+                <groupId>com.adobe.aem</groupId>
+                <artifactId>uber-jar</artifactId>
+                <version>${aem.version}</version>
+                <scope>provided</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>
