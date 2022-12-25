@@ -57,7 +57,7 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <manifestLocation>${project.build.outputDirectory}/META-INF</manifestLocation>
+                    <manifestLocation>target/classes/META-INF</manifestLocation>
                     <instructions>
                         <Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>
                         <Bundle-Name>${project.name}</Bundle-Name>

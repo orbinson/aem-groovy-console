@@ -18,9 +18,7 @@
     <modules>
         <module>all</module>
         <module>bundle</module>
-        <module>groovy-json</module>
-        <module>groovy-all-uber</module>
-        <module>groovy-all-osgi</module>
+        <module>groovy</module>
         <module>ui.apps</module>
         <module>ui.apps.structure</module>
         <module>ui.config</module>
