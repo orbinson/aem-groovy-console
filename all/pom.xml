@@ -39,24 +39,9 @@
                     </properties>
                     <embeddeds>
                         <embedded>
-                            <groupId>org.apache.groovy</groupId>
-                            <artifactId>groovy</artifactId>
-                            <target>/apps/aem-groovy-console-packages/content/install</target>
-                        </embedded>
-                        <embedded>
-                            <groupId>org.apache.groovy</groupId>
-                            <artifactId>groovy-json</artifactId>
-                            <target>/apps/aem-groovy-console-packages/content/install</target>
-                        </embedded>
-                        <embedded>
-                            <groupId>org.apache.groovy</groupId>
-                            <artifactId>groovy-templates</artifactId>
-                            <target>/apps/aem-groovy-console-packages/content/install</target>
-                        </embedded>
-                        <embedded>
-                            <groupId>org.apache.groovy</groupId>
-                            <artifactId>groovy-dateutil</artifactId>
-                            <target>/apps/aem-groovy-console-packages/content/install</target>
+                            <groupId>be.orbinson.aem</groupId>
+                            <artifactId>groovy-all-osgi</artifactId>
+                            <target>/apps/aem-groovy-console-packages/application/install</target>
                         </embedded>
                         <embedded>
                             <groupId>be.orbinson.aem</groupId>
@@ -146,21 +131,11 @@
     </profiles>
 
     <dependencies>
+        <!-- OSGi Compatible Groovy -->
         <dependency>
-            <groupId>org.apache.groovy</groupId>
-            <artifactId>groovy</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.groovy</groupId>
-            <artifactId>groovy-json</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.groovy</groupId>
-            <artifactId>groovy-templates</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.groovy</groupId>
-            <artifactId>groovy-dateutil</artifactId>
+            <groupId>be.orbinson.aem</groupId>
+            <artifactId>groovy-all-osgi</artifactId>
+            <version>${groovy.version}</version>
         </dependency>
 
         <dependency>

@@ -18,6 +18,9 @@
     <modules>
         <module>all</module>
         <module>bundle</module>
+        <module>groovy-json</module>
+        <module>groovy-all-uber</module>
+        <module>groovy-all-osgi</module>
         <module>ui.apps</module>
         <module>ui.apps.structure</module>
         <module>ui.config</module>
@@ -89,6 +92,8 @@
 
         <!-- AEM minimum version -->
         <aem.version>6.5.10</aem.version>
+
+        <groovy.version>4.0.6</groovy.version>
     </properties>
 
     <profiles>
@@ -390,23 +395,37 @@
             <dependency>
                 <groupId>org.apache.groovy</groupId>
                 <artifactId>groovy</artifactId>
-                <version>4.0.6</version>
-                <scope>provided</scope>
+                <version>${groovy.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.groovy</groupId>
                 <artifactId>groovy-json</artifactId>
-                <version>4.0.6</version>
+                <version>${groovy.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.groovy</groupId>
                 <artifactId>groovy-templates</artifactId>
-                <version>4.0.6</version>
+                <version>${groovy.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.groovy</groupId>
                 <artifactId>groovy-dateutil</artifactId>
-                <version>4.0.6</version>
+                <version>${groovy.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.groovy</groupId>
+                <artifactId>groovy-nio</artifactId>
+                <version>${groovy.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.groovy</groupId>
+                <artifactId>groovy-xml</artifactId>
+                <version>${groovy.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.groovy</groupId>
+                <artifactId>groovy-yaml</artifactId>
+                <version>${groovy.version}</version>
             </dependency>
 
             <!-- Testing -->
