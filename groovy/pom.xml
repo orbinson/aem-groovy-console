@@ -19,8 +19,7 @@
 
     <modules>
         <module>groovy-json</module>
-        <module>groovy-all-uber</module>
-        <module>groovy-all-osgi</module>
+        <module>groovy-osgi</module>
     </modules>
 
 </project>
