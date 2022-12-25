@@ -4,10 +4,10 @@ import be.orbinson.aem.groovy.console.api.BindingExtensionProvider
 import be.orbinson.aem.groovy.console.api.BindingVariable
 import be.orbinson.aem.groovy.console.api.context.ScriptContext
 import be.orbinson.aem.groovy.console.api.context.ServletScriptContext
+import be.orbinson.aem.groovy.console.builders.PageBuilder
+import be.orbinson.aem.groovy.console.builders.NodeBuilder
 import com.day.cq.search.QueryBuilder
 import com.day.cq.wcm.api.PageManager
-import com.icfolson.aem.groovy.extension.builders.NodeBuilder
-import com.icfolson.aem.groovy.extension.builders.PageBuilder
 import groovy.json.JsonException
 import groovy.json.JsonSlurper
 import org.apache.sling.api.SlingHttpServletRequest
