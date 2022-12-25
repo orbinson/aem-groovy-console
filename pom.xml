@@ -90,7 +90,6 @@
 
         <!-- AEM minimum version -->
         <aem.version>6.5.10</aem.version>
-
         <groovy.version>4.0.6</groovy.version>
     </properties>
 

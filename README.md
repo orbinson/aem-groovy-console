@@ -17,10 +17,9 @@ scripts are included in the package for reference.
 
 ## Compatibility
 
-We only support AEM 6.5.10+ and AEM as a Cloud Service. 
+Supported AEM versions are AEM 6.5.10+ and AEM as a Cloud Service latest SDK version.
 
-For older AEM on premises, check the original repo [aem-groovy-console](https://github.com/CID15/aem-groovy-console)
-
+To install the AEM Groovy Console on older AEM versions check the original project [aem-groovy-console](https://github.com/CID15/aem-groovy-console)
 ## Installation
 
 1. [Download the console package](https://github.com/orbinson/aem-groovy-console/releases/download/18.0.0/aem-groovy-console-all-17.0.0.zip).

@@ -78,6 +78,8 @@
                             <artifactId>groovy-json</artifactId>
                             <target>/apps/aem-groovy-console-packages/application/install</target>
                         </embedded>
+=======
+>>>>>>> origin/develop
                         <embedded>
                             <groupId>be.orbinson.aem</groupId>
                             <artifactId>aem-groovy-console-bundle</artifactId>
