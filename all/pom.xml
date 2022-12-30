@@ -4,9 +4,9 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>org.cid15.aem.groovy.console</groupId>
+        <groupId>be.orbinson.aem</groupId>
         <artifactId>aem-groovy-console</artifactId>
-        <version>17.0.0</version>
+        <version>18.0.0</version>
     </parent>
 
     <artifactId>aem-groovy-console-all</artifactId>
@@ -15,6 +15,18 @@
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>com.adobe.aem</groupId>
+                <artifactId>aemanalyser-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>aem-analyser</id>
+                        <goals>
+                            <goal>project-analyse</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.apache.jackrabbit</groupId>
                 <artifactId>filevault-package-maven-plugin</artifactId>
@@ -25,8 +37,6 @@
                     <properties>
                         <cloudManagerTarget>all</cloudManagerTarget>
                     </properties>
-                    <!-- skip sub package validation for now as some vendor packages like CIF apps will not pass -->
-                    <skipSubPackageValidation>true</skipSubPackageValidation>
                     <embeddeds>
                         <embedded>
                             <groupId>org.codehaus.groovy</groupId>
@@ -34,29 +44,24 @@
                             <target>/apps/aem-groovy-console-packages/content/install</target>
                         </embedded>
                         <embedded>
-                            <groupId>com.icfolson.aem.groovy.extension</groupId>
-                            <artifactId>aem-groovy-extension-bundle</artifactId>
-                            <target>/apps/aem-groovy-console-packages/content/install</target>
-                        </embedded>
-                        <embedded>
-                            <groupId>org.cid15.aem.groovy.console</groupId>
+                            <groupId>be.orbinson.aem</groupId>
                             <artifactId>aem-groovy-console-bundle</artifactId>
                             <target>/apps/aem-groovy-console-packages/application/install</target>
                         </embedded>
                         <embedded>
-                            <groupId>org.cid15.aem.groovy.console</groupId>
+                            <groupId>be.orbinson.aem</groupId>
                             <artifactId>aem-groovy-console-ui.apps</artifactId>
                             <type>zip</type>
                             <target>/apps/aem-groovy-console-packages/application/install</target>
                         </embedded>
                         <embedded>
-                            <groupId>org.cid15.aem.groovy.console</groupId>
+                            <groupId>be.orbinson.aem</groupId>
                             <artifactId>aem-groovy-console-ui.config</artifactId>
                             <type>zip</type>
                             <target>/apps/aem-groovy-console-packages/application/install</target>
                         </embedded>
                         <embedded>
-                            <groupId>org.cid15.aem.groovy.console</groupId>
+                            <groupId>be.orbinson.aem</groupId>
                             <artifactId>aem-groovy-console-ui.content</artifactId>
                             <type>zip</type>
                             <target>/apps/aem-groovy-console-packages/content/install</target>
@@ -65,13 +70,9 @@
                 </configuration>
             </plugin>
             <plugin>
-                <groupId>com.day.jcr.vault</groupId>
-                <artifactId>content-package-maven-plugin</artifactId>
+                <groupId>io.wcm.maven.plugins</groupId>
+                <artifactId>wcmio-content-package-maven-plugin</artifactId>
                 <extensions>true</extensions>
-                <configuration>
-                    <verbose>true</verbose>
-                    <failOnError>true</failOnError>
-                </configuration>
             </plugin>
             <plugin>
                 <artifactId>maven-clean-plugin</artifactId>
@@ -98,8 +99,8 @@
             <build>
                 <plugins>
                     <plugin>
-                        <groupId>com.day.jcr.vault</groupId>
-                        <artifactId>content-package-maven-plugin</artifactId>
+                        <groupId>io.wcm.maven.plugins</groupId>
+                        <artifactId>wcmio-content-package-maven-plugin</artifactId>
                         <executions>
                             <execution>
                                 <id>install-package</id>
@@ -107,8 +108,7 @@
                                     <goal>install</goal>
                                 </goals>
                                 <configuration>
-                                    <targetURL>http://${aem.host}:${aem.port}/crx/packmgr/service.jsp</targetURL>
-                                    <failOnError>true</failOnError>
+                                    <serviceURL>http://${aem.host}:${aem.port}/crx/packmgr/service.jsp</serviceURL>
                                 </configuration>
                             </execution>
                         </executions>
@@ -124,8 +124,8 @@
             <build>
                 <plugins>
                     <plugin>
-                        <groupId>com.day.jcr.vault</groupId>
-                        <artifactId>content-package-maven-plugin</artifactId>
+                        <groupId>io.wcm.maven.plugins</groupId>
+                        <artifactId>wcmio-content-package-maven-plugin</artifactId>
                         <executions>
                             <execution>
                                 <id>install-package</id>
@@ -157,8 +157,8 @@
             <build>
                 <plugins>
                     <plugin>
-                        <groupId>com.day.jcr.vault</groupId>
-                        <artifactId>content-package-maven-plugin</artifactId>
+                        <groupId>io.wcm.maven.plugins</groupId>
+                        <artifactId>wcmio-content-package-maven-plugin</artifactId>
                         <executions>
                             <execution>
                                 <id>install-package-publish</id>
@@ -166,8 +166,7 @@
                                     <goal>install</goal>
                                 </goals>
                                 <configuration>
-                                    <targetURL>http://${aem.publish.host}:${aem.publish.port}/crx/packmgr/service.jsp</targetURL>
-                                    <failOnError>true</failOnError>
+                                    <serviceURL>http://${aem.publish.host}:${aem.publish.port}/crx/packmgr/service.jsp</serviceURL>
                                 </configuration>
                             </execution>
                         </executions>
@@ -187,24 +186,24 @@
             <artifactId>aem-groovy-extension-bundle</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.cid15.aem.groovy.console</groupId>
+            <groupId>be.orbinson.aem</groupId>
             <artifactId>aem-groovy-console-bundle</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.cid15.aem.groovy.console</groupId>
+            <groupId>be.orbinson.aem</groupId>
             <artifactId>aem-groovy-console-ui.apps</artifactId>
             <version>${project.version}</version>
             <type>zip</type>
         </dependency>
         <dependency>
-            <groupId>org.cid15.aem.groovy.console</groupId>
+            <groupId>be.orbinson.aem</groupId>
             <artifactId>aem-groovy-console-ui.config</artifactId>
             <version>${project.version}</version>
             <type>zip</type>
         </dependency>
         <dependency>
-            <groupId>org.cid15.aem.groovy.console</groupId>
+            <groupId>be.orbinson.aem</groupId>
             <artifactId>aem-groovy-console-ui.content</artifactId>
             <version>${project.version}</version>
             <type>zip</type>

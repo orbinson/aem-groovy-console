@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>org.cid15.aem.groovy.console</groupId>
+        <groupId>be.orbinson.aem</groupId>
         <artifactId>aem-groovy-console</artifactId>
-        <version>17.0.0</version>
+        <version>18.0.0</version>
     </parent>
 
     <artifactId>aem-groovy-console-ui.apps</artifactId>
@@ -29,7 +30,7 @@
                     </properties>
                     <repositoryStructurePackages>
                         <repositoryStructurePackage>
-                            <groupId>org.cid15.aem.groovy.console</groupId>
+                            <groupId>be.orbinson.aem</groupId>
                             <artifactId>aem-groovy-console-ui.apps.structure</artifactId>
                         </repositoryStructurePackage>
                     </repositoryStructurePackages>
@@ -41,32 +42,49 @@
                 </configuration>
             </plugin>
             <plugin>
-                <groupId>com.day.jcr.vault</groupId>
-                <artifactId>content-package-maven-plugin</artifactId>
+                <groupId>io.wcm.maven.plugins</groupId>
+                <artifactId>wcmio-content-package-maven-plugin</artifactId>
                 <extensions>true</extensions>
-                <configuration>
-                    <verbose>true</verbose>
-                    <failOnError>true</failOnError>
-                </configuration>
             </plugin>
         </plugins>
     </build>
 
     <dependencies>
         <dependency>
-            <groupId>org.cid15.aem.groovy.console</groupId>
+            <groupId>be.orbinson.aem</groupId>
             <artifactId>aem-groovy-console-bundle</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.cid15.aem.groovy.console</groupId>
+            <groupId>be.orbinson.aem</groupId>
             <artifactId>aem-groovy-console-ui.apps.structure</artifactId>
             <version>${project.version}</version>
             <type>zip</type>
         </dependency>
-        <dependency>
-            <groupId>com.adobe.aem</groupId>
-            <artifactId>aem-sdk-api</artifactId>
-        </dependency>
     </dependencies>
+
+    <profiles>
+        <profile>
+            <id>on-prem</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>com.adobe.aem</groupId>
+                    <artifactId>uber-jar</artifactId>
+                </dependency>
+            </dependencies>
+        </profile>
+
+        <profile>
+            <id>cloud</id>
+            <dependencies>
+                <dependency>
+                    <groupId>com.adobe.aem</groupId>
+                    <artifactId>aem-sdk-api</artifactId>
+                </dependency>
+            </dependencies>
+        </profile>
+    </profiles>
 </project>

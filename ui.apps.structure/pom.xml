@@ -3,9 +3,9 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>org.cid15.aem.groovy.console</groupId>
+        <groupId>be.orbinson.aem</groupId>
         <artifactId>aem-groovy-console</artifactId>
-        <version>17.0.0</version>
+        <version>18.0.0</version>
     </parent>
 
     <artifactId>aem-groovy-console-ui.apps.structure</artifactId>

@@ -3,9 +3,9 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>org.cid15.aem.groovy.console</groupId>
+        <groupId>be.orbinson.aem</groupId>
         <artifactId>aem-groovy-console</artifactId>
-        <version>17.0.0</version>
+        <version>18.0.0</version>
     </parent>
 
     <artifactId>aem-groovy-console-ui.config</artifactId>
@@ -23,22 +23,22 @@
                     <showImportPackageReport>false</showImportPackageReport>
                     <repositoryStructurePackages>
                         <repositoryStructurePackage>
-                            <groupId>org.cid15.aem.groovy.console</groupId>
+                            <groupId>be.orbinson.aem</groupId>
                             <artifactId>aem-groovy-console-ui.apps.structure</artifactId>
                         </repositoryStructurePackage>
                     </repositoryStructurePackages>
                 </configuration>
             </plugin>
             <plugin>
-                <groupId>com.day.jcr.vault</groupId>
-                <artifactId>content-package-maven-plugin</artifactId>
+                <groupId>io.wcm.maven.plugins</groupId>
+                <artifactId>wcmio-content-package-maven-plugin</artifactId>
             </plugin>
         </plugins>
     </build>
 
     <dependencies>
         <dependency>
-            <groupId>org.cid15.aem.groovy.console</groupId>
+            <groupId>be.orbinson.aem</groupId>
             <artifactId>aem-groovy-console-ui.apps.structure</artifactId>
             <version>${project.version}</version>
             <type>zip</type>
