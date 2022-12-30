@@ -63,10 +63,12 @@
     <distributionManagement>
         <snapshotRepository>
             <id>ossrh</id>
+            <name>Central Repository OSSRH - Snapshots</name>
             <url>https://s01.oss.sonatype.org/content/repositories/snapshots</url>
         </snapshotRepository>
         <repository>
             <id>ossrh</id>
+            <name>Central Repository OSSRH</name>
             <url>https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/</url>
         </repository>
     </distributionManagement>
@@ -86,12 +88,60 @@
         <vault.user>admin</vault.user>
         <vault.password>admin</vault.password>
         <package.group>aem-groovy-console</package.group>
-
-        <!-- AEM minimum version -->
-        <aem.version>6.5.10</aem.version>
     </properties>
 
     <profiles>
+        <profile>
+            <id>on-prem</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <properties>
+                <aem.version>6.5.10</aem.version>
+            </properties>
+            <dependencyManagement>
+                <dependencies>
+                    <!-- AEM 6.5 -->
+                    <dependency>
+                        <groupId>com.adobe.aem</groupId>
+                        <artifactId>uber-jar</artifactId>
+                        <version>${aem.version}</version>
+                        <scope>provided</scope>
+                    </dependency>
+                </dependencies>
+            </dependencyManagement>
+        </profile>
+
+        <profile>
+            <id>cloud</id>
+            <properties>
+                <aem.version>2022.11.9850.20221116T162329Z-220900</aem.version>
+            </properties>
+            <dependencyManagement>
+                <dependencies>
+                    <!-- AEM as a Cloud Service -->
+                    <dependency>
+                        <groupId>io.wcm.maven</groupId>
+                        <artifactId>io.wcm.maven.aem-cloud-dependencies</artifactId>
+                        <version>${aem.version}.0000</version>
+                        <type>pom</type>
+                        <scope>import</scope>
+                    </dependency>
+                </dependencies>
+            </dependencyManagement>
+        </profile>
+
+        <profile>
+            <id>github-packages</id>
+            <distributionManagement>
+                <repository>
+                    <id>github</id>
+                    <name>GitHub Packages</name>
+                    <url>https://maven.pkg.github.com/orbinson/aem-groovy-console</url>
+                </repository>
+            </distributionManagement>
+        </profile>
+
         <profile>
             <id>autoInstallBundle</id>
             <activation>
@@ -438,14 +488,6 @@
                 <artifactId>org.apache.sling.testing.sling-mock-oak</artifactId>
                 <version>3.1.4-1.40.0</version>
                 <scope>test</scope>
-            </dependency>
-
-            <!-- SDK included last to allow other dependencies to override included versions -->
-            <dependency>
-                <groupId>com.adobe.aem</groupId>
-                <artifactId>uber-jar</artifactId>
-                <version>${aem.version}</version>
-                <scope>provided</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>

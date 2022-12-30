@@ -228,12 +228,30 @@
             <artifactId>org.apache.sling.testing.sling-mock-oak</artifactId>
             <scope>test</scope>
         </dependency>
-
-        <!-- SDK included last to allow other dependencies to override included versions -->
-        <dependency>
-            <groupId>com.adobe.aem</groupId>
-            <artifactId>uber-jar</artifactId>
-            <scope>provided</scope>
-        </dependency>
     </dependencies>
+
+    <profiles>
+        <profile>
+            <id>on-prem</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>com.adobe.aem</groupId>
+                    <artifactId>uber-jar</artifactId>
+                </dependency>
+            </dependencies>
+        </profile>
+
+        <profile>
+            <id>cloud</id>
+            <dependencies>
+                <dependency>
+                    <groupId>com.adobe.aem</groupId>
+                    <artifactId>aem-sdk-api</artifactId>
+                </dependency>
+            </dependencies>
+        </profile>
+    </profiles>
 </project>
