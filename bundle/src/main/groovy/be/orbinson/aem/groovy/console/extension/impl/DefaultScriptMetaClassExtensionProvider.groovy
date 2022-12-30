@@ -132,6 +132,10 @@ class DefaultScriptMetaClassExtensionProvider implements ScriptMetaClassExtensio
                 session.workspace.queryManager.createQuery(query, "xpath").execute().nodes
             }
 
+            delegate.sql2Query { String query ->
+                session.workspace.queryManager.createQuery(query, "JCR-SQL2").execute().nodes
+            }
+
             delegate.table = { Closure closure ->
                 def table = new Table()
 
