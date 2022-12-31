@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [18.0.0] - 2022-31-01
+## [18.0.0] - 2022-30-01
 
 ### Added
 
@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Fix datatables error dialog: [#9](https://github.com/orbinson/aem-groovy-console/pull/9)
+- Service user mapping is created automatically for bundle: [#1](https://github.com/orbinson/aem-groovy-console/pull/1)
 
 ## [17.0.0] - 2021-01-12
 

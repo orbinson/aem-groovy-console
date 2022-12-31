@@ -10,59 +10,127 @@ scripts are included in the package for reference.
 
 ![Screenshot](src/site/screenshot.png)
 
-## Requirements
-
-* AEM author instance running on [localhost:4502](http://localhost:4502/)
-* [Maven](http://maven.apache.org/) 3.x
-
 ## Compatibility
 
-Supported AEM versions are AEM 6.5.10+ and AEM as a Cloud Service latest SDK version.
+Supported AEM versions:
 
-To install the AEM Groovy Console on older AEM versions check the original project [aem-groovy-console](https://github.com/CID15/aem-groovy-console)
-## Installation
+* On premise: `>= 6.5.10`
+* AEM as a Cloud Service: `>= 2022.11`
 
-1. [Download the console package](https://github.com/orbinson/aem-groovy-console/releases/download/18.0.0/aem-groovy-console-all-18.0.0.zip).
-   For previous versions, tags can be checked out from GitHub and built directly from the source (e.g. `mvn install`).
+Embedded Groovy version: `2.4.15`
 
-2. [Verify](http://localhost:4502/groovyconsole) the installation.
+To install the AEM Groovy Console on older AEM versions check the original
+project [aem-groovy-console](https://github.com/CID15/aem-groovy-console)
 
-Additional build profiles may be added in the project's `pom.xml` to support deployment to non-localhost AEM servers.
+## Local installation
+
+### Requirements
+
+* AEM author instance running on [http://localhost:4502](http://localhost:4502/)
+* [Maven](http://maven.apache.org/) `>= 3.6.3`
+
+### Installation
+
+#### Manual
+
+1. Download the
+   console [aem-groovy-console-all](https://github.com/orbinson/aem-groovy-console/releases/download/18.0.0/aem-groovy-console-all-18.0.0.zip)
+   content package and install with [PackMgr](http://localhost:4502/crx/packmgr). For previous versions you can search
+   on the [Maven Central repository](https://search.maven.org/search?q=a:aem-groovy-console).
+
+2. Navigate to the [groovyconsole](http://localhost:4502/groovyconsole) page.
+
+#### Embedded package
+
+To deploy the Groovy Console as an embedded package you need to update your `pom.xml`
+
+1. Add the `aem-groovy-console-all` to the `<dependencies>` section
+
+   ```xml
+   <dependency>
+     <groupId>be.orbinson.aem</groupId>
+     <artifactId>aem-groovy-console-all</artifactId>
+     <version>18.0.0</version>
+     <type>zip</type>
+   </dependency>
+   ```
+2. Embed the package in with
+   the [filevault-package-maven-plugin](https://jackrabbit.apache.org/filevault-package-maven-plugin/) in
+   the `<embeddeds>` section
+
+   ```xml
+   <embedded>
+      <groupId>be.orbinson.aem</groupId>
+      <artifactId>aem-groovy-console-all</artifactId>
+      <target>/apps/vendor-packages/content/install</target>
+   </embedded>
+   ```
+
+#### AEM Dispatcher
+
+If you need to have the Groovy Console available through the dispatcher on a publish instance you can add the filters
+following configuration.
+
+```text
+# Allow Groovy Console page
+/001 {
+    /type "allow"
+    /url "/groovyconsole"
+}
+/002 {
+    /type "allow"
+    /url "/apps/groovyconsole.html"
+}
+
+# Allow servlets
+/003 {
+    /type "allow"
+    /path "/bin/groovyconsole/*"
+}
+```
 
 ## Building From Source
 
 To build and install the latest development version of the Groovy Console (or if you've made source modifications), run
 the following Maven command.
 
-    mvn install -P local
+```shell
+mvn clean install -P autoInstallSinglePackage
+```
 
 ## OSGi Configuration
 
-Navigate to the [OSGi console configuration page](http://localhost:4502/system/console/configMgr) and select the *
-*Groovy Console Configuration Service**.
+To check the OSGi configuration navigate to
+the [Groovy Console Configuration Service](http://localhost:4502/system/console/configMgr/be.orbinson.aem.groovy.console.configuration.impl.DefaultConfigurationService)
+OSGi configuration page.
 
- Property                        | Description                                                                                                                       | Default Value 
----------------------------------|-----------------------------------------------------------------------------------------------------------------------------------|---------------
- Email Enabled?                  | Check to enable email notification on completion of script execution.                                                             | `false`       
- Email Recipients                | Email addresses to receive notification.                                                                                          | `[]`          
- Script Execution Allowed Groups | List of group names that are authorized to use the console.  By default, only the 'admin' user has permission to execute scripts. | `[]`          
- Scheduled Jobs Allowed Groups   | List of group names that are authorized to schedule jobs.  By default, only the 'admin' user has permission to schedule jobs.     | `[]`          
- Audit Disabled?                 | Disables auditing of script execution history.                                                                                    | `false`       
- Display All Audit Records?      | If enabled, all audit records (including records for other users) will be displayed in the console history.                       | `false`       
- Thread Timeout                  | Time in seconds that scripts are allowed to execute before being interrupted.  If 0, no timeout is enforced.                      | 0             
+| Property                        | Description                                                                                                                       | Default Value |
+|---------------------------------|-----------------------------------------------------------------------------------------------------------------------------------|---------------|
+| Email Enabled?                  | Check to enable email notification on completion of script execution.                                                             | `false`       |
+| Email Recipients                | Email addresses to receive notification.                                                                                          | `[]`          |
+| Script Execution Allowed Groups | List of group names that are authorized to use the console.  By default, only the 'admin' user has permission to execute scripts. | `[]`          |
+| Scheduled Jobs Allowed Groups   | List of group names that are authorized to schedule jobs.  By default, only the 'admin' user has permission to schedule jobs.     | `[]`          |
+| Audit Disabled?                 | Disables auditing of script execution history.                                                                                    | `false`       |
+| Display All Audit Records?      | If enabled, all audit records (including records for other users) will be displayed in the console history.                       | `false`       |
+| Thread Timeout                  | Time in seconds that scripts are allowed to execute before being interrupted.  If 0, no timeout is enforced.                      | 0             |
+| Distributed execution enabled?  | If enabled, a script will be able to be replicated from an author and executed on all default replication agents.                 | `false`       |
 
-## Batch Script Execution
+## Batch script execution
 
 Saved scripts can be remotely executed by sending a POST request to the console servlet with either the `scriptPath`
 or `scriptPaths` query parameter.
 
-### Single Script
+### Single script
 
-    curl -d "scriptPath=/conf/groovyconsole/scripts/samples/JcrSearch.groovy" -X POST -u admin:admin http://localhost:4502/bin/groovyconsole/post.json
+```shell
+curl -d "scriptPath=/conf/groovyconsole/scripts/samples/JcrSearch.groovy" -X POST -u admin:admin http://localhost:4502/bin/groovyconsole/post.json
+```
 
-### Multiple Scripts
+### Multiple scripts
 
-    curl -d "scriptPaths=/conf/groovyconsole/scripts/samples/JcrSearch.groovy&scriptPaths=/conf/groovyconsole/scripts/samples/FulltextQuery.groovy" -X POST -u admin:admin http://localhost:4502/bin/groovyconsole/post.json
+```shell
+curl -d "scriptPaths=/conf/groovyconsole/scripts/samples/JcrSearch.groovy&scriptPaths=/conf/groovyconsole/scripts/samples/FulltextQuery.groovy" -X POST -u admin:admin http://localhost:4502/bin/groovyconsole/post.json
+```
 
 ## Extensions
 
@@ -72,18 +140,19 @@ instance. See the default extension providers in the `be.orbinson.aem.groovy.con
 examples of how a bundle can implement these services to supply additional script bindings, compilation customizers,
 metaclasses, and star imports.
 
- Service Interface                                                            | Description                                                                                                                  
-------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------
- `be.orbinson.aem.groovy.console.api.BindingExtensionProvider`                | Customize the bindings that are provided for each script execution.                                                          
- `be.orbinson.aem.groovy.console.api.CompilationCustomizerExtensionProvider` | Restrict language features (via blacklist or whitelist) or provide AST transformations within the Groovy script compilation. 
- `be.orbinson.aem.groovy.console.api.ScriptMetaClassExtensionProvider`       | Add runtime metaclasses (i.e. new methods) to the underlying script class.                                                   
- `be.orbinson.aem.groovy.console.api.StarImportExtensionProvider`            | Supply additional star imports that are added to the compiler configuration for each script execution.                       
+| Service Interface                                                           | Description                                                                                                                  |
+|-----------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------|
+| `be.orbinson.aem.groovy.console.api.BindingExtensionProvider`               | Customize the bindings that are provided for each script execution.                                                          |
+| `be.orbinson.aem.groovy.console.api.CompilationCustomizerExtensionProvider` | Restrict language features (via blacklist or whitelist) or provide AST transformations within the Groovy script compilation. |
+| `be.orbinson.aem.groovy.console.api.ScriptMetaClassExtensionProvider`       | Add runtime metaclasses (i.e. new methods) to the underlying script class.                                                   |
+| `be.orbinson.aem.groovy.console.api.StarImportExtensionProvider`            | Supply additional star imports that are added to the compiler configuration for each script execution.                       |
 
 ## Notifications
 
 To provide custom notifications for script executions, bundles may implement
 the `be.orbinson.aem.groovy.console.notification.NotificationService` interface (see
-the `be.orbinson.aem.groovy.console.notification.impl.EmailNotificationService` class for an example). These services will
+the `be.orbinson.aem.groovy.console.notification.impl.EmailNotificationService` class for an example). These services
+will
 be dynamically bound by the Groovy Console service and all registered notification services will be called for each
 script execution.
 
@@ -103,14 +172,10 @@ required annotations to register a custom event handler.
 
 ## Sample Scripts
 
-Sample scripts can be found in the `src/main/scripts` directory.
-
-## Versioning
-
-Follows [Semantic Versioning](http://semver.org/) guidelines.
+Sample scripts can be found in the [samples](src/main/content/jcr_root/conf/groovyconsole/scripts/samples) directory.
 
 ## Kudos
 
 Kudos to [ICF Next](https://github.com/icfnext/aem-groovy-console)
-and [CID 15](https://github.com/CID15/aem-groovy-console) for developing this plugin. We forked this plugin because the
-maintenance of the plugins seems to have stopped.
+and [CID 15](https://github.com/CID15/aem-groovy-console) for the initial development of the AEM Groovy Console. We
+forked this plugin because the maintenance of the plugins seems to have stopped.
