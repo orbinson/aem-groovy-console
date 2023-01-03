@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [18.0.1] - 2023-01-04
+
 ### Changed
 
 - Allow to select scripts in any directory: [#29](https://github.com/orbinson/aem-groovy-console/issues/29)
