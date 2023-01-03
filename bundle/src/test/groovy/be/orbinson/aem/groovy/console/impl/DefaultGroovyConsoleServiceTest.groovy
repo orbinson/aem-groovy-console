@@ -1,8 +1,8 @@
 package be.orbinson.aem.groovy.console.impl
 
 import be.orbinson.aem.groovy.console.GroovyConsoleService
-import be.orbinson.aem.groovy.console.api.impl.RequestScriptContext
-import be.orbinson.aem.groovy.console.api.impl.RequestScriptData
+import be.orbinson.aem.groovy.console.api.context.impl.RequestScriptContext
+import be.orbinson.aem.groovy.console.api.context.impl.RequestScriptData
 import be.orbinson.aem.groovy.console.audit.AuditService
 import be.orbinson.aem.groovy.console.configuration.ConfigurationService
 import be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants

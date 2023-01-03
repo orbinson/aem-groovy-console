@@ -2,7 +2,7 @@ package be.orbinson.aem.groovy.console.replication
 
 import be.orbinson.aem.groovy.console.GroovyConsoleService
 import be.orbinson.aem.groovy.console.api.context.ScriptContext
-import be.orbinson.aem.groovy.console.api.impl.ResourceScriptContext
+import be.orbinson.aem.groovy.console.api.context.impl.ResourceScriptContext
 import be.orbinson.aem.groovy.console.configuration.ConfigurationService
 import com.day.cq.commons.jcr.JcrConstants
 import com.google.common.base.Charsets

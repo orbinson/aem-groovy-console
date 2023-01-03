@@ -17,6 +17,7 @@
 
     <modules>
         <module>all</module>
+        <module>api</module>
         <module>bundle</module>
         <module>ui.apps</module>
         <module>ui.apps.structure</module>
@@ -341,6 +342,26 @@
                 <plugin>
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>3.8.1</version>
+                </plugin>
+                <plugin>
+                    <groupId>biz.aQute.bnd</groupId>
+                    <artifactId>bnd-baseline-maven-plugin</artifactId>
+                    <version>5.2.0</version>
+                    <configuration>
+                        <failOnMissing>false</failOnMissing>
+                        <diffignores>
+                            <!-- ignore Bundle-Version header for baseline, i.e. no enforcement of specific bundle versions -->
+                            <diffignore>Bundle-Version</diffignore>
+                        </diffignores>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <id>baseline</id>
+                            <goals>
+                                <goal>baseline</goal>
+                            </goals>
+                        </execution>
+                    </executions>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.felix</groupId>

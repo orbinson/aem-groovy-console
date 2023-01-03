@@ -2,7 +2,7 @@ package be.orbinson.aem.groovy.console.extension.impl
 
 import be.orbinson.aem.groovy.console.api.*
 import be.orbinson.aem.groovy.console.api.context.ScriptContext
-import be.orbinson.aem.groovy.console.api.impl.RequestScriptContext
+import be.orbinson.aem.groovy.console.api.context.impl.RequestScriptContext
 import be.orbinson.aem.groovy.console.extension.ExtensionService
 import com.google.common.io.ByteStreams
 import io.wcm.testing.mock.aem.junit5.AemContext
