@@ -1,8 +1,12 @@
 name: Release to Maven Central
 
 on:
-  release:
-    types: [ created ]
+  push:
+    tags:
+      - '*'
+
+permissions:
+  contents: write
 
 jobs:
   publish:
@@ -12,6 +16,14 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+
+      - name: Cache local Maven repository
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
 
       - name: Set up Maven Central Repository
         uses: actions/setup-java@v3
@@ -24,13 +36,8 @@ jobs:
           gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
           gpg-passphrase: MAVEN_GPG_PASSPHRASE
 
-      - name: Cache local Maven repository
-        uses: actions/cache@v3
-        with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: |
-            ${{ runner.os }}-maven-
+      - name: Remove SNAPSHOT from version
+        run: mvn versions:set -DremoveSnapshot versions:commit
 
       - name: Deploy package
         run: mvn --batch-mode deploy
@@ -38,3 +45,20 @@ jobs:
           MAVEN_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
           MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+
+      - name: Next SNAPSHOT version
+        run: mvn versions:set -DnextSnapshot versions:commit
+
+      - name: Update changelog
+        id: update-changelog
+        uses: release-flow/keep-a-changelog-action/prepare-release@v1
+        with:
+          release-type: patch
+
+      - name: Create release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: aem-groovy-console-all-*.zip
+          body: ${{ steps.update-changelog.outputs.release-notes }}
+
+      - uses: stefanzweifel/git-auto-commit-action@v4
