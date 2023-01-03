@@ -1,3 +1,8 @@
+[![Maven Central](https://img.shields.io/maven-central/v/be.orbinson.aem/aem-groovy-console)](https://img.shields.io/maven-central/v/be.orbinson.aem/aem-groovy-console)
+[![GitHub](https://img.shields.io/github/v/release/orbinson/aem-groovy-console)](https://img.shields.io/github/v/release/orbinson/aem-groovy-console)
+[![Build and test for AEM 6.5](https://github.com/orbinson/aem-groovy-console/actions/workflows/build-and-test-on-prem.yml/badge.svg)](https://github.com/orbinson/aem-groovy-console/actions/workflows/build-and-test-on-prem.yml)
+[![Build and test for AEM as a Cloud Service](https://github.com/orbinson/aem-groovy-console/actions/workflows/build-and-test-cloud.yml/badge.svg)](https://github.com/orbinson/aem-groovy-console/actions/workflows/build-and-test-cloud.yml)
+
 # AEM Groovy Console
 
 ## Overview

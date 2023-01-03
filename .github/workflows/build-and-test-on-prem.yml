@@ -1,4 +1,4 @@
-name: Build and test for AEM 6.5
+name: AEM 6.5
 
 on: [push, pull_request]
 

@@ -1,4 +1,4 @@
-name: Build and test for AEM as a Cloud Service
+name: AEMaaCS
 
 on: [push, pull_request]
 
