@@ -3,7 +3,7 @@ name: AEMaaCS
 on: [ push, pull_request ]
 
 concurrency:
-  group: ${{ github.head_ref || github.ref_name }}
+  group: ${{ github.head_ref || github.ref_name }}-cloud
   cancel-in-progress: true
 
 jobs:

@@ -3,7 +3,7 @@ name: AEM 6.5
 on: [push, pull_request]
 
 concurrency:
-  group: ${{ github.head_ref || github.ref_name }}
+  group: ${{ github.head_ref || github.ref_name }}-on-prem
   cancel-in-progress: true
 
 jobs:
