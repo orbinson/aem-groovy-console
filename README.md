@@ -1,5 +1,5 @@
-[![Maven Central](https://img.shields.io/maven-central/v/be.orbinson.aem/aem-groovy-console)](https://img.shields.io/maven-central/v/be.orbinson.aem/aem-groovy-console)
-[![GitHub](https://img.shields.io/github/v/release/orbinson/aem-groovy-console)](https://img.shields.io/github/v/release/orbinson/aem-groovy-console)
+[![Maven Central](https://img.shields.io/maven-central/v/be.orbinson.aem/aem-groovy-console)](https://search.maven.org/search?q=a:%20aem-groovy-console-all%20g:be.orbinson.aem)
+[![GitHub](https://img.shields.io/github/v/release/orbinson/aem-groovy-console)](https://github.com/orbinson/aem-groovy-console/releases)
 [![Build and test for AEM 6.5](https://github.com/orbinson/aem-groovy-console/actions/workflows/build-and-test-on-prem.yml/badge.svg)](https://github.com/orbinson/aem-groovy-console/actions/workflows/build-and-test-on-prem.yml)
 [![Build and test for AEM as a Cloud Service](https://github.com/orbinson/aem-groovy-console/actions/workflows/build-and-test-cloud.yml/badge.svg)](https://github.com/orbinson/aem-groovy-console/actions/workflows/build-and-test-cloud.yml)
 
@@ -13,7 +13,7 @@ code using the AEM, Sling, or JCR APIs. After installing the package in AEM (ins
 the [console page](http://localhost:4502/groovyconsole) for documentation on the available bindings and methods. Sample
 scripts are included in the package for reference.
 
-![Screenshot](src/site/screenshot.png)
+![Screenshot](docs/assets/screenshot.png)
 
 ## Compatibility
 
