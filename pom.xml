@@ -7,7 +7,7 @@
     <groupId>be.orbinson.aem</groupId>
     <artifactId>aem-groovy-console</artifactId>
     <packaging>pom</packaging>
-    <version>18.0.0-SNAPSHOT</version>
+    <version>18.0.0</version>
     <name>AEM Groovy Console</name>
     <description>
         The AEM Groovy Console provides an interface for running Groovy scripts in the AEM container. Scripts can be
@@ -63,12 +63,14 @@
 
     <distributionManagement>
         <snapshotRepository>
-            <id>sonatype-nexus-staging</id>
-            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+            <id>ossrh</id>
+            <name>Central Repository OSSRH - Snapshots</name>
+            <url>https://s01.oss.sonatype.org/content/repositories/snapshots</url>
         </snapshotRepository>
         <repository>
-            <id>sonatype-nexus-staging</id>
-            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+            <id>ossrh</id>
+            <name>Central Repository OSSRH</name>
+            <url>https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/</url>
         </repository>
     </distributionManagement>
 
@@ -87,13 +89,50 @@
         <vault.user>admin</vault.user>
         <vault.password>admin</vault.password>
         <package.group>aem-groovy-console</package.group>
-
-        <!-- AEM minimum version -->
-        <aem.version>6.5.10</aem.version>
         <groovy.version>4.0.6</groovy.version>
     </properties>
 
     <profiles>
+        <profile>
+            <id>on-prem</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <properties>
+                <aem.version>6.5.10</aem.version>
+            </properties>
+            <dependencyManagement>
+                <dependencies>
+                    <!-- AEM 6.5 -->
+                    <dependency>
+                        <groupId>com.adobe.aem</groupId>
+                        <artifactId>uber-jar</artifactId>
+                        <version>${aem.version}</version>
+                        <scope>provided</scope>
+                    </dependency>
+                </dependencies>
+            </dependencyManagement>
+        </profile>
+
+        <profile>
+            <id>cloud</id>
+            <properties>
+                <aem.version>2022.11.9850.20221116T162329Z-220900</aem.version>
+            </properties>
+            <dependencyManagement>
+                <dependencies>
+                    <!-- AEM as a Cloud Service -->
+                    <dependency>
+                        <groupId>io.wcm.maven</groupId>
+                        <artifactId>io.wcm.maven.aem-cloud-dependencies</artifactId>
+                        <version>${aem.version}.0000</version>
+                        <type>pom</type>
+                        <scope>import</scope>
+                    </dependency>
+                </dependencies>
+            </dependencyManagement>
+        </profile>
+
         <profile>
             <id>autoInstallBundle</id>
             <activation>
@@ -258,6 +297,13 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-gpg-plugin</artifactId>
                 <version>1.6</version>
+                <configuration>
+                    <!-- Prevent gpg from using pinentry programs -->
+                    <gpgArguments>
+                        <arg>--pinentry-mode</arg>
+                        <arg>loopback</arg>
+                    </gpgArguments>
+                </configuration>
                 <executions>
                     <execution>
                         <phase>deploy</phase>
@@ -388,7 +434,7 @@
                 <scope>provided</scope>
             </dependency>
 
-            <!-- groovy -->
+            <!-- Groovy -->
             <dependency>
                 <groupId>org.apache.groovy</groupId>
                 <artifactId>groovy</artifactId>
@@ -456,14 +502,6 @@
                 <artifactId>org.apache.sling.testing.sling-mock-oak</artifactId>
                 <version>3.1.4-1.40.0</version>
                 <scope>test</scope>
-            </dependency>
-
-            <!-- SDK included last to allow other dependencies to override included versions -->
-            <dependency>
-                <groupId>com.adobe.aem</groupId>
-                <artifactId>uber-jar</artifactId>
-                <version>${aem.version}</version>
-                <scope>provided</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>

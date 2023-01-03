@@ -39,13 +39,12 @@ class DefaultBindingExtensionProvider implements BindingExtensionProvider {
                 log             : new BindingVariable(LoggerFactory.getLogger("groovyconsole"), Logger,
                         "http://www.slf4j.org/api/org/slf4j/Logger.html"),
                 session         : new BindingVariable(session, Session,
-                        "https://docs.adobe.com/docs/en/spec/javax.jcr/javadocs/jcr-2.0/javax/jcr/Session.html"),
+                        "https://developer.adobe.com/experience-manager/reference-materials/spec/javax.jcr/javadocs/jcr-2.0/javax/jcr/Session.html"),
                 pageManager     : new BindingVariable(resourceResolver.adaptTo(PageManager), PageManager),
                 resourceResolver: new BindingVariable(resourceResolver, ResourceResolver,
-                        "https://sling.apache.org/apidocs/sling10/org/apache/sling/api/resource/ResourceResolver.html"),
+                        "https://sling.apache.org/apidocs/sling12/org/apache/sling/api/resource/ResourceResolver.html"),
                 queryBuilder    : new BindingVariable(queryBuilder, QueryBuilder,
-                        "https://helpx.adobe.com/experience-manager/6-4/sites/developing/using/reference-materials/javadoc" +
-                                "/com/day/cq/search/QueryBuilder.html"),
+                        "https://developer.adobe.com/experience-manager/reference-materials/6-5/javadoc/com/day/cq/search/QueryBuilder.html"),
                 nodeBuilder     : new BindingVariable(new NodeBuilder(session), NodeBuilder,
                         "http://code.digitalatolson.com/aem-groovy-extension/groovydocs/com/icfolson/aem/groovy/extension" +
                                 "/builders/NodeBuilder.html"),
@@ -61,9 +60,9 @@ class DefaultBindingExtensionProvider implements BindingExtensionProvider {
         if (scriptContext instanceof ServletScriptContext) {
             bindingVariables.putAll([
                     slingRequest : new BindingVariable(scriptContext.request, SlingHttpServletRequest,
-                            "https://sling.apache.org/apidocs/sling10/org/apache/sling/api/SlingHttpServletRequest.html"),
+                            "https://sling.apache.org/apidocs/sling12/org/apache/sling/api/SlingHttpServletRequest.html"),
                     slingResponse: new BindingVariable(scriptContext.response, SlingHttpServletResponse,
-                            "https://sling.apache.org/apidocs/sling10/org/apache/sling/api/SlingHttpServletResponse.html")
+                            "https://sling.apache.org/apidocs/sling12/org/apache/sling/api/SlingHttpServletResponse.html")
             ])
         }
 

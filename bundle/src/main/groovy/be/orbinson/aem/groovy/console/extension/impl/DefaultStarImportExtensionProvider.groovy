@@ -8,12 +8,11 @@ import org.osgi.service.component.annotations.Component
 @Component(service = StarImportExtensionProvider, immediate = true)
 class DefaultStarImportExtensionProvider implements StarImportExtensionProvider {
 
-    private static final String AEM_JAVADOC_PREFIX = "https://helpx.adobe" +
-            ".com/experience-manager/6-5/sites/developing/using/reference-materials/javadoc"
+    private static final String AEM_JAVADOC_PREFIX = "https://developer.adobe.com/experience-manager/reference-materials/6-5/javadoc"
 
-    private static final String JCR_JAVADOC_PREFIX = "https://docs.adobe.com/docs/en/spec/javax.jcr/javadocs/jcr-2.0"
+    private static final String JCR_JAVADOC_PREFIX = "https://developer.adobe.com/experience-manager/reference-materials/spec/javax.jcr/javadocs/jcr-2.0"
 
-    private static final String SLING_JAVADOC_PREFIX = "http://sling.apache.org/apidocs/sling9"
+    private static final String SLING_JAVADOC_PREFIX = "http://sling.apache.org/apidocs/sling12"
 
     private static final String JAVADOC_SUFFIX = "package-summary.html"
 
