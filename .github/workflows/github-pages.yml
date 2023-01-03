@@ -1,16 +1,14 @@
-name: Publish site
+name: Publish Docs
 
 on:
   release:
-    types: [created]
+    types: [ created ]
 
-# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
 permissions:
   contents: read
   pages: write
   id-token: write
 
-# Allow one concurrent deployment
 concurrency:
   group: "pages"
   cancel-in-progress: true
@@ -18,20 +16,30 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Set up Maven Central Repository
+      - name: Set Java
         uses: actions/setup-java@v3
         with:
           distribution: 'zulu'
           java-version: 11
 
-      - name: Publish site
+      - name: Cache local Maven repository
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+
+      - name: Generate site
         run: mvn --batch-mode --projects bundle site
 
       - name: Setup Pages
@@ -41,6 +49,7 @@ jobs:
         uses: actions/upload-pages-artifact@v1
         with:
           path: './bundle/target/site/groovydocs'
+
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v1

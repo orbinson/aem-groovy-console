@@ -1,6 +1,10 @@
 name: AEMaaCS
 
-on: [push, pull_request]
+on: [ push, pull_request ]
+
+concurrency:
+  group: ${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
 
 jobs:
   build:
@@ -24,5 +28,5 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-maven-
 
-      - name: Build & Test with Maven for AEM Cloud SDK
+      - name: Build for AEM Cloud SDK
         run: mvn --batch-mode --update-snapshots --activate-profiles cloud install
