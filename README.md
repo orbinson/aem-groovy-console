@@ -7,7 +7,7 @@
 
 ## Overview
 
-The AEM Groovy Console provides an interface for running [Groovy](http://www.groovy-lang.org/) scripts in Adobe
+The AEM Groovy Console provides an interface for running [Groovy](https://www.groovy-lang.org) scripts in Adobe
 Experience Manager. Scripts can be created to manipulate content in the JCR, call OSGi services, or execute arbitrary
 code using the AEM, Sling, or JCR APIs. After installing the package in AEM (instructions below), see
 the [console page](http://localhost:4502/groovyconsole) for documentation on the available bindings and methods. Sample
@@ -32,7 +32,7 @@ project [aem-groovy-console](https://github.com/CID15/aem-groovy-console)
 ### Requirements
 
 * AEM author instance running on [http://localhost:4502](http://localhost:4502/)
-* [Maven](http://maven.apache.org/) `>= 3.6.3`
+* [Maven](https://maven.apache.org/) `>= 3.6.3`
 
 ### Installation
 
@@ -151,6 +151,10 @@ metaclasses, and star imports.
 | `be.orbinson.aem.groovy.console.api.CompilationCustomizerExtensionProvider` | Restrict language features (via blacklist or whitelist) or provide AST transformations within the Groovy script compilation. |
 | `be.orbinson.aem.groovy.console.api.ScriptMetaClassExtensionProvider`       | Add runtime metaclasses (i.e. new methods) to the underlying script class.                                                   |
 | `be.orbinson.aem.groovy.console.api.StarImportExtensionProvider`            | Supply additional star imports that are added to the compiler configuration for each script execution.                       |
+
+## Registering Additional Metaclasses
+
+Services implementing the `be.orbinson.aem.groovy.console.extension.MetaClassExtensionProvider` will be automatically discovered and bound by the OSGi container. These services can be implemented in any deployed bundle. The AEM Groovy Extension bundle will handle the registration and removal of supplied metaclasses as these services are activated/deactivated in the container. See the `DefaultMetaClassExtensionProvider` service for the proper closure syntax for registering metaclasses.
 
 ## Notifications
 

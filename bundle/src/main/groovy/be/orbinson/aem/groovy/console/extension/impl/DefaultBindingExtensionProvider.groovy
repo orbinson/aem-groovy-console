@@ -37,7 +37,7 @@ class DefaultBindingExtensionProvider implements BindingExtensionProvider {
 
         def bindingVariables = [
                 log             : new BindingVariable(LoggerFactory.getLogger("groovyconsole"), Logger,
-                        "http://www.slf4j.org/api/org/slf4j/Logger.html"),
+                        "https://www.slf4j.org/api/org/slf4j/Logger.html"),
                 session         : new BindingVariable(session, Session,
                         "https://developer.adobe.com/experience-manager/reference-materials/spec/javax.jcr/javadocs/jcr-2.0/javax/jcr/Session.html"),
                 pageManager     : new BindingVariable(resourceResolver.adaptTo(PageManager), PageManager),
@@ -46,13 +46,11 @@ class DefaultBindingExtensionProvider implements BindingExtensionProvider {
                 queryBuilder    : new BindingVariable(queryBuilder, QueryBuilder,
                         "https://developer.adobe.com/experience-manager/reference-materials/6-5/javadoc/com/day/cq/search/QueryBuilder.html"),
                 nodeBuilder     : new BindingVariable(new NodeBuilder(session), NodeBuilder,
-                        "http://code.digitalatolson.com/aem-groovy-extension/groovydocs/com/icfolson/aem/groovy/extension" +
-                                "/builders/NodeBuilder.html"),
+                        "                        https://orbinson.github.io/aem-groovy-console/be/orbinson/aem/groovy/console/builders/NodeBuilder.html"),
                 pageBuilder     : new BindingVariable(new PageBuilder(session), PageBuilder,
-                        "http://code.digitalatolson.com/aem-groovy-extension/groovydocs/com/icfolson/aem/groovy/extension" +
-                                "/builders/PageBuilder.html"),
+                        "                        https://orbinson.github.io/aem-groovy-console/be/orbinson/aem/groovy/console/builders/PageBuilder.html"),
                 bundleContext   : new BindingVariable(bundleContext, BundleContext,
-                        "http://www.osgi.org/javadoc/r4v43/core/org/osgi/framework/BundleContext.html"),
+                        "https://docs.osgi.org/javadoc/r4v43/core/org/osgi/framework/BundleContext.html"),
                 out             : new BindingVariable(scriptContext.printStream, PrintStream,
                         "https://docs.oracle.com/javase/8/docs/api/java/io/PrintStream.html")
         ]
