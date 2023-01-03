@@ -12,7 +12,7 @@ class DefaultStarImportExtensionProvider implements StarImportExtensionProvider 
 
     private static final String JCR_JAVADOC_PREFIX = "https://developer.adobe.com/experience-manager/reference-materials/spec/javax.jcr/javadocs/jcr-2.0"
 
-    private static final String SLING_JAVADOC_PREFIX = "http://sling.apache.org/apidocs/sling12"
+    private static final String SLING_JAVADOC_PREFIX = "https://sling.apache.org/apidocs/sling12"
 
     private static final String JAVADOC_SUFFIX = "package-summary.html"
 

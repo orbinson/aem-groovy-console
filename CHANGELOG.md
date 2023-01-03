@@ -9,7 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Allow to select scripts in any directory [#29](https://github.com/orbinson/aem-groovy-console/issues/29)
+- Allow to select scripts in any directory: [#29](https://github.com/orbinson/aem-groovy-console/issues/29)
+
+### Fixed
+
+- Publish java docs to github pages: [#19](https://github.com/orbinson/aem-groovy-console/issues/19)
+- Add MetaClassExtensions extensions: [#32](https://github.com/orbinson/aem-groovy-console/issues/32)
 
 ## [18.0.0] - 2022-30-01
 

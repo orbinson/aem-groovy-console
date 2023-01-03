@@ -182,10 +182,6 @@
             <artifactId>groovy-all</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.icfolson.aem.groovy.extension</groupId>
-            <artifactId>aem-groovy-extension-bundle</artifactId>
-        </dependency>
-        <dependency>
             <groupId>be.orbinson.aem</groupId>
             <artifactId>aem-groovy-console-bundle</artifactId>
             <version>${project.version}</version>

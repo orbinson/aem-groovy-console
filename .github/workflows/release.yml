@@ -1,8 +1,8 @@
-name: Publish package to the Maven Central Repository
+name: Release to Maven Central
 
 on:
   release:
-    types: [created]
+    types: [ created ]
 
 jobs:
   publish:
@@ -24,7 +24,15 @@ jobs:
           gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
           gpg-passphrase: MAVEN_GPG_PASSPHRASE
 
-      - name: Publish package
+      - name: Cache local Maven repository
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+
+      - name: Deploy package
         run: mvn --batch-mode deploy
         env:
           MAVEN_USERNAME: ${{ secrets.SONATYPE_USERNAME }}

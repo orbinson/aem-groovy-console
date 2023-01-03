@@ -98,6 +98,44 @@
                 <groupId>org.apache.sling</groupId>
                 <artifactId>sling-maven-plugin</artifactId>
             </plugin>
+            <plugin>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>1.7</version>
+                <executions>
+                    <execution>
+                        <id>groovydoc</id>
+                        <phase>site</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <target>
+                                <taskdef name="groovydoc"
+                                         classname="org.codehaus.groovy.ant.Groovydoc"
+                                         classpathref="maven.compile.classpath"/>
+                                <groovydoc destdir="${project.reporting.outputDirectory}/groovydocs"
+                                           sourcepath="${basedir}/src/main/groovy"
+                                           use="true"
+                                           windowtitle="${project.name}"
+                                           doctitle="${project.name}">
+                                    <link packages="com.day.cq.wcm.api."
+                                          href="https://docs.adobe.com/docs/en/aem/6-2/develop/ref/javadoc"/>
+                                    <link packages="org.apache.sling."
+                                          href="http://sling.apache.org/apidocs/sling7"/>
+                                    <link packages="javax.jcr."
+                                          href="https://docs.adobe.com/content/docs/en/spec/jsr170/javadocs/jcr-2.0/"/>
+                                    <link packages="java."
+                                          href="https://docs.oracle.com/javase/7/docs/api"/>
+                                    <link packages="javax."
+                                          href="https://docs.oracle.com/javaee/7/api"/>
+                                    <link packages="groovy.,org.codehaus.groovy."
+                                          href="http://groovy.codehaus.org/api/"/>
+                                </groovydoc>
+                            </target>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 
@@ -196,10 +234,6 @@
         <dependency>
             <groupId>org.codehaus.groovy</groupId>
             <artifactId>groovy-all</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.icfolson.aem.groovy.extension</groupId>
-            <artifactId>aem-groovy-extension-bundle</artifactId>
         </dependency>
 
         <!-- test -->
