@@ -2,7 +2,6 @@ package be.orbinson.aem.groovy.console.notification
 
 import be.orbinson.aem.groovy.console.response.RunScriptResponse
 import org.osgi.annotation.versioning.ConsumerType
-import org.osgi.annotation.versioning.ProviderType
 
 /**
  * Services may implement this interface to send email notifications for Groovy Console script executions.

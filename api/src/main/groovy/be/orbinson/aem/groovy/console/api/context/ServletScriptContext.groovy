@@ -4,8 +4,6 @@ import org.apache.sling.api.SlingHttpServletRequest
 import org.apache.sling.api.SlingHttpServletResponse
 import org.osgi.annotation.versioning.ConsumerType
 
-import java.util.function.Consumer
-
 /**
  * Script context for scripts executed by a servlet (e.g. the default POST servlet execution).
  */
