@@ -23,7 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Publish java docs to github pages: [#19](https://github.com/orbinson/aem-groovy-console/issues/19)
 - Add MetaClassExtensions extensions: [#32](https://github.com/orbinson/aem-groovy-console/issues/32)
 
-## [18.0.0] - 2022-30-01
+## [18.0.0] - 2022-01-30
 
 ### Added
 
@@ -46,3 +46,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [17.0.0] - 2021-01-12
 
 - Last version released by [CID15](https://github.com/CID15/aem-groovy-console)
+
+[unreleased]: https://github.com/orbinson/aem-groovy-console/compare/18.0.1...HEAD
+[18.0.1]: https://github.com/orbinson/aem-groovy-console/compare/18.0.0...18.0.1
+[18.0.0]: https://github.com/orbinson/aem-groovy-console/compare/17.0.0...18.0.0
+[17.0.0]: https://github.com/orbinson/aem-groovy-console/releases/tag/17.0.0
