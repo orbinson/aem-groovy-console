@@ -6,7 +6,7 @@
     <parent>
         <groupId>be.orbinson.aem</groupId>
         <artifactId>aem-groovy-console</artifactId>
-        <version>18.0.0</version>
+        <version>18.0.2-SNAPSHOT</version>
     </parent>
 
     <artifactId>aem-groovy-console-all</artifactId>
@@ -185,10 +185,6 @@
         <dependency>
             <groupId>org.codehaus.groovy</groupId>
             <artifactId>groovy-all</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.icfolson.aem.groovy.extension</groupId>
-            <artifactId>aem-groovy-extension-bundle</artifactId>
         </dependency>
         <dependency>
             <groupId>be.orbinson.aem</groupId>
