@@ -326,6 +326,9 @@ class DefaultMetaClassExtensionProvider implements MetaClassExtensionProvider {
             case PropertyType.STRING:
                 result = value.string
                 break
+            case PropertyType.NAME:
+                result = value.string
+                break
             case PropertyType.REFERENCE:
                 result = getNodeFromValue(session, value)
                 break

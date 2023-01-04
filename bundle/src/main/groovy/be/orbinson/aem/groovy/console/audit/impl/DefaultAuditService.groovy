@@ -12,7 +12,6 @@ import groovy.util.logging.Slf4j
 import org.apache.sling.api.resource.PersistenceException
 import org.apache.sling.api.resource.ResourceResolver
 import org.apache.sling.api.resource.ResourceResolverFactory
-import org.osgi.service.component.annotations.Activate
 import org.osgi.service.component.annotations.Component
 import org.osgi.service.component.annotations.Reference
 

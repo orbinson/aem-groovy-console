@@ -1,6 +1,6 @@
 package be.orbinson.aem.groovy.console.audit.impl
 
-import be.orbinson.aem.groovy.console.api.impl.RequestScriptContext
+import be.orbinson.aem.groovy.console.api.context.impl.RequestScriptContext
 import be.orbinson.aem.groovy.console.audit.AuditRecord
 import be.orbinson.aem.groovy.console.audit.AuditService
 import be.orbinson.aem.groovy.console.configuration.impl.DefaultConfigurationService
