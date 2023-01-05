@@ -51,15 +51,6 @@ jobs:
 
       - name: Deploy package
         run: mvn --batch-mode deploy
-        if: ${{ inputs.deploy }}
-        env:
-          MAVEN_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
-          MAVEN_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
-          MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
-
-      - name: Build package
-        run: mvn --batch-mode package
-        if: ${{ !inputs.deploy }}
         env:
           MAVEN_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
