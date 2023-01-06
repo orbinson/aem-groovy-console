@@ -1,8 +1,12 @@
 name: Publish Docs
 
 on:
-  release:
-    types: [ created ]
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 1 * *'
+  push:
+    branches:
+      - 'main'
 
 permissions:
   contents: read
@@ -40,15 +44,35 @@ jobs:
             ${{ runner.os }}-maven-
 
       - name: Generate site
-        run: mvn --batch-mode --projects bundle site
+        run: mvn --batch-mode --projects api,bundle site
 
       - name: Setup Pages
         uses: actions/configure-pages@v2
 
+      - name: Archive artifact
+        shell: sh
+        if: runner.os == 'Linux'
+        run: |
+          chmod -c -R +rX "$INPUT_PATH" | while read line; do
+            echo "::warning title=Invalid file permissions automatically fixed::$line"
+          done
+          tar \
+            --dereference --hard-dereference \
+            --directory "./api/target/gapidocs" \
+            -cvf "$RUNNER_TEMP/artifact.tar" \
+            .
+          tar \
+            --dereference --hard-dereference \
+            --directory "./bundle/target/gapidocs" \
+            -cvf "$RUNNER_TEMP/artifact.tar" \
+            .
+
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v1
+        uses: actions/upload-artifact@main
         with:
-          path: './bundle/target/site/groovydocs'
+          name: github-pages
+          path: ${{ runner.temp }}/artifact.tar
+          retention-days: 90
 
       - name: Deploy to GitHub Pages
         id: deployment

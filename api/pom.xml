@@ -23,36 +23,10 @@
             <plugin>
                 <groupId>biz.aQute.bnd</groupId>
                 <artifactId>bnd-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>bnd-process</id>
-                        <goals>
-                            <goal>bnd-process</goal>
-                        </goals>
-                    </execution>
-                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
-                <configuration>
-                    <archive>
-                        <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
-                    </archive>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>empty-javadoc-jar</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>jar</goal>
-                        </goals>
-                        <configuration>
-                            <classifier>javadoc</classifier>
-                            <classesDirectory>${basedir}/javadoc</classesDirectory>
-                        </configuration>
-                    </execution>
-                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.sling</groupId>
@@ -63,42 +37,13 @@
                 <artifactId>maven-source-plugin</artifactId>
             </plugin>
             <plugin>
-                <artifactId>maven-antrun-plugin</artifactId>
-                <version>1.7</version>
-                <executions>
-                    <execution>
-                        <id>groovydoc</id>
-                        <phase>site</phase>
-                        <goals>
-                            <goal>run</goal>
-                        </goals>
-                        <configuration>
-                            <target>
-                                <taskdef name="groovydoc"
-                                         classname="org.codehaus.groovy.ant.Groovydoc"
-                                         classpathref="maven.compile.classpath"/>
-                                <groovydoc destdir="${project.reporting.outputDirectory}/groovydocs"
-                                           sourcepath="${basedir}/src/main/groovy"
-                                           use="true"
-                                           windowtitle="${project.name}"
-                                           doctitle="${project.name}">
-                                    <link packages="com.day.cq.wcm.api."
-                                          href="https://docs.adobe.com/docs/en/aem/6-2/develop/ref/javadoc"/>
-                                    <link packages="org.apache.sling."
-                                          href="http://sling.apache.org/apidocs/sling7"/>
-                                    <link packages="javax.jcr."
-                                          href="https://docs.adobe.com/content/docs/en/spec/jsr170/javadocs/jcr-2.0/"/>
-                                    <link packages="java."
-                                          href="https://docs.oracle.com/javase/7/docs/api"/>
-                                    <link packages="javax."
-                                          href="https://docs.oracle.com/javaee/7/api"/>
-                                    <link packages="groovy.,org.codehaus.groovy."
-                                          href="http://groovy.codehaus.org/api/"/>
-                                </groovydoc>
-                            </target>
-                        </configuration>
-                    </execution>
-                </executions>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>3.4.1</version>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.gmavenplus</groupId>
+                <artifactId>gmavenplus-plugin</artifactId>
             </plugin>
         </plugins>
     </build>
@@ -107,13 +52,19 @@
         <dependency>
             <groupId>org.osgi</groupId>
             <artifactId>org.osgi.annotation.bundle</artifactId>
-            <version>2.0.0</version>
         </dependency>
 
-        <!-- groovy -->
         <dependency>
             <groupId>org.codehaus.groovy</groupId>
             <artifactId>groovy-all</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.groovy</groupId>
+            <artifactId>groovy</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.groovy</groupId>
+            <artifactId>groovy-groovydoc</artifactId>
         </dependency>
     </dependencies>
 

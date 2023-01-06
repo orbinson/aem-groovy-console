@@ -27,7 +27,6 @@
                         <cloudManagerTarget>none</cloudManagerTarget>
                     </properties>
                     <filters>
-                        <!-- /apps root -->
                         <filter><root>/apps</root></filter>
                         <filter><root>/apps/groovyconsole</root></filter>
                     </filters>

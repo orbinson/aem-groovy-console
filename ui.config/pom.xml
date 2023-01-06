@@ -13,7 +13,6 @@
     <name>AEM Groovy Console - UI config</name>
 
     <build>
-        <sourceDirectory>src/content/jcr_root</sourceDirectory>
         <plugins>
             <plugin>
                 <groupId>org.apache.jackrabbit</groupId>
