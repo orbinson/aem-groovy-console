@@ -58,6 +58,7 @@ jobs:
           echo "RELEASE_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)" >> $GITHUB_ENV
 
       - name: Update CHANGELOG.md
+        if: ${{ inputs.push }}
         uses: thomaseizinger/keep-a-changelog-new-release@v1
         with:
           version: ${{ env.RELEASE_VERSION }}
@@ -91,9 +92,11 @@ jobs:
           body: ${{ steps.changelog.outputs.release-notes }}
 
       - name: Next SNAPSHOT version
+        if: ${{ inputs.push }}
         run: mvn --batch-mode versions:set -DnextSnapshot versions:commit
 
       - name: Set RELEASE_VERSION env variable
+        if: ${{ inputs.push }}
         run: |
           echo "RELEASE_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)" >> $GITHUB_ENV
 
