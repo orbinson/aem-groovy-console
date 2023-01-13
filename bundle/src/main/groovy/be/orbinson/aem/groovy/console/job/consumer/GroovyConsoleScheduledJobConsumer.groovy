@@ -2,7 +2,7 @@ package be.orbinson.aem.groovy.console.job.consumer
 
 import be.orbinson.aem.groovy.console.GroovyConsoleService
 import be.orbinson.aem.groovy.console.api.JobProperties
-import be.orbinson.aem.groovy.console.api.impl.ScheduledJobScriptContext
+import be.orbinson.aem.groovy.console.api.context.impl.ScheduledJobScriptContext
 import com.google.common.base.Charsets
 import groovy.util.logging.Slf4j
 import org.apache.sling.api.resource.ResourceResolverFactory

@@ -1,0 +1,107 @@
+name: Create release
+
+on:
+  workflow_dispatch:
+    inputs:
+      central:
+        description: 'Release to Maven Central'
+        required: false
+        default: true
+        type: boolean
+      github:
+        description: 'Create GitHub release'
+        required: false
+        default: true
+        type: boolean
+      push:
+        description: 'Push changes'
+        required: false
+        default: true
+        type: boolean
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Cache local Maven repository
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+
+      - name: Set up Java with Maven Central Repository
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: 11
+          server-id: ossrh
+          server-username: MAVEN_USERNAME
+          server-password: MAVEN_PASSWORD
+          gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
+          gpg-passphrase: MAVEN_GPG_PASSPHRASE
+
+      - name: Remove SNAPSHOT from version
+        run: mvn --batch-mode versions:set -DremoveSnapshot versions:commit
+
+      - name: Set RELEASE_VERSION env variable
+        run: |
+          echo "RELEASE_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)" >> $GITHUB_ENV
+
+      - name: Update CHANGELOG.md
+        if: ${{ inputs.push }}
+        uses: thomaseizinger/keep-a-changelog-new-release@v1
+        with:
+          version: ${{ env.RELEASE_VERSION }}
+
+      - name: Get release info
+        id: changelog
+        uses: release-flow/keep-a-changelog-action/get-release-info@v1
+
+      - name: Deploy package
+        if: ${{ inputs.central }}
+        run: mvn --batch-mode deploy
+        env:
+          MAVEN_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
+          MAVEN_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+
+      - name: Commit and push release
+        if: ${{ inputs.push }}
+        uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_message: "Create release ${{ steps.changelog.outputs.release-version }}"
+          tagging_message: ${{ steps.changelog.outputs.release-version }}
+
+      - name: Create release
+        if: ${{ inputs.github }}
+        uses: softprops/action-gh-release@v1
+        with:
+          name: ${{ steps.update-changelog.outputs.release-version }}
+          tag_name: ${{ steps.changelog.outputs.release-version }}
+          files: all/target/aem-groovy-console-all-*.zip
+          body: ${{ steps.changelog.outputs.release-notes }}
+
+      - name: Next SNAPSHOT version
+        if: ${{ inputs.push }}
+        run: mvn --batch-mode versions:set -DnextSnapshot versions:commit
+
+      - name: Set RELEASE_VERSION env variable
+        if: ${{ inputs.push }}
+        run: |
+          echo "RELEASE_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)" >> $GITHUB_ENV
+
+      - name: Commit and push development version
+        if: ${{ inputs.push }}
+        uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_message: "Bump development version to ${{ env.RELEASE_VERSION }}"

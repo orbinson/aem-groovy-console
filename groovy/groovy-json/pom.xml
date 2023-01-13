@@ -8,13 +8,12 @@
     <parent>
         <groupId>be.orbinson.aem</groupId>
         <artifactId>aem-groovy-console</artifactId>
-        <version>18.0.1-SNAPSHOT</version>
+        <version>18.0.4-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
     <artifactId>groovy-json</artifactId>
     <name>Groovy JSON</name>
-    <packaging>bundle</packaging>
     <version>4.0.6.1-FIX</version>
 
     <description>Groovy JSON Fix to make it compatible with OSGi until GROOVY-10881 is fixed</description>
@@ -41,33 +40,22 @@
                 </executions>
             </plugin>
             <plugin>
-                <groupId>org.apache.felix</groupId>
-                <artifactId>maven-bundle-plugin</artifactId>
-                <inherited>true</inherited>
-                <extensions>true</extensions>
+                <groupId>biz.aQute.bnd</groupId>
+                <artifactId>bnd-maven-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>generate-manifest</id>
+                        <id>bnd-process</id>
                         <goals>
-                            <goal>manifest</goal>
+                            <goal>bnd-process</goal>
                         </goals>
-                    </execution>
-                    <execution>
-                        <id>bundle</id>
-                        <goals>
-                            <goal>bundle</goal>
-                        </goals>
+                        <configuration>
+                            <bnd><![CDATA[
+                                Export-Package: groovy.json
+                                DynamicImport-Package: *
+                                ]]></bnd>
+                        </configuration>
                     </execution>
                 </executions>
-                <configuration>
-                    <unpackBundle>true</unpackBundle>
-                    <instructions>
-                        <Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>
-                        <Bundle-Name>${project.name}</Bundle-Name>
-                        <Bundle-Vendor>${project.organization.name}</Bundle-Vendor>
-                        <DynamicImport-Package>*</DynamicImport-Package>
-                    </instructions>
-                </configuration>
             </plugin>
         </plugins>
     </build>

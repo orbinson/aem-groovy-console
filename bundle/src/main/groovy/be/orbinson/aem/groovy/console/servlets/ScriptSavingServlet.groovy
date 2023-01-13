@@ -2,7 +2,7 @@ package be.orbinson.aem.groovy.console.servlets
 
 
 import be.orbinson.aem.groovy.console.GroovyConsoleService
-import be.orbinson.aem.groovy.console.api.impl.RequestScriptData
+import be.orbinson.aem.groovy.console.api.context.impl.RequestScriptData
 import org.apache.sling.api.SlingHttpServletRequest
 import org.apache.sling.api.SlingHttpServletResponse
 import org.osgi.service.component.annotations.Component

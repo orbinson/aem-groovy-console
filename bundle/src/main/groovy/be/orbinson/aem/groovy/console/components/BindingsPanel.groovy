@@ -1,7 +1,7 @@
 package be.orbinson.aem.groovy.console.components
 
 import be.orbinson.aem.groovy.console.api.BindingVariable
-import be.orbinson.aem.groovy.console.api.impl.RequestScriptContext
+import be.orbinson.aem.groovy.console.api.context.impl.RequestScriptContext
 import be.orbinson.aem.groovy.console.extension.ExtensionService
 import groovy.transform.Memoized
 import org.apache.sling.api.SlingHttpServletRequest

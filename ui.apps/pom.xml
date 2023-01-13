@@ -6,7 +6,7 @@
     <parent>
         <groupId>be.orbinson.aem</groupId>
         <artifactId>aem-groovy-console</artifactId>
-        <version>18.0.1-SNAPSHOT</version>
+        <version>18.0.4-SNAPSHOT</version>
     </parent>
 
     <artifactId>aem-groovy-console-ui.apps</artifactId>
@@ -14,7 +14,6 @@
     <name>AEM Groovy Console - UI apps</name>
 
     <build>
-        <sourceDirectory>src/main/content/jcr_root</sourceDirectory>
         <plugins>
             <plugin>
                 <groupId>org.apache.jackrabbit</groupId>

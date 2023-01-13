@@ -5,7 +5,7 @@
     <parent>
         <groupId>be.orbinson.aem</groupId>
         <artifactId>aem-groovy-console</artifactId>
-        <version>18.0.1-SNAPSHOT</version>
+        <version>18.0.4-SNAPSHOT</version>
     </parent>
 
     <artifactId>aem-groovy-console-ui.apps.structure</artifactId>
@@ -27,7 +27,6 @@
                         <cloudManagerTarget>none</cloudManagerTarget>
                     </properties>
                     <filters>
-                        <!-- /apps root -->
                         <filter><root>/apps</root></filter>
                         <filter><root>/apps/groovyconsole</root></filter>
                     </filters>

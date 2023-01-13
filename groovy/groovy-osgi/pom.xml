@@ -8,13 +8,12 @@
     <parent>
         <groupId>be.orbinson.aem</groupId>
         <artifactId>aem-groovy-console</artifactId>
-        <version>18.0.1-SNAPSHOT</version>
+        <version>18.0.4-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
     <artifactId>groovy-osgi</artifactId>
     <name>Groovy OSGI</name>
-    <packaging>bundle</packaging>
     <version>4.0.6</version>
 
     <description>Bundle to make Groovy work in an OSGi environment</description>
@@ -22,16 +21,12 @@
     <build>
         <plugins>
             <plugin>
-                <groupId>org.apache.felix</groupId>
-                <artifactId>maven-bundle-plugin</artifactId>
-                <extensions>true</extensions>
+                <groupId>biz.aQute.bnd</groupId>
+                <artifactId>bnd-maven-plugin</artifactId>
                 <configuration>
-                    <instructions>
-                        <Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>
-                        <Bundle-Name>${project.name}</Bundle-Name>
-                        <Bundle-Vendor>${project.organization.name}</Bundle-Vendor>
-                        <Bundle-Activator>groovy.osgi.activator.Activator</Bundle-Activator>
-                    </instructions>
+                    <bnd><![CDATA[
+                        Bundle-Activator: groovy.osgi.activator.Activator
+                 ]]></bnd>
                 </configuration>
             </plugin>
         </plugins>
