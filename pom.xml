@@ -102,6 +102,7 @@
         <package.group>aem-groovy-console</package.group>
         <vault.password>admin</vault.password>
         <vault.user>admin</vault.user>
+        <service.path>crx/packmgr/service.jsp</service.path>
     </properties>
 
     <profiles>
@@ -228,7 +229,7 @@
                                         <goal>install</goal>
                                     </goals>
                                     <configuration>
-                                        <serviceURL>http://${aem.host}:${aem.port}/crx/packmgr/service.jsp</serviceURL>
+                                        <serviceURL>http://${aem.host}:${aem.port}/${service.path}</serviceURL>
                                     </configuration>
                                 </execution>
                             </executions>
@@ -269,7 +270,7 @@
                                     </goals>
                                     <configuration>
                                         <serviceURL>
-                                            http://${aem.publish.host}:${aem.publish.port}/crx/packmgr/service.jsp
+                                            http://${aem.publish.host}:${aem.publish.port}/${service.path}
                                         </serviceURL>
                                     </configuration>
                                 </execution>

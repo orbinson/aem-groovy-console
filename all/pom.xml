@@ -97,7 +97,7 @@
                                     <goal>install</goal>
                                 </goals>
                                 <configuration>
-                                    <serviceURL>http://${aem.host}:${aem.port}/crx/packmgr/service.jsp</serviceURL>
+                                    <serviceURL>http://${aem.host}:${aem.port}/${service.path}</serviceURL>
                                 </configuration>
                             </execution>
                         </executions>
@@ -120,7 +120,7 @@
                                     <goal>install</goal>
                                 </goals>
                                 <configuration>
-                                    <serviceURL>http://${aem.publish.host}:${aem.publish.port}/crx/packmgr/service.jsp</serviceURL>
+                                    <serviceURL>http://${aem.publish.host}:${aem.publish.port}/${service.path}</serviceURL>
                                 </configuration>
                             </execution>
                         </executions>
