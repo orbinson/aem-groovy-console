@@ -2,7 +2,7 @@ package be.orbinson.aem.groovy.console.servlets
 
 import be.orbinson.aem.groovy.console.configuration.ConfigurationService
 import be.orbinson.aem.groovy.console.response.impl.DefaultReplicateScriptResponse
-import com.day.cq.commons.jcr.JcrConstants
+import org.apache.jackrabbit.JcrConstants
 import com.day.cq.replication.ReplicationActionType
 import com.day.cq.replication.Replicator
 import com.google.common.base.Charsets
@@ -29,6 +29,9 @@ import static javax.servlet.http.HttpServletResponse.SC_FORBIDDEN
 ])
 @Slf4j("LOG")
 class ReplicateScriptServlet extends AbstractJsonResponseServlet {
+
+    // TODO add check?
+
     @Reference
     private ConfigurationService configurationService
 

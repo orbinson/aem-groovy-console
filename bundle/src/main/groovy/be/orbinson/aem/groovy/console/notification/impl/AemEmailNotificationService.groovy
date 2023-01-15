@@ -15,12 +15,13 @@ import org.apache.commons.mail.MultiPartEmail
 import org.osgi.service.component.annotations.Component
 import org.osgi.service.component.annotations.Reference
 import org.osgi.service.component.annotations.ReferenceCardinality
+import org.osgi.service.component.annotations.ReferencePolicy
 
 import javax.mail.util.ByteArrayDataSource
 
 @Component(service = [EmailNotificationService, NotificationService], immediate = true)
 @Slf4j("LOG")
-class DefaultEmailNotificationService implements EmailNotificationService {
+class AemEmailNotificationService implements EmailNotificationService {
 
     static final String SUBJECT = "Groovy Console Script Execution Result"
 
@@ -33,8 +34,8 @@ class DefaultEmailNotificationService implements EmailNotificationService {
     @Reference
     private ConfigurationService configurationService
 
-    @Reference(cardinality = ReferenceCardinality.OPTIONAL)
-    private MailService mailService
+    @Reference
+    private volatile MailService mailService
 
     @Override
     void notify(RunScriptResponse response) {

@@ -4,7 +4,7 @@ import be.orbinson.aem.groovy.console.GroovyConsoleService
 import be.orbinson.aem.groovy.console.api.context.ScriptContext
 import be.orbinson.aem.groovy.console.api.context.impl.RequestScriptContext
 import be.orbinson.aem.groovy.console.configuration.ConfigurationService
-import com.day.cq.commons.jcr.JcrConstants
+import org.apache.jackrabbit.JcrConstants
 import com.google.common.base.Charsets
 import groovy.util.logging.Slf4j
 import org.apache.sling.api.SlingHttpServletRequest

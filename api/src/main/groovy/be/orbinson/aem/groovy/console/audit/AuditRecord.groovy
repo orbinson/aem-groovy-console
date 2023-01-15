@@ -2,7 +2,7 @@ package be.orbinson.aem.groovy.console.audit
 
 import be.orbinson.aem.groovy.console.response.RunScriptResponse
 import be.orbinson.aem.groovy.console.response.impl.DefaultRunScriptResponse
-import com.day.text.Text
+import org.apache.jackrabbit.util.Text
 import groovy.transform.ToString
 import org.apache.sling.api.resource.Resource
 
