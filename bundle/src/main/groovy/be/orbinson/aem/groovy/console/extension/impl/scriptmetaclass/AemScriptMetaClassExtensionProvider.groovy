@@ -42,6 +42,10 @@ class AemScriptMetaClassExtensionProvider implements ScriptMetaClassExtensionPro
                 replicator.replicate(session, ReplicationActionType.DEACTIVATE, path, options)
             }
 
+            delegate.invalidate { String path, ReplicationOptions options = null ->
+                replicator.replicate(session, ReplicationActionType.DELETE, path, options)
+            }
+
             delegate.createQuery { Map predicates ->
                 queryBuilder.createQuery(PredicateGroup.create(predicates), session)
             }
