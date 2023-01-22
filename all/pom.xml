@@ -61,6 +61,12 @@
                         </embedded>
                         <embedded>
                             <groupId>be.orbinson.aem</groupId>
+                            <artifactId>aem-groovy-console-ui.apps.aem</artifactId>
+                            <type>zip</type>
+                            <target>/apps/aem-groovy-console-packages/application/install</target>
+                        </embedded>
+                        <embedded>
+                            <groupId>be.orbinson.aem</groupId>
                             <artifactId>aem-groovy-console-ui.config</artifactId>
                             <type>zip</type>
                             <target>/apps/aem-groovy-console-packages/application/install</target>
@@ -83,8 +89,31 @@
     </build>
 
     <profiles>
+        <!-- Default package is built for AEM -->
+        <profile>
+            <id>aem</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>be.orbinson.aem</groupId>
+                    <artifactId>aem-groovy-console-ui.apps.aem</artifactId>
+                    <version>${project.version}</version>
+                    <type>zip</type>
+                </dependency>
+            </dependencies>
+        </profile>
         <profile>
             <id>autoInstallSinglePackage</id>
+            <dependencies>
+                <dependency>
+                    <groupId>be.orbinson.aem</groupId>
+                    <artifactId>aem-groovy-console-ui.apps.aem</artifactId>
+                    <version>${project.version}</version>
+                    <type>zip</type>
+                </dependency>
+            </dependencies>
             <build>
                 <plugins>
                     <plugin>
@@ -105,9 +134,12 @@
                 </plugins>
             </build>
         </profile>
-
         <profile>
-            <id>autoInstallSinglePackagePublish</id>
+            <id>autoInstallSinglePackageSling</id>
+            <properties>
+                <aem.port>8080</aem.port>
+                <service.path>bin/cpm/package.service.html</service.path>
+            </properties>
             <build>
                 <plugins>
                     <plugin>
@@ -115,12 +147,12 @@
                         <artifactId>wcmio-content-package-maven-plugin</artifactId>
                         <executions>
                             <execution>
-                                <id>install-package-publish</id>
+                                <id>install-package</id>
                                 <goals>
                                     <goal>install</goal>
                                 </goals>
                                 <configuration>
-                                    <serviceURL>http://${aem.publish.host}:${aem.publish.port}/${service.path}</serviceURL>
+                                    <serviceURL>http://${aem.host}:${aem.port}/${service.path}</serviceURL>
                                 </configuration>
                             </execution>
                         </executions>

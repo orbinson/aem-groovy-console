@@ -22,6 +22,7 @@
         <module>api</module>
         <module>bundle</module>
         <module>ui.apps</module>
+        <module>ui.apps.aem</module>
         <module>ui.apps.structure</module>
         <module>ui.config</module>
         <module>ui.content</module>
@@ -97,12 +98,11 @@
         <!-- AEM -->
         <aem.host>localhost</aem.host>
         <aem.port>4502</aem.port>
-        <aem.publish.host>localhost</aem.publish.host>
-        <aem.publish.port>4503</aem.publish.port>
+        <service.path>crx/packmgr/service.jsp</service.path>
+
         <package.group>aem-groovy-console</package.group>
         <vault.password>admin</vault.password>
         <vault.user>admin</vault.user>
-        <service.path>crx/packmgr/service.jsp</service.path>
     </properties>
 
     <profiles>
@@ -147,6 +147,21 @@
         </profile>
 
         <profile>
+            <id>publish</id>
+            <properties>
+                <aem.port>4503</aem.port>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>sling</id>
+            <properties>
+                <aem.port>8080</aem.port>
+                <service.path>bin/cpm/package.service.html</service.path>
+            </properties>
+        </profile>
+
+        <profile>
             <id>autoInstallBundle</id>
             <activation>
                 <activeByDefault>false</activeByDefault>
@@ -157,34 +172,6 @@
                         <plugin>
                             <groupId>org.apache.sling</groupId>
                             <artifactId>sling-maven-plugin</artifactId>
-                            <executions>
-                                <execution>
-                                    <id>install-bundle</id>
-                                    <goals>
-                                        <goal>install</goal>
-                                    </goals>
-                                </execution>
-                            </executions>
-                        </plugin>
-                    </plugins>
-                </pluginManagement>
-            </build>
-        </profile>
-
-        <profile>
-            <id>autoInstallBundlePublish</id>
-            <activation>
-                <activeByDefault>false</activeByDefault>
-            </activation>
-            <build>
-                <pluginManagement>
-                    <plugins>
-                        <plugin>
-                            <groupId>org.apache.sling</groupId>
-                            <artifactId>sling-maven-plugin</artifactId>
-                            <configuration>
-                                <slingUrl>http://${aem.publish.host}:${aem.publish.port}/system/console</slingUrl>
-                            </configuration>
                             <executions>
                                 <execution>
                                     <id>install-bundle</id>
@@ -230,48 +217,6 @@
                                     </goals>
                                     <configuration>
                                         <serviceURL>http://${aem.host}:${aem.port}/${service.path}</serviceURL>
-                                    </configuration>
-                                </execution>
-                            </executions>
-                        </plugin>
-                    </plugins>
-                </pluginManagement>
-            </build>
-        </profile>
-
-        <profile>
-            <id>autoInstallPackagePublish</id>
-            <activation>
-                <activeByDefault>false</activeByDefault>
-            </activation>
-            <build>
-                <pluginManagement>
-                    <plugins>
-                        <plugin>
-                            <groupId>org.apache.jackrabbit</groupId>
-                            <artifactId>filevault-package-maven-plugin</artifactId>
-                            <executions>
-                                <execution>
-                                    <id>create-package</id>
-                                    <goals>
-                                        <goal>package</goal>
-                                    </goals>
-                                </execution>
-                            </executions>
-                        </plugin>
-                        <plugin>
-                            <groupId>io.wcm.maven.plugins</groupId>
-                            <artifactId>wcmio-content-package-maven-plugin</artifactId>
-                            <executions>
-                                <execution>
-                                    <id>install-package-publish</id>
-                                    <goals>
-                                        <goal>install</goal>
-                                    </goals>
-                                    <configuration>
-                                        <serviceURL>
-                                            http://${aem.publish.host}:${aem.publish.port}/${service.path}
-                                        </serviceURL>
                                     </configuration>
                                 </execution>
                             </executions>

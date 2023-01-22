@@ -17,26 +17,20 @@ scripts are included in the package for reference.
 
 ## Compatibility
 
-Supported AEM versions:
+Supported versions:
 
-* On premise: `>= 6.5.10`
+* AEM On premise: `>= 6.5.10`
 * AEM as a Cloud Service: `>= 2022.11`
+* Sling: `>=12`
 
 Embedded Groovy version: `2.4.15`
 
 To install the AEM Groovy Console on older AEM versions check the original
 project [aem-groovy-console](https://github.com/CID15/aem-groovy-console)
 
-## Local installation
+## Installation
 
-### Requirements
-
-* AEM author instance running on [http://localhost:4502](http://localhost:4502/)
-* [Maven](https://maven.apache.org/) `>= 3.6.3`
-
-### Installation
-
-#### Manual
+### Manual
 
 1. Download the
    console [aem-groovy-console-all](https://github.com/orbinson/aem-groovy-console/releases/download/18.0.0/aem-groovy-console-all-18.0.0.zip)
@@ -45,7 +39,24 @@ project [aem-groovy-console](https://github.com/CID15/aem-groovy-console)
 
 2. Navigate to the [groovyconsole](http://localhost:4502/groovyconsole) page.
 
-#### Embedded package
+### Maven profiles
+
+Maven profiles can be used to install the bundles to AEM / Sling
+
+* AEM Author running on localhost:4502
+  * api & bundle: `-P autoInstallBundle`
+  * ui.apps, ui.apps.aem, ui.config, ui.content: `-P autoInstallPackage`
+  * all: `-P autoInstallSinglePackage`
+* AEM Publish running on localhost:4503
+  * api & bundle: `-P autoInstallBundle,publish`
+  * ui.apps, ui.apps.aem, ui.config, ui.content: `-P autoInstallPackage,publish`
+  * all: `-P autoInstallSinglePackage,publish`
+* Sling running on localhost:8080
+  * api & bundle: `-P autoInstallBundle,sling`
+  * ui.apps, ui.apps.aem, ui.config, ui.content: `-P autoInstallPackage,sling`
+  * all: `-P autoInstallSingleSling`
+
+### Embedded package
 
 To deploy the Groovy Console as an embedded package you need to update your `pom.xml`
 
@@ -71,7 +82,7 @@ To deploy the Groovy Console as an embedded package you need to update your `pom
    </embedded>
    ```
 
-#### AEM Dispatcher
+### AEM Dispatcher
 
 If you need to have the Groovy Console available through the dispatcher on a publish instance you can add the filters
 following configuration.
@@ -96,7 +107,7 @@ following configuration.
 
 ## Building From Source
 
-To build and install the latest development version of the Groovy Console (or if you've made source modifications), run
+To build and install the latest development version of the Groovy Console to use in AEM (or if you've made source modifications), run
 the following Maven command.
 
 ```shell

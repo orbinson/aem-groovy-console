@@ -1,4 +1,4 @@
-#base=css
+#base=../clientlibs/css
 
 bootstrap.css
 bootstrap-theme.css

@@ -1,4 +1,4 @@
-#base=js
+#base=../clientlibs/js
 
 datatables.js
 jquery-ui.min.js
