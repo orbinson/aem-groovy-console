@@ -20,7 +20,7 @@ class JcrBindingExtensionProvider implements BindingExtensionProvider {
                 session    : new BindingVariable(session, Session,
                         "https://developer.adobe.com/experience-manager/reference-materials/spec/javax.jcr/javadocs/jcr-2.0/javax/jcr/Session.html"),
                 nodeBuilder: new BindingVariable(new NodeBuilder(session), NodeBuilder,
-                        "                        https://orbinson.github.io/aem-groovy-console/be/orbinson/aem/groovy/console/builders/NodeBuilder.html")
+                        "https://orbinson.github.io/aem-groovy-console/be/orbinson/aem/groovy/console/builders/NodeBuilder.html")
         ]
 
         bindingVariables

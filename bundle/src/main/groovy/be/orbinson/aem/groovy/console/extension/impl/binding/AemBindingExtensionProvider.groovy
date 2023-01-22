@@ -25,7 +25,7 @@ class AemBindingExtensionProvider implements BindingExtensionProvider {
         def bindingVariables = [
                 pageManager: new BindingVariable(resourceResolver.adaptTo(PageManager), PageManager),
                 pageBuilder: new BindingVariable(new PageBuilder(session), PageBuilder,
-                        "                        https://orbinson.github.io/aem-groovy-console/be/orbinson/aem/groovy/console/builders/PageBuilder.html"),
+                        "https://orbinson.github.io/aem-groovy-console/be/orbinson/aem/groovy/console/builders/PageBuilder.html"),
         ]
 
         bindingVariables

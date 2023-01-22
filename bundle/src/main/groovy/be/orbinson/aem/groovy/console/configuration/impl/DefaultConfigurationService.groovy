@@ -113,7 +113,7 @@ class DefaultConfigurationService implements ConfigurationService {
 
                 user.admin || (groupIds ? memberOfGroupIds.intersect(groupIds as Iterable) : false)
             } else {
-                LOG.debug("UserManager not available, probably in a Sling Based application, reverting to is admin check")
+                LOG.debug("UserManager not available, probably in a Sling Based application, falling back to is admin check")
                 return request.getResourceResolver().getUserID() == "admin"
             }
         }

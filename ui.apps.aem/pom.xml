@@ -65,30 +65,36 @@
             <version>${project.version}</version>
             <type>zip</type>
         </dependency>
+
+        <dependency>
+            <groupId>com.adobe.aem</groupId>
+            <artifactId>uber-jar</artifactId>
+        </dependency>
     </dependencies>
 
     <profiles>
         <profile>
-            <id>on-prem</id>
-            <activation>
-                <activeByDefault>true</activeByDefault>
-            </activation>
-            <dependencies>
-                <dependency>
-                    <groupId>com.adobe.aem</groupId>
-                    <artifactId>uber-jar</artifactId>
-                </dependency>
-            </dependencies>
-        </profile>
-
-        <profile>
-            <id>cloud</id>
-            <dependencies>
-                <dependency>
-                    <groupId>com.adobe.aem</groupId>
-                    <artifactId>aem-sdk-api</artifactId>
-                </dependency>
-            </dependencies>
+            <id>auto-deploy</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>io.wcm.maven.plugins</groupId>
+                        <artifactId>wcmio-content-package-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>install-package</id>
+                                <goals>
+                                    <goal>install</goal>
+                                </goals>
+                                <configuration>
+                                    <serviceURL>http://${aem.host}:${aem.port}/${service.path}</serviceURL>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
         </profile>
     </profiles>
+
 </project>

@@ -44,17 +44,14 @@ project [aem-groovy-console](https://github.com/CID15/aem-groovy-console)
 Maven profiles can be used to install the bundles to AEM / Sling
 
 * AEM Author running on localhost:4502
-  * api & bundle: `-P autoInstallBundle`
-  * ui.apps, ui.apps.aem, ui.config, ui.content: `-P autoInstallPackage`
-  * all: `-P autoInstallSinglePackage`
+    * api, bundle, ui.apps, ui.apps.aem, ui.config, ui.content: `-P auto-deploy`
+    * all: `-P auto-deploy-single-package,aem`
 * AEM Publish running on localhost:4503
-  * api & bundle: `-P autoInstallBundle,publish`
-  * ui.apps, ui.apps.aem, ui.config, ui.content: `-P autoInstallPackage,publish`
-  * all: `-P autoInstallSinglePackage,publish`
+    * api, bundle, ui.apps, ui.apps.aem, ui.config, ui.content: `-P auto-deploy,publish`
+    * all: `-P auto-deploy-single-package,aem,publish`
 * Sling running on localhost:8080
-  * api & bundle: `-P autoInstallBundle,sling`
-  * ui.apps, ui.apps.aem, ui.config, ui.content: `-P autoInstallPackage,sling`
-  * all: `-P autoInstallSingleSling`
+    * api, bundle, ui.apps, ui.apps.aem, ui.config, ui.content: `-P auto-deploy,sling`
+    * all: `-P auto-deploy-single-package,sling`
 
 ### Embedded package
 
@@ -107,7 +104,8 @@ following configuration.
 
 ## Building From Source
 
-To build and install the latest development version of the Groovy Console to use in AEM (or if you've made source modifications), run
+To build and install the latest development version of the Groovy Console to use in AEM (or if you've made source
+modifications), run
 the following Maven command.
 
 ```shell
@@ -165,7 +163,11 @@ metaclasses, and star imports.
 
 ## Registering Additional Metaclasses
 
-Services implementing the `be.orbinson.aem.groovy.console.extension.MetaClassExtensionProvider` will be automatically discovered and bound by the OSGi container. These services can be implemented in any deployed bundle. The AEM Groovy Extension bundle will handle the registration and removal of supplied metaclasses as these services are activated/deactivated in the container. See the `DefaultMetaClassExtensionProvider` service for the proper closure syntax for registering metaclasses.
+Services implementing the `be.orbinson.aem.groovy.console.extension.MetaClassExtensionProvider` will be automatically
+discovered and bound by the OSGi container. These services can be implemented in any deployed bundle. The AEM Groovy
+Extension bundle will handle the registration and removal of supplied metaclasses as these services are
+activated/deactivated in the container. See the `DefaultMetaClassExtensionProvider` service for the proper closure
+syntax for registering metaclasses.
 
 ## Notifications
 

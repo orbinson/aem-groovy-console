@@ -30,8 +30,6 @@ import static javax.servlet.http.HttpServletResponse.SC_FORBIDDEN
 @Slf4j("LOG")
 class ReplicateScriptServlet extends AbstractJsonResponseServlet {
 
-    // TODO add check?
-
     @Reference
     private ConfigurationService configurationService
 
@@ -39,7 +37,7 @@ class ReplicateScriptServlet extends AbstractJsonResponseServlet {
     private ResourceResolverFactory resourceResolverFactory
 
     @Reference
-    Replicator replicator
+    private Replicator replicator
 
     @Override
     protected void doPost(@NotNull SlingHttpServletRequest request, @NotNull SlingHttpServletResponse response) throws ServletException, IOException {
