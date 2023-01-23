@@ -44,7 +44,7 @@ jobs:
             ${{ runner.os }}-maven-
 
       - name: Generate site
-        run: mvn --batch-mode --projects api,bundle site
+        run: mvn --batch-mode --projects api,bundle install site
 
       - name: Setup Pages
         uses: actions/configure-pages@v2
