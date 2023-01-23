@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jcr:root
+        xmlns:jcr="http://www.jcp.org/jcr/1.0"
+        xmlns:nt="http://www.jcp.org/jcr/nt/1.0"
+        jcr:primaryType="nt:unstructured"
+        parBrowse="{Boolean}false"
+        ok="function() { GroovyConsole.loadScript(this.getSelectedPath()); this.hide(); }"
+        title="Load Script"
+        xtype="browsedialog">
+    <treeRoot
+            jcr:primaryType="nt:unstructured"
+            name=""
+            text="/"
+            draggable="{Boolean}false"
+            singleClickExpand="{Boolean}true"
+            expanded="{Boolean}true"/>
+    <listeners
+            jcr:primaryType="nt:unstructured"
+            beforeshow="function() { GroovyConsole.refreshOpenDialog(this); }"
+            hide="function() { GroovyConsole.enableButtons(); }"/>
+</jcr:root>

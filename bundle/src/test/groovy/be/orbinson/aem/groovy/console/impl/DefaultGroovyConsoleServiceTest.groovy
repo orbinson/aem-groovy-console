@@ -6,22 +6,21 @@ import be.orbinson.aem.groovy.console.api.context.impl.RequestScriptData
 import be.orbinson.aem.groovy.console.audit.AuditService
 import be.orbinson.aem.groovy.console.configuration.ConfigurationService
 import be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants
-import be.orbinson.aem.groovy.console.extension.impl.DefaultBindingExtensionProvider
 import be.orbinson.aem.groovy.console.extension.impl.DefaultExtensionService
-import be.orbinson.aem.groovy.console.extension.impl.DefaultScriptMetaClassExtensionProvider
-import com.day.cq.commons.jcr.JcrConstants
+import be.orbinson.aem.groovy.console.extension.impl.binding.SlingBindingExtensionProvider
+import be.orbinson.aem.groovy.console.extension.impl.scriptmetaclass.SlingScriptMetaClassExtensionProvider
 import com.day.cq.replication.Replicator
 import com.day.cq.search.QueryBuilder
 import com.google.common.base.Charsets
 import io.wcm.testing.mock.aem.junit5.AemContext
 import io.wcm.testing.mock.aem.junit5.AemContextExtension
+import org.apache.commons.io.IOUtils
+import org.apache.jackrabbit.JcrConstants
 import org.apache.sling.event.jobs.JobManager
-import org.apache.sling.testing.mock.sling.ResourceResolverType
+import org.apache.sling.jcr.resource.api.JcrResourceConstants
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-
-import javax.jcr.Session
 
 import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.PATH_SCRIPTS_FOLDER
 import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.SCRIPT
@@ -31,7 +30,7 @@ import static org.mockito.Mockito.mock
 @ExtendWith(AemContextExtension.class)
 class DefaultGroovyConsoleServiceTest {
 
-    private final AemContext context = new AemContext(ResourceResolverType.JCR_MOCK);
+    private final AemContext context = new AemContext();
 
     def SCRIPT_NAME = "Script"
 
@@ -48,9 +47,9 @@ class DefaultGroovyConsoleServiceTest {
         context.registerService(ConfigurationService, mock(ConfigurationService))
         context.registerService(AuditService, mock(AuditService))
         context.registerService(Replicator, mock(Replicator))
-        context.registerInjectActivateService(new DefaultBindingExtensionProvider())
+        context.registerInjectActivateService(new SlingBindingExtensionProvider())
         context.registerInjectActivateService(new DefaultExtensionService())
-        context.registerInjectActivateService(new DefaultScriptMetaClassExtensionProvider())
+        context.registerInjectActivateService(new SlingScriptMetaClassExtensionProvider())
         context.registerInjectActivateService(new DefaultGroovyConsoleService())
     }
 
@@ -87,17 +86,18 @@ class DefaultGroovyConsoleServiceTest {
 
         consoleService.saveScript(scriptData)
 
-        assertNodeExists(PATH_SCRIPTS_FOLDER, JcrConstants.NT_FOLDER)
-        assertNodeExists(PATH_FILE, JcrConstants.NT_FILE)
-        assertNodeExists(PATH_FILE_CONTENT, JcrConstants.NT_RESOURCE)
+        assertResourceExists(PATH_SCRIPTS_FOLDER, JcrResourceConstants.NT_SLING_FOLDER)
+        assertResourceExists(PATH_FILE, JcrConstants.NT_FILE)
+        assertResourceExists(PATH_FILE_CONTENT, JcrConstants.NT_RESOURCE)
 
-        assertNotNull(context.resourceResolver().adaptTo(Session).getNode(PATH_FILE_CONTENT).getProperty(JcrConstants.JCR_DATA).getBinary().getStream().getText())
+        String script = IOUtils.toString(context.resourceResolver().getResource(PATH_FILE).adaptTo(InputStream.class), "UTF-8");
+        assertEquals("println \"BEER\"", script);
     }
 
     void assertScriptResult(map) {
         assertNull(map.result)
         assertEquals("BEER" + System.lineSeparator(), map.output)
-        assertEquals("",map.exceptionStackTrace)
+        assertEquals("", map.exceptionStackTrace)
         assertNotNull(map.runningTime)
     }
 
@@ -115,9 +115,9 @@ class DefaultGroovyConsoleServiceTest {
         [(GroovyConsoleConstants.FILE_NAME): (SCRIPT_NAME), (SCRIPT): scriptAsString]
     }
 
-    void assertNodeExists(String path, String type) {
-        def node = context.resourceResolver().getResource(path);
-        assertNotNull(node)
-        assertTrue(node.isResourceType(type))
+    void assertResourceExists(String path, String type) {
+        def resource = context.resourceResolver().getResource(path);
+        assertNotNull(resource)
+        assertTrue(resource.isResourceType(type))
     }
 }

@@ -61,6 +61,12 @@
                         </embedded>
                         <embedded>
                             <groupId>be.orbinson.aem</groupId>
+                            <artifactId>aem-groovy-console-ui.apps.aem</artifactId>
+                            <type>zip</type>
+                            <target>/apps/aem-groovy-console-packages/application/install</target>
+                        </embedded>
+                        <embedded>
+                            <groupId>be.orbinson.aem</groupId>
                             <artifactId>aem-groovy-console-ui.config</artifactId>
                             <type>zip</type>
                             <target>/apps/aem-groovy-console-packages/application/install</target>
@@ -83,8 +89,23 @@
     </build>
 
     <profiles>
+        <!-- Default package is built for AEM -->
         <profile>
-            <id>autoInstallSinglePackage</id>
+            <id>aem</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>be.orbinson.aem</groupId>
+                    <artifactId>aem-groovy-console-ui.apps.aem</artifactId>
+                    <version>${project.version}</version>
+                    <type>zip</type>
+                </dependency>
+            </dependencies>
+        </profile>
+        <profile>
+            <id>auto-deploy-single-package</id>
             <build>
                 <plugins>
                     <plugin>
@@ -97,30 +118,7 @@
                                     <goal>install</goal>
                                 </goals>
                                 <configuration>
-                                    <serviceURL>http://${aem.host}:${aem.port}/crx/packmgr/service.jsp</serviceURL>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-
-        <profile>
-            <id>autoInstallSinglePackagePublish</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>io.wcm.maven.plugins</groupId>
-                        <artifactId>wcmio-content-package-maven-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>install-package-publish</id>
-                                <goals>
-                                    <goal>install</goal>
-                                </goals>
-                                <configuration>
-                                    <serviceURL>http://${aem.publish.host}:${aem.publish.port}/crx/packmgr/service.jsp</serviceURL>
+                                    <serviceURL>http://${aem.host}:${aem.port}/${service.path}</serviceURL>
                                 </configuration>
                             </execution>
                         </executions>

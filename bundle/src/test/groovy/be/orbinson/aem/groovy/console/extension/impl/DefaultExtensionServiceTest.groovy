@@ -22,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows
 @ExtendWith(AemContextExtension.class)
 class DefaultExtensionServiceTest {
 
-    private final AemContext context = new AemContext(ResourceResolverType.JCR_MOCK);
+    private final AemContext context = new AemContext();
 
     static final def SELECTORS = "mobile"
 

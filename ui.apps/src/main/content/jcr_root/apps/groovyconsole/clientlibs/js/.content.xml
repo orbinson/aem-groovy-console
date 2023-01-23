@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jcr:root xmlns:sling="http://sling.apache.org/jcr/sling/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0"
+          jcr:primaryType="sling:OrderedFolder"
+          embed="[
+              /apps/groovyconsole/clientlibs/js/datatables.js,
+              /apps/groovyconsole/clientlibs/js/jquery-ui.min.js,
+              /apps/groovyconsole/clientlibs/js/moment.min.js,
+              /apps/groovyconsole/clientlibs/js/daterangepicker.js,
+              /apps/groovyconsole/clientlibs/js/bootstrap3-typeahead.js,
+              /apps/groovyconsole/clientlibs/js/ace.js,
+              /apps/groovyconsole/clientlibs/js/ext-language_tools.js,
+              /apps/groovyconsole/clientlibs/js/mode-groovy.js,
+              /apps/groovyconsole/clientlibs/js/mode-json.js,
+              /apps/groovyconsole/clientlibs/js/worker-json.js,
+              /apps/groovyconsole/clientlibs/js/theme-idle_fingers.js,
+              /apps/groovyconsole/clientlibs/js/modernizr.custom.2.6.2.js,
+              /apps/groovyconsole/clientlibs/js/console.js,
+              /apps/groovyconsole/clientlibs/js/services.js,
+              /apps/groovyconsole/clientlibs/js/audit.js,
+              /apps/groovyconsole/clientlibs/js/scheduled-jobs.js,
+              /apps/groovyconsole/clientlibs/js/local-storage.js
+          ]"/>

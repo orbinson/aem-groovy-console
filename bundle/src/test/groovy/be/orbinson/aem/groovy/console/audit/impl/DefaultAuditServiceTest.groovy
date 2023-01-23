@@ -19,7 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull
 @ExtendWith(AemContextExtension.class)
 class DefaultAuditServiceTest {
 
-    private final AemContext context = new AemContext(ResourceResolverType.JCR_MOCK);
+    private final AemContext context = new AemContext();
 
     AuditService auditService;
 
