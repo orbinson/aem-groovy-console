@@ -5,9 +5,8 @@ import be.orbinson.aem.groovy.console.api.context.JobScriptContext
 import be.orbinson.aem.groovy.console.api.context.ScriptContext
 import be.orbinson.aem.groovy.console.response.RunScriptResponse
 import be.orbinson.aem.groovy.console.table.Table
-import com.day.cq.commons.jcr.JcrConstants
-import com.day.cq.commons.jcr.JcrUtil
-import com.day.text.Text
+import org.apache.jackrabbit.JcrConstants
+import org.apache.jackrabbit.util.Text
 import com.google.common.net.MediaType
 import groovy.json.JsonBuilder
 import groovy.transform.TupleConstructor
@@ -138,8 +137,7 @@ class DefaultRunScriptResponse implements RunScriptResponse {
         def outputFileNamePrefix
 
         if (jobProperties?.jobTitle) {
-            outputFileNamePrefix = JcrUtil.createValidName(jobProperties.jobTitle,
-                    JcrUtil.HYPHEN_LABEL_CHAR_MAPPING).toLowerCase() + "-"
+            outputFileNamePrefix = Text.escapeIllegalJcrChars(jobProperties.jobTitle).toLowerCase() + "-"
         } else {
             outputFileNamePrefix = "output-"
         }

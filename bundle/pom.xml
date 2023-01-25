@@ -31,7 +31,8 @@
                         </goals>
                         <configuration>
                             <bnd><![CDATA[
-DynamicImport-Package: *
+                                    Import-Package: com.day.cq.*;resolution:=optional,org.apache.commons.mail;resolution:=optional,*
+                                    DynamicImport-Package: *
                                 ]]></bnd>
                         </configuration>
                     </execution>
@@ -176,30 +177,33 @@ DynamicImport-Package: *
             <artifactId>org.apache.sling.testing.sling-mock-oak</artifactId>
             <scope>test</scope>
         </dependency>
+
+        <dependency>
+            <groupId>com.adobe.aem</groupId>
+            <artifactId>uber-jar</artifactId>
+        </dependency>
     </dependencies>
 
     <profiles>
         <profile>
-            <id>on-prem</id>
-            <activation>
-                <activeByDefault>true</activeByDefault>
-            </activation>
-            <dependencies>
-                <dependency>
-                    <groupId>com.adobe.aem</groupId>
-                    <artifactId>uber-jar</artifactId>
-                </dependency>
-            </dependencies>
-        </profile>
-
-        <profile>
-            <id>cloud</id>
-            <dependencies>
-                <dependency>
-                    <groupId>com.adobe.aem</groupId>
-                    <artifactId>aem-sdk-api</artifactId>
-                </dependency>
-            </dependencies>
+            <id>auto-deploy</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.sling</groupId>
+                        <artifactId>sling-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>install-bundle</id>
+                                <goals>
+                                    <goal>install</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
         </profile>
     </profiles>
+
 </project>

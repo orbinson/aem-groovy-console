@@ -1,5 +1,16 @@
-<meta http-equiv="content-type" content="text/html; charset=UTF-8"
-      data-sly-use.head="/libs/wcm/foundation/components/page/head.js"
-      data-sly-use.headlibRenderer="headlibs.html"/>
-<sly data-sly-call="${headlibRenderer.headlibs @ designPath=head.designPath}" />
-<title>${head.title}</title>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8"/>
+<style>
+@font-face {
+  font-family: 'Glyphicons Halflings';
+
+  src: url('${request.contextPath @ context='unsafe'}/apps/groovyconsole/clientlibs/resources/fonts/glyphicons-halflings-regular.eot');
+  src: url('${request.contextPath @ context='unsafe'}/apps/groovyconsole/clientlibs/resources/fonts/glyphicons-halflings-regular.eot?#iefix') format('embedded-opentype'), url('${request.contextPath @ context='unsafe'}/apps/groovyconsole/clientlibs/resources/fonts/glyphicons-halflings-regular.woff2') format('woff2'), url('${request.contextPath @ context='unsafe'}/apps/groovyconsole/clientlibs/resources/fonts/glyphicons-halflings-regular.woff') format('woff'), url('${request.contextPath @ context='unsafe'}/apps/groovyconsole/clientlibs/resources/fonts/glyphicons-halflings-regular.ttf') format('truetype'), url('${request.contextPath @ context='unsafe'}/apps/groovyconsole/clientlibs/resources/fonts/glyphicons-halflings-regular.svg#glyphicons_halflingsregular') format('svg');
+}
+
+</style>
+
+<sly data-sly-use.application="be.orbinson.aem.groovy.console.components.Application">
+    <sly data-sly-test="${application.sling}" data-sly-include="headlibs-sling.jsp"></sly>
+    <sly data-sly-test="${application.aem}" data-sly-include="headlibs-aem.html"></sly>
+</sly>
+<title>${properties.jcr:title}</title>

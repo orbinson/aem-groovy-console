@@ -3,6 +3,13 @@ var GroovyConsole = function () {
   var resultDataTable;
 
   return {
+    getContextPath: function() {
+          if (typeof CQ !== 'undefined' && typeof CQ.shared !== 'undefined' && typeof CQ.shared.HTTP !== 'undefined') {
+              return CQ.shared.HTTP.getContextPath();
+          }
+          return ""
+    },
+
     initializeEditors: function () {
       // script editor
       window.scriptEditor = ace.edit('script-editor');
@@ -173,7 +180,7 @@ var GroovyConsole = function () {
 
           $('#schedule-job-text').text('Scheduling...');
 
-          $.post(CQ.shared.HTTP.getContextPath() + '/bin/groovyconsole/jobs.json', {
+          $.post(GroovyConsole.getContextPath() + '/bin/groovyconsole/jobs.json', {
             script: script,
             data: dataEditor.getSession().getValue(),
             jobTitle: jobTitle,
@@ -230,7 +237,7 @@ var GroovyConsole = function () {
 
           $('#run-script-text').text('Running...');
 
-          $.post(CQ.shared.HTTP.getContextPath() + '/bin/groovyconsole/post.json', {
+          $.post(GroovyConsole.getContextPath() + '/bin/groovyconsole/post.json', {
             script: script,
             data: dataEditor.getSession().getValue()
           }).done(function (response) {
@@ -271,7 +278,7 @@ var GroovyConsole = function () {
 
           $('#run-script-text').text('Distributing...');
 
-          $.post(CQ.shared.HTTP.getContextPath() + '/bin/groovyconsole/replicate.json', {
+          $.post(GroovyConsole.getContextPath() + '/bin/groovyconsole/replicate.json', {
             script: script,
             data: dataEditor.getSession().getValue()
           }).done(function (response) {
@@ -547,7 +554,7 @@ var GroovyConsole = function () {
     loadScript: function (scriptPath) {
       GroovyConsole.reset();
 
-      $.get(CQ.shared.HTTP.getContextPath() + scriptPath + '/jcr:content/jcr:data').done(function (script) {
+      $.get(GroovyConsole.getContextPath() + scriptPath + '/jcr:content/jcr:data').done(function (script) {
         GroovyConsole.localStorage.saveScriptName(scriptPath);
         GroovyConsole.showSuccess('Script loaded successfully.');
 
@@ -563,7 +570,7 @@ var GroovyConsole = function () {
       GroovyConsole.reset();
       GroovyConsole.localStorage.saveScriptName(fileName);
 
-      $.post(CQ.shared.HTTP.getContextPath() + '/bin/groovyconsole/save', {
+      $.post(GroovyConsole.getContextPath() + '/bin/groovyconsole/save', {
         fileName: fileName,
         script: scriptEditor.getSession().getValue()
       }).done(function () {

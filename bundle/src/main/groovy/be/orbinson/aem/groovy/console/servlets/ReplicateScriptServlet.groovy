@@ -2,7 +2,7 @@ package be.orbinson.aem.groovy.console.servlets
 
 import be.orbinson.aem.groovy.console.configuration.ConfigurationService
 import be.orbinson.aem.groovy.console.response.impl.DefaultReplicateScriptResponse
-import com.day.cq.commons.jcr.JcrConstants
+import org.apache.jackrabbit.JcrConstants
 import com.day.cq.replication.ReplicationActionType
 import com.day.cq.replication.Replicator
 import com.google.common.base.Charsets
@@ -29,6 +29,7 @@ import static javax.servlet.http.HttpServletResponse.SC_FORBIDDEN
 ])
 @Slf4j("LOG")
 class ReplicateScriptServlet extends AbstractJsonResponseServlet {
+
     @Reference
     private ConfigurationService configurationService
 
@@ -36,7 +37,7 @@ class ReplicateScriptServlet extends AbstractJsonResponseServlet {
     private ResourceResolverFactory resourceResolverFactory
 
     @Reference
-    Replicator replicator
+    private Replicator replicator
 
     @Override
     protected void doPost(@NotNull SlingHttpServletRequest request, @NotNull SlingHttpServletResponse response) throws ServletException, IOException {

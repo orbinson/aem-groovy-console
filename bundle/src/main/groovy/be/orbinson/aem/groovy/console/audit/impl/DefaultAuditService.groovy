@@ -5,23 +5,16 @@ import be.orbinson.aem.groovy.console.audit.AuditService
 import be.orbinson.aem.groovy.console.configuration.ConfigurationService
 import be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants
 import be.orbinson.aem.groovy.console.response.RunScriptResponse
-import com.day.cq.commons.jcr.JcrConstants
-import com.day.cq.commons.jcr.JcrUtil
 import groovy.transform.Synchronized
 import groovy.util.logging.Slf4j
-import org.apache.sling.api.resource.PersistenceException
-import org.apache.sling.api.resource.ResourceResolver
-import org.apache.sling.api.resource.ResourceResolverFactory
+import org.apache.jackrabbit.JcrConstants
+import org.apache.jackrabbit.oak.spi.nodetype.NodeTypeConstants
+import org.apache.sling.api.resource.*
+import org.apache.sling.jcr.resource.api.JcrResourceConstants
 import org.osgi.service.component.annotations.Component
 import org.osgi.service.component.annotations.Reference
 
-import javax.jcr.Node
-import javax.jcr.RepositoryException
-import javax.jcr.Session
-
 import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.*
-import static com.day.cq.commons.jcr.JcrConstants.MIX_CREATED
-import static com.day.cq.commons.jcr.JcrConstants.NT_UNSTRUCTURED
 
 @Component(service = AuditService, immediate = true)
 @Slf4j("LOG")
@@ -45,20 +38,16 @@ class DefaultAuditService implements AuditService {
 
         withResourceResolver { ResourceResolver resourceResolver ->
             try {
-                def auditRecordNode = addAuditRecordNode(resourceResolver, response.userId)
+                def auditRecordResource = addAuditRecordResource(resourceResolver, response.userId)
 
-                setAuditRecordNodeProperties(auditRecordNode, response)
-
-                resourceResolver.commit()
-
-                def auditRecordResource = resourceResolver.getResource(auditRecordNode.path)
+                setAuditRecordResourceProperties(resourceResolver, auditRecordResource, response)
 
                 auditRecord = new AuditRecord(auditRecordResource)
 
                 LOG.debug("created audit record : {}", auditRecord)
 
                 auditRecord
-            } catch (RepositoryException | PersistenceException e) {
+            } catch (PersistenceException e) {
                 LOG.error("error creating audit record", e)
 
                 throw e
@@ -162,39 +151,37 @@ class DefaultAuditService implements AuditService {
     }
 
     @Synchronized
-    private Node addAuditRecordNode(ResourceResolver resourceResolver, String userId) {
+    private Resource addAuditRecordResource(ResourceResolver resourceResolver, String userId) {
         def date = Calendar.instance
         def year = date.format(DATE_FORMAT_YEAR)
         def month = date.format(DATE_FORMAT_MONTH)
         def day = date.format(DATE_FORMAT_DAY)
 
-        def adminSession = resourceResolver.adaptTo(Session)
+        def auditRecordFolderResource = ResourceUtil.getOrCreateResource(resourceResolver, "$AUDIT_PATH/$userId/$year/$month/$day",
+                JcrResourceConstants.NT_SLING_FOLDER, JcrResourceConstants.NT_SLING_FOLDER, true)
 
-        def auditRecordParentNode = JcrUtil.createPath("$AUDIT_PATH/$userId/$year/$month/$day", NT_UNSTRUCTURED,
-                adminSession)
+        def auditRecordName = ResourceUtil.createUniqueChildName(auditRecordFolderResource, "record")
 
-        def auditRecordNode = JcrUtil.createUniqueNode(auditRecordParentNode, AUDIT_RECORD_NODE_PREFIX, NT_UNSTRUCTURED,
-                adminSession)
+        def props = [
+                (JcrConstants.JCR_MIXINTYPES): NodeTypeConstants.MIX_CREATED,
+                (JcrConstants.JCR_CREATED)   : Calendar.getInstance()
+        ]
+        def auditRecordResource = ResourceUtil.getOrCreateResource(resourceResolver, auditRecordFolderResource.getPath() + "/" + auditRecordName,
+                props, JcrResourceConstants.NT_SLING_FOLDER, true)
 
-        try {
-            auditRecordNode.addMixin(MIX_CREATED)
-        } catch (e) {
-            // unsupported for jcr mocks
-            auditRecordNode.setProperty(JcrConstants.JCR_CREATED, Calendar.getInstance())
-        }
-
-        auditRecordNode
+        auditRecordResource
     }
 
-    private void setAuditRecordNodeProperties(Node auditRecordNode, RunScriptResponse response) {
-        auditRecordNode.setProperty(SCRIPT, response.script)
+    private static void setAuditRecordResourceProperties(ResourceResolver resourceResolver, Resource auditRecordResource, RunScriptResponse response) {
+        def valueMap = auditRecordResource.adaptTo(ModifiableValueMap.class);
+        valueMap.put(SCRIPT, response.script)
 
         if (response.data) {
-            auditRecordNode.setProperty(DATA, response.data)
+            valueMap.put(DATA, response.data)
         }
 
         if (response.jobId) {
-            auditRecordNode.setProperty(JOB_ID, response.jobId)
+            valueMap.put(JOB_ID, response.jobId)
         }
 
         if (response.jobProperties) {
@@ -202,30 +189,32 @@ class DefaultAuditService implements AuditService {
                     .findAll { entry -> AUDIT_JOB_PROPERTIES.contains(entry.key) }
                     .each { entry ->
                         if (entry.value instanceof String) {
-                            auditRecordNode.setProperty(entry.key, entry.value as String)
+                            valueMap.put(entry.key, entry.value as String)
                         } else if (entry.value instanceof Calendar) {
-                            auditRecordNode.setProperty(entry.key, entry.value as Calendar)
+                            valueMap.put(entry.key, entry.value as Calendar)
                         }
                     }
         }
 
         if (response.exceptionStackTrace) {
-            auditRecordNode.setProperty(EXCEPTION_STACK_TRACE, response.exceptionStackTrace)
+            valueMap.put(EXCEPTION_STACK_TRACE, response.exceptionStackTrace)
 
             if (response.output) {
-                auditRecordNode.setProperty(OUTPUT, response.output)
+                valueMap.put(OUTPUT, response.output)
             }
         } else {
             if (response.result) {
-                auditRecordNode.setProperty(RESULT, response.result)
+                valueMap.put(RESULT, response.result)
             }
 
             if (response.output) {
-                auditRecordNode.setProperty(OUTPUT, response.output)
+                valueMap.put(OUTPUT, response.output)
             }
 
-            auditRecordNode.setProperty(RUNNING_TIME, response.runningTime)
+            valueMap.put(RUNNING_TIME, response.runningTime)
         }
+
+        resourceResolver.commit()
     }
 
     private String getAuditNodePath(String userId) {
@@ -250,7 +239,7 @@ class DefaultAuditService implements AuditService {
         auditRecords
     }
 
-    private List<AuditRecord> getAuditRecordsForDateRange(List<AuditRecord> auditRecords, Calendar startDate, Calendar endDate) {
+    private static List<AuditRecord> getAuditRecordsForDateRange(List<AuditRecord> auditRecords, Calendar startDate, Calendar endDate) {
         auditRecords.findAll { auditRecord ->
             def auditRecordDate = auditRecord.date
 

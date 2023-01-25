@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workspaceFilter version="1.0">
+    <filter root="/apps/groovyconsole/clientlibs-aem"/>
+    <filter root="/apps/groovyconsole/components/console/opendialog"/>
+    <filter root="/apps/groovyconsole/components/console/savedialog"/>
+</workspaceFilter>

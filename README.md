@@ -1,7 +1,6 @@
 [![Maven Central](https://img.shields.io/maven-central/v/be.orbinson.aem/aem-groovy-console)](https://search.maven.org/artifact/be.orbinson.aem/aem-groovy-console-all)
 [![GitHub](https://img.shields.io/github/v/release/orbinson/aem-groovy-console)](https://github.com/orbinson/aem-groovy-console/releases)
-[![Build and test for AEM 6.5](https://github.com/orbinson/aem-groovy-console/actions/workflows/build-on-prem.yml/badge.svg)](https://github.com/orbinson/aem-groovy-console/actions/workflows/build-on-prem.yml)
-[![Build and test for AEM as a Cloud Service](https://github.com/orbinson/aem-groovy-console/actions/workflows/build-cloud.yml/badge.svg)](https://github.com/orbinson/aem-groovy-console/actions/workflows/build-cloud.yml)
+[![Build and test for AEM 6.5](https://github.com/orbinson/aem-groovy-console/actions/workflows/build.yml/badge.svg)](https://github.com/orbinson/aem-groovy-console/actions/workflows/build.yml)
 
 # AEM Groovy Console
 
@@ -17,26 +16,20 @@ scripts are included in the package for reference.
 
 ## Compatibility
 
-Supported AEM versions:
+Supported versions:
 
-* On premise: `>= 6.5.10`
+* AEM On premise: `>= 6.5.10`
 * AEM as a Cloud Service: `>= 2022.11`
+* Sling: `>=12`
 
 Embedded Groovy version: `2.4.15`
 
 To install the AEM Groovy Console on older AEM versions check the original
 project [aem-groovy-console](https://github.com/CID15/aem-groovy-console)
 
-## Local installation
+## Installation
 
-### Requirements
-
-* AEM author instance running on [http://localhost:4502](http://localhost:4502/)
-* [Maven](https://maven.apache.org/) `>= 3.6.3`
-
-### Installation
-
-#### Manual
+### Manual
 
 1. Download the
    console [aem-groovy-console-all](https://github.com/orbinson/aem-groovy-console/releases/download/18.0.0/aem-groovy-console-all-18.0.0.zip)
@@ -45,7 +38,21 @@ project [aem-groovy-console](https://github.com/CID15/aem-groovy-console)
 
 2. Navigate to the [groovyconsole](http://localhost:4502/groovyconsole) page.
 
-#### Embedded package
+### Maven profiles
+
+Maven profiles can be used to install the bundles to AEM / Sling
+
+* AEM Author running on localhost:4502
+    * api, bundle, ui.apps, ui.apps.aem, ui.config, ui.content: `-P auto-deploy`
+    * all: `-P auto-deploy-single-package,aem`
+* AEM Publish running on localhost:4503
+    * api, bundle, ui.apps, ui.apps.aem, ui.config, ui.content: `-P auto-deploy,publish`
+    * all: `-P auto-deploy-single-package,aem,publish`
+* Sling running on localhost:8080
+    * api, bundle, ui.apps, ui.apps.aem, ui.config, ui.content: `-P auto-deploy,sling`
+    * all: `-P auto-deploy-single-package,sling`
+
+### Embedded package
 
 To deploy the Groovy Console as an embedded package you need to update your `pom.xml`
 
@@ -71,7 +78,7 @@ To deploy the Groovy Console as an embedded package you need to update your `pom
    </embedded>
    ```
 
-#### AEM Dispatcher
+### AEM Dispatcher
 
 If you need to have the Groovy Console available through the dispatcher on a publish instance you can add the filters
 following configuration.
@@ -96,7 +103,8 @@ following configuration.
 
 ## Building From Source
 
-To build and install the latest development version of the Groovy Console (or if you've made source modifications), run
+To build and install the latest development version of the Groovy Console to use in AEM (or if you've made source
+modifications), run
 the following Maven command.
 
 ```shell
@@ -154,7 +162,11 @@ metaclasses, and star imports.
 
 ## Registering Additional Metaclasses
 
-Services implementing the `be.orbinson.aem.groovy.console.extension.MetaClassExtensionProvider` will be automatically discovered and bound by the OSGi container. These services can be implemented in any deployed bundle. The AEM Groovy Extension bundle will handle the registration and removal of supplied metaclasses as these services are activated/deactivated in the container. See the `DefaultMetaClassExtensionProvider` service for the proper closure syntax for registering metaclasses.
+Services implementing the `be.orbinson.aem.groovy.console.extension.MetaClassExtensionProvider` will be automatically
+discovered and bound by the OSGi container. These services can be implemented in any deployed bundle. The AEM Groovy
+Extension bundle will handle the registration and removal of supplied metaclasses as these services are
+activated/deactivated in the container. See the `DefaultMetaClassExtensionProvider` service for the proper closure
+syntax for registering metaclasses.
 
 ## Notifications
 

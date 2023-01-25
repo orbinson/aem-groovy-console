@@ -14,14 +14,18 @@ import be.orbinson.aem.groovy.console.response.RunScriptResponse
 import be.orbinson.aem.groovy.console.response.SaveScriptResponse
 import be.orbinson.aem.groovy.console.response.impl.DefaultRunScriptResponse
 import be.orbinson.aem.groovy.console.response.impl.DefaultSaveScriptResponse
-import com.day.cq.commons.jcr.JcrConstants
-import com.day.cq.commons.jcr.JcrUtil
 import com.google.common.net.MediaType
 import groovy.transform.Synchronized
 import groovy.transform.TimedInterrupt
 import groovy.util.logging.Slf4j
+import org.apache.jackrabbit.JcrConstants
 import org.apache.jackrabbit.util.Text
+import org.apache.sling.api.resource.ModifiableValueMap
+import org.apache.sling.api.resource.Resource
+import org.apache.sling.api.resource.ResourceResolver
+import org.apache.sling.api.resource.ResourceUtil
 import org.apache.sling.event.jobs.JobManager
+import org.apache.sling.jcr.resource.api.JcrResourceConstants
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
@@ -31,29 +35,14 @@ import org.osgi.service.component.annotations.Reference
 import org.osgi.service.component.annotations.ReferenceCardinality
 import org.osgi.service.component.annotations.ReferencePolicy
 
-import javax.jcr.Node
-import javax.jcr.Session
 import java.util.concurrent.CopyOnWriteArrayList
 
-import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.CHARSET
-import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.FORMAT_RUNNING_TIME
-import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.PATH_SCRIPTS_FOLDER
-import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.TIME_ZONE_RUNNING_TIME
+import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.*
 
 @Component(service = GroovyConsoleService, immediate = true)
 @Slf4j("LOG")
 class DefaultGroovyConsoleService implements GroovyConsoleService {
 
-    static final def RUNNING_TIME = { closure ->
-        def start = System.currentTimeMillis()
-
-        closure()
-
-        def date = new Date()
-
-        date.time = System.currentTimeMillis() - start
-        date.format(FORMAT_RUNNING_TIME, TimeZone.getTimeZone(TIME_ZONE_RUNNING_TIME))
-    }
 
     @Reference
     private ConfigurationService configurationService
@@ -82,11 +71,12 @@ class DefaultGroovyConsoleService implements GroovyConsoleService {
                 script.metaClass(meta)
             }
 
-            def result = null
+            def start = System.currentTimeMillis()
+            def result = script.run()
+            def date = new Date()
 
-            def runningTime = RUNNING_TIME {
-                result = script.run()
-            }
+            date.time = System.currentTimeMillis() - start
+            def runningTime = date.format(FORMAT_RUNNING_TIME, TimeZone.getTimeZone(TIME_ZONE_RUNNING_TIME))
 
             LOG.debug("script execution completed, running time : {}", runningTime)
 
@@ -116,16 +106,18 @@ class DefaultGroovyConsoleService implements GroovyConsoleService {
     @Override
     @Synchronized
     SaveScriptResponse saveScript(ScriptData scriptData) {
-        def session = scriptData.resourceResolver.adaptTo(Session)
-        def folderNode = JcrUtil.createPath(PATH_SCRIPTS_FOLDER, JcrConstants.NT_FOLDER, session)
+        def resourceResolver = scriptData.resourceResolver
+
+        def folderResource = ResourceUtil.getOrCreateResource(resourceResolver, PATH_SCRIPTS_FOLDER, JcrResourceConstants.NT_SLING_FOLDER, JcrResourceConstants.NT_SLING_FOLDER, true);
 
         def fileName = scriptData.fileName
 
-        if (folderNode.hasNode(fileName)) {
-            folderNode.getNode(fileName).remove()
+        if (folderResource.getChild(fileName)) {
+            resourceResolver.delete(folderResource.getChild(fileName))
+            resourceResolver.commit();
         }
 
-        saveFile(session, folderNode, scriptData.script, fileName, new Date(), MediaType.OCTET_STREAM.toString())
+        saveFile(resourceResolver, folderResource, scriptData.script, fileName, new Date(), MediaType.OCTET_STREAM.toString())
 
         new DefaultSaveScriptResponse(fileName)
     }
@@ -203,21 +195,24 @@ class DefaultGroovyConsoleService implements GroovyConsoleService {
                 as CompilationCustomizer[])
     }
 
-    private void saveFile(Session session, Node folderNode, String script, String fileName, Date date,
+    private void saveFile(ResourceResolver resourceResolver, Resource folderResource, String script, String fileName, Date date,
                           String mimeType) {
-        def fileNode = folderNode.addNode(Text.escapeIllegalJcrChars(fileName), JcrConstants.NT_FILE)
-        def resourceNode = fileNode.addNode(JcrConstants.JCR_CONTENT, JcrConstants.NT_RESOURCE)
+
+        def fileResource = resourceResolver.create(folderResource, Text.escapeIllegalJcrChars(fileName),
+                [(JcrConstants.JCR_PRIMARYTYPE): JcrConstants.NT_FILE] as Map)
+
+        def fileContentResource = resourceResolver.create(fileResource, JcrConstants.JCR_CONTENT,
+                [(JcrConstants.JCR_PRIMARYTYPE): JcrConstants.NT_RESOURCE] as Map)
 
         def stream = new ByteArrayInputStream(script.getBytes(CHARSET))
-        def binary = session.valueFactory.createBinary(stream)
+        def valueMap = fileContentResource.adaptTo(ModifiableValueMap.class)
 
-        resourceNode.setProperty(JcrConstants.JCR_MIMETYPE, mimeType)
-        resourceNode.setProperty(JcrConstants.JCR_ENCODING, CHARSET)
-        resourceNode.setProperty(JcrConstants.JCR_DATA, binary)
-        resourceNode.setProperty(JcrConstants.JCR_LASTMODIFIED, date.time)
-        resourceNode.setProperty(JcrConstants.JCR_LAST_MODIFIED_BY, session.userID)
+        valueMap.put(JcrConstants.JCR_MIMETYPE, mimeType)
+        valueMap.put(JcrConstants.JCR_ENCODING, CHARSET)
+        valueMap.put(JcrConstants.JCR_DATA, stream)
+        valueMap.put(JcrConstants.JCR_LASTMODIFIED, date.time)
+        valueMap.put("jcr:lastModifiedBy", resourceResolver.getUserID())
 
-        session.save()
-        binary.dispose()
+        resourceResolver.commit()
     }
 }

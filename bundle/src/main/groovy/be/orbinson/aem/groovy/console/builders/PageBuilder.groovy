@@ -1,6 +1,6 @@
 package be.orbinson.aem.groovy.console.builders
 
-import com.day.cq.commons.jcr.JcrConstants
+import org.apache.jackrabbit.JcrConstants
 import com.day.cq.wcm.api.NameConstants
 import com.day.cq.wcm.api.Page
 

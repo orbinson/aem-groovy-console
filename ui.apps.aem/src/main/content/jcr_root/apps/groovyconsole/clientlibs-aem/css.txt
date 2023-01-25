@@ -1,0 +1,7 @@
+#base=../clientlibs/css
+
+bootstrap.css
+bootstrap-theme.css
+daterangepicker.css
+datatables.css
+console.css
