@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [18.0.3] - 2023-01-05
+
+### Changed
+
+- Only internal changes to automate releases
+
 ## [18.0.2] - 2023-01-05
 
 ### Changed
@@ -50,6 +56,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Last version released by [CID15](https://github.com/CID15/aem-groovy-console)
 
 [Unreleased]: https://github.com/orbinson/aem-groovy-console/compare/18.0.2...HEAD
+
+[18.0.3]: https://github.com/orbinson/aem-groovy-console/compare/18.0.2...18.0.3
 
 [18.0.2]: https://github.com/orbinson/aem-groovy-console/compare/18.0.1...18.0.2
 
