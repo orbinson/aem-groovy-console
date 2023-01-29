@@ -17,7 +17,8 @@
           <option name="pomFileName" value="pom.xml" />
           <option name="profilesMap">
             <map>
-              <entry key="autoInstallPackagePublish" value="true" />
+              <entry key="publish" value="true" />
+              <entry key="auto-deploy" value="true" />
             </map>
           </option>
           <option name="resolveToWorkspace" value="false" />

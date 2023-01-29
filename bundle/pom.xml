@@ -31,8 +31,8 @@
                         </goals>
                         <configuration>
                             <bnd><![CDATA[
-                                    Import-Package: com.day.cq.*;resolution:=optional,org.apache.commons.mail;resolution:=optional,*
-                                    DynamicImport-Package: *
+                                Import-Package: com.day.cq.*;resolution:=optional,org.apache.commons.mail;resolution:=optional,*
+                                DynamicImport-Package: *
                                 ]]></bnd>
                         </configuration>
                     </execution>

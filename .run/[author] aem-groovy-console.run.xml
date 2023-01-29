@@ -19,7 +19,8 @@
           <option name="pomFileName" value="pom.xml" />
           <option name="profilesMap">
             <map>
-              <entry key="autoInstallSinglePackage" value="true" />
+              <entry key="auto-deploy-single-package" value="true" />
+              <entry key="aem" value="true" />
             </map>
           </option>
           <option name="resolveToWorkspace" value="false" />
