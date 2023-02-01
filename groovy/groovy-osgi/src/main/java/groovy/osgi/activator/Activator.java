@@ -149,7 +149,7 @@ public class Activator implements BundleActivator, SynchronousBundleListener {
         Properties properties = loadProperties(getExtensionModuleUrl(bundle));
         String moduleName = properties.getProperty(PropertiesModuleFactory.MODULE_NAME_KEY);
         ExtensionModuleRegistry extensionModuleRegistry = (((MetaClassRegistryImpl) GroovySystem.getMetaClassRegistry()).getModuleRegistry());
-        if (extensionModuleRegistry.hasModule(moduleName)) {
+        if (extensionModuleRegistry.hasModule(moduleName) && bundleWrappers.get(bundle.getBundleId()) != null) {
             extensionModuleRegistry.removeModule(bundleWrappers.get(bundle.getBundleId()).extensionModule);
             // What should we do with the cached classes?
         }
