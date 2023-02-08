@@ -8,6 +8,10 @@ import com.day.cq.replication.Replicator
 import com.day.cq.search.PredicateGroup
 import com.day.cq.search.QueryBuilder
 import com.day.cq.wcm.api.PageManager
+import org.apache.sling.distribution.DistributionRequest
+import org.apache.sling.distribution.Distributor
+import org.apache.sling.distribution.DistributionRequestType
+import org.apache.sling.distribution.SimpleDistributionRequest
 import org.osgi.service.component.annotations.Component
 import org.osgi.service.component.annotations.Reference
 
@@ -21,6 +25,9 @@ class AemScriptMetaClassExtensionProvider implements ScriptMetaClassExtensionPro
 
     @Reference
     private QueryBuilder queryBuilder
+
+    @Reference
+    private Distributor distributor;
 
     @Override
     Closure getScriptMetaClass(ScriptContext scriptContext) {
@@ -42,8 +49,13 @@ class AemScriptMetaClassExtensionProvider implements ScriptMetaClassExtensionPro
                 replicator.replicate(session, ReplicationActionType.DEACTIVATE, path, options)
             }
 
-            delegate.invalidate { String path, ReplicationOptions options = null ->
+            delegate.delete { String path, ReplicationOptions options = null ->
                 replicator.replicate(session, ReplicationActionType.DELETE, path, options)
+            }
+
+            delegate.invalidate { String path, String agentId = "publish", boolean isDeep = false ->
+                DistributionRequest distributionRequest = new SimpleDistributionRequest(DistributionRequestType.INVALIDATE, isDeep, path);
+                distributor.distribute(agentId, resourceResolver, distributionRequest);
             }
 
             delegate.createQuery { Map predicates ->
