@@ -8,7 +8,7 @@
     <groupId>be.orbinson.aem</groupId>
     <artifactId>aem-groovy-console</artifactId>
     <packaging>pom</packaging>
-    <version>18.0.4-SNAPSHOT</version>
+    <version>19.0.0-SNAPSHOT</version>
 
     <name>AEM Groovy Console</name>
     <description>
@@ -91,15 +91,12 @@
         <timestamp>${maven.build.timestamp}</timestamp>
 
         <!-- Versions -->
-        <aem.sdk.version>2022.11.9850.20221116T162329Z-220900</aem.sdk.version>
-        <aem.uberjar.version>6.5.10</aem.uberjar.version>
         <bnd.version>6.4.0</bnd.version>
-        <groovy.version>2.4.15</groovy.version>
         <aem.version>6.5.10</aem.version>
+        <groovy.version>4.0.9</groovy.version>
 
         <package.group>aem-groovy-console</package.group>
         <vault.password>admin</vault.password>
-        <groovy.version>4.0.8</groovy.version>
     </properties>
 
     <profiles>
@@ -540,7 +537,7 @@
             <dependency>
                 <groupId>org.apache.groovy</groupId>
                 <artifactId>groovy-json</artifactId>
-                <version>4.0.9-SNAPSHOT</version>
+                <version>${groovy.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.groovy</groupId>
