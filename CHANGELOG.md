@@ -7,15 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [19.0.0] - 2023-02-15
+
 ### Changed
 
--  Add invalidate method, replace current invalidate with name delete: [#37](https://github.com/orbinson/aem-groovy-console/pull/37)
+-   Add invalidate method, replace current invalidate with name delete: [#37](https://github.com/orbinson/aem-groovy-console/pull/37)
 
 ## [18.0.3] - 2023-01-05
 
 ### Changed
 
-- Only internal changes to automate releases
+-   Only internal changes to automate releases
 
 ## [18.0.2] - 2023-01-05
 
@@ -59,7 +61,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 -   Last version released by [CID15](https://github.com/CID15/aem-groovy-console)
 
-[Unreleased]: https://github.com/orbinson/aem-groovy-console/compare/18.0.2...HEAD
+[Unreleased]: https://github.com/orbinson/aem-groovy-console/compare/19.0.0...HEAD
+
+[19.0.0]: https://github.com/orbinson/aem-groovy-console/compare/18.0.3...19.0.0
 
 [18.0.3]: https://github.com/orbinson/aem-groovy-console/compare/18.0.2...18.0.3
 
