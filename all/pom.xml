@@ -6,7 +6,7 @@
     <parent>
         <groupId>be.orbinson.aem</groupId>
         <artifactId>aem-groovy-console</artifactId>
-        <version>18.0.4-SNAPSHOT</version>
+        <version>19.0.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>aem-groovy-console-all</artifactId>
@@ -38,11 +38,6 @@
                         <cloudManagerTarget>all</cloudManagerTarget>
                     </properties>
                     <embeddeds>
-                        <embedded>
-                            <groupId>org.codehaus.groovy</groupId>
-                            <artifactId>groovy-all</artifactId>
-                            <target>/apps/aem-groovy-console-packages/content/install</target>
-                        </embedded>
                         <embedded>
                             <groupId>be.orbinson.aem</groupId>
                             <artifactId>aem-groovy-console-api</artifactId>
@@ -76,6 +71,76 @@
                             <artifactId>aem-groovy-console-ui.content</artifactId>
                             <type>zip</type>
                             <target>/apps/aem-groovy-console-packages/content/install</target>
+                        </embedded>
+                        <embedded>
+                            <groupId>be.orbinson.aem</groupId>
+                            <artifactId>groovy-osgi</artifactId>
+                            <target>/apps/aem-groovy-console-packages/application/install</target>
+                        </embedded>
+                        <embedded>
+                            <groupId>org.apache.groovy</groupId>
+                            <artifactId>groovy</artifactId>
+                            <target>/apps/aem-groovy-console-vendor-packages/application/install</target>
+                        </embedded>
+                        <embedded>
+                            <groupId>org.apache.groovy</groupId>
+                            <artifactId>groovy-dateutil</artifactId>
+                            <target>/apps/aem-groovy-console-vendor-packages/application/install</target>
+                        </embedded>
+                        <embedded>
+                            <groupId>org.apache.groovy</groupId>
+                            <artifactId>groovy-templates</artifactId>
+                            <target>/apps/aem-groovy-console-vendor-packages/application/install</target>
+                        </embedded>
+                        <embedded>
+                            <groupId>org.apache.groovy</groupId>
+                            <artifactId>groovy-nio</artifactId>
+                            <target>/apps/aem-groovy-console-vendor-packages/application/install</target>
+                        </embedded>
+                        <embedded>
+                            <groupId>org.apache.groovy</groupId>
+                            <artifactId>groovy-xml</artifactId>
+                            <target>/apps/aem-groovy-console-vendor-packages/application/install</target>
+                        </embedded>
+                        <embedded>
+                            <groupId>org.apache.groovy</groupId>
+                            <artifactId>groovy-yaml</artifactId>
+                            <target>/apps/aem-groovy-console-vendor-packages/application/install</target>
+                        </embedded>
+                        <embedded>
+                            <groupId>org.apache.groovy</groupId>
+                            <artifactId>groovy-json</artifactId>
+                            <target>/apps/aem-groovy-console-vendor-packages/application/install</target>
+                        </embedded>
+                        <embedded>
+                            <groupId>org.apache.aries.spifly</groupId>
+                            <artifactId>org.apache.aries.spifly.dynamic.bundle</artifactId>
+                            <target>/apps/aem-groovy-console-vendor-packages/application/install</target>
+                        </embedded>
+                        <embedded>
+                            <groupId>org.ow2.asm</groupId>
+                            <artifactId>asm</artifactId>
+                            <target>/apps/aem-groovy-console-vendor-packages/application/install</target>
+                        </embedded>
+                        <embedded>
+                            <groupId>org.ow2.asm</groupId>
+                            <artifactId>asm-analysis</artifactId>
+                            <target>/apps/aem-groovy-console-vendor-packages/application/install</target>
+                        </embedded>
+                        <embedded>
+                            <groupId>org.ow2.asm</groupId>
+                            <artifactId>asm-commons</artifactId>
+                            <target>/apps/aem-groovy-console-vendor-packages/application/install</target>
+                        </embedded>
+                        <embedded>
+                            <groupId>org.ow2.asm</groupId>
+                            <artifactId>asm-util</artifactId>
+                            <target>/apps/aem-groovy-console-vendor-packages/application/install</target>
+                        </embedded>
+                        <embedded>
+                            <groupId>org.ow2.asm</groupId>
+                            <artifactId>asm-tree</artifactId>
+                            <target>/apps/aem-groovy-console-vendor-packages/application/install</target>
                         </embedded>
                     </embeddeds>
                 </configuration>
@@ -130,9 +195,74 @@
 
     <dependencies>
         <dependency>
-            <groupId>org.codehaus.groovy</groupId>
-            <artifactId>groovy-all</artifactId>
+            <groupId>be.orbinson.aem</groupId>
+            <artifactId>groovy-osgi</artifactId>
+            <version>${project.version}</version>
         </dependency>
+
+        <!-- OOTB Groovy -->
+        <dependency>
+            <groupId>org.apache.groovy</groupId>
+            <artifactId>groovy</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.groovy</groupId>
+            <artifactId>groovy-dateutil</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.groovy</groupId>
+            <artifactId>groovy-templates</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.groovy</groupId>
+            <artifactId>groovy-nio</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.groovy</groupId>
+            <artifactId>groovy-xml</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.groovy</groupId>
+            <artifactId>groovy-yaml</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.groovy</groupId>
+            <artifactId>groovy-json</artifactId>
+        </dependency>
+
+        <!-- SpiFly to make ServiceLoader work in Groovy JSON -->
+        <dependency>
+            <groupId>org.apache.aries.spifly</groupId>
+            <artifactId>org.apache.aries.spifly.dynamic.bundle</artifactId>
+            <version>1.3.6</version>
+        </dependency>
+        <dependency>
+            <groupId>org.ow2.asm</groupId>
+            <artifactId>asm</artifactId>
+            <version>9.4</version>
+        </dependency>
+        <dependency>
+            <groupId>org.ow2.asm</groupId>
+            <artifactId>asm-analysis</artifactId>
+            <version>9.4</version>
+        </dependency>
+        <dependency>
+            <groupId>org.ow2.asm</groupId>
+            <artifactId>asm-commons</artifactId>
+            <version>9.4</version>
+        </dependency>
+        <dependency>
+            <groupId>org.ow2.asm</groupId>
+            <artifactId>asm-util</artifactId>
+            <version>9.4</version>
+        </dependency>
+        <dependency>
+            <groupId>org.ow2.asm</groupId>
+            <artifactId>asm-tree</artifactId>
+            <version>9.4</version>
+        </dependency>
+
+
         <dependency>
             <groupId>be.orbinson.aem</groupId>
             <artifactId>aem-groovy-console-api</artifactId>

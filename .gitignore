@@ -7,4 +7,5 @@
 .classpath
 .settings/
 target/
+dependency-reduced-pom.xml
 .mvn

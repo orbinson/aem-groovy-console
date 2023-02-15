@@ -8,7 +8,7 @@
     <groupId>be.orbinson.aem</groupId>
     <artifactId>aem-groovy-console</artifactId>
     <packaging>pom</packaging>
-    <version>18.0.4-SNAPSHOT</version>
+    <version>19.0.0-SNAPSHOT</version>
 
     <name>AEM Groovy Console</name>
     <description>
@@ -21,6 +21,7 @@
         <module>all</module>
         <module>api</module>
         <module>bundle</module>
+        <module>groovy</module>
         <module>ui.apps</module>
         <module>ui.apps.aem</module>
         <module>ui.apps.structure</module>
@@ -90,15 +91,12 @@
         <timestamp>${maven.build.timestamp}</timestamp>
 
         <!-- Versions -->
-        <aem.sdk.version>2022.11.9850.20221116T162329Z-220900</aem.sdk.version>
-        <aem.uberjar.version>6.5.10</aem.uberjar.version>
         <bnd.version>6.4.0</bnd.version>
-        <groovy.version>2.4.15</groovy.version>
         <aem.version>6.5.10</aem.version>
+        <groovy.version>4.0.9</groovy.version>
 
         <package.group>aem-groovy-console</package.group>
         <vault.password>admin</vault.password>
-        <vault.user>admin</vault.user>
     </properties>
 
     <profiles>
@@ -135,6 +133,28 @@
 
     <build>
         <plugins>
+            <plugin>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.8.1</version>
+                <configuration>
+                    <compilerId>groovy-eclipse-compiler</compilerId>
+                    <source>11</source>
+                    <target>11</target>
+                    <encoding>utf-8</encoding>
+                </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.codehaus.groovy</groupId>
+                        <artifactId>groovy-eclipse-compiler</artifactId>
+                        <version>3.7.0</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>org.codehaus.groovy</groupId>
+                        <artifactId>groovy-eclipse-batch</artifactId>
+                        <version>3.0.8-01</version>
+                    </dependency>
+                </dependencies>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-gpg-plugin</artifactId>
@@ -275,6 +295,9 @@
                     <artifactId>aemanalyser-maven-plugin</artifactId>
                     <version>1.5.8</version>
                     <extensions>true</extensions>
+                    <configuration>
+                        <skip>${aemanalyser.skip.validation}</skip>
+                    </configuration>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.sling</groupId>
@@ -507,21 +530,44 @@
 
             <!-- Groovy -->
             <dependency>
-                <groupId>org.codehaus.groovy</groupId>
-                <artifactId>groovy-all</artifactId>
-                <version>${groovy.version}</version>
-                <scope>provided</scope>
-            </dependency>
-
-            <dependency>
                 <groupId>org.apache.groovy</groupId>
                 <artifactId>groovy</artifactId>
-                <version>4.0.7</version>
+                <version>${groovy.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.groovy</groupId>
+                <artifactId>groovy-json</artifactId>
+                <version>${groovy.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.groovy</groupId>
+                <artifactId>groovy-templates</artifactId>
+                <version>${groovy.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.groovy</groupId>
+                <artifactId>groovy-dateutil</artifactId>
+                <version>${groovy.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.groovy</groupId>
+                <artifactId>groovy-nio</artifactId>
+                <version>${groovy.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.groovy</groupId>
+                <artifactId>groovy-xml</artifactId>
+                <version>${groovy.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.groovy</groupId>
+                <artifactId>groovy-yaml</artifactId>
+                <version>${groovy.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.groovy</groupId>
                 <artifactId>groovy-groovydoc</artifactId>
-                <version>4.0.7</version>
+                <version>${groovy.version}</version>
             </dependency>
 
             <!-- Testing -->

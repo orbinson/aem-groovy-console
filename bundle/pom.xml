@@ -8,7 +8,7 @@
     <parent>
         <groupId>be.orbinson.aem</groupId>
         <artifactId>aem-groovy-console</artifactId>
-        <version>18.0.4-SNAPSHOT</version>
+        <version>19.0.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>aem-groovy-console-bundle</artifactId>
@@ -17,7 +17,7 @@
     <build>
         <plugins>
             <plugin>
-                <groupId>biz.aQute.bnd</groupId>
+                  <groupId>biz.aQute.bnd</groupId>
                 <artifactId>bnd-baseline-maven-plugin</artifactId>
             </plugin>
             <plugin>
@@ -31,8 +31,8 @@
                         </goals>
                         <configuration>
                             <bnd><![CDATA[
-                                    Import-Package: com.day.cq.*;resolution:=optional,org.apache.commons.mail;resolution:=optional,*
-                                    DynamicImport-Package: *
+                                Import-Package: com.day.cq.*;resolution:=optional,org.apache.commons.mail;resolution:=optional,*
+                                DynamicImport-Package: *
                                 ]]></bnd>
                         </configuration>
                     </execution>
@@ -131,12 +131,20 @@
 
         <!-- Groovy -->
         <dependency>
-            <groupId>org.codehaus.groovy</groupId>
-            <artifactId>groovy-all</artifactId>
+            <groupId>org.apache.groovy</groupId>
+            <artifactId>groovy</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.groovy</groupId>
-            <artifactId>groovy</artifactId>
+            <artifactId>groovy-json</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.groovy</groupId>
+            <artifactId>groovy-templates</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.groovy</groupId>
+            <artifactId>groovy-dateutil</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.groovy</groupId>
