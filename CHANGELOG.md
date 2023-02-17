@@ -7,9 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [19.0.1] - 2023-02-17
+
 ### Changed
 
-- Compile with JDK 8 as to support AEM 6.5 customers who haven't updated yet
+-   Compile with JDK 8 as to support AEM 6.5 customers who haven't updated yet
 
 ## [19.0.0] - 2023-02-15
 
@@ -65,7 +67,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 -   Last version released by [CID15](https://github.com/CID15/aem-groovy-console)
 
-[Unreleased]: https://github.com/orbinson/aem-groovy-console/compare/19.0.0...HEAD
+[Unreleased]: https://github.com/orbinson/aem-groovy-console/compare/19.0.1...HEAD
+
+[19.0.1]: https://github.com/orbinson/aem-groovy-console/compare/19.0.0...19.0.1
 
 [19.0.0]: https://github.com/orbinson/aem-groovy-console/compare/18.0.3...19.0.0
 
