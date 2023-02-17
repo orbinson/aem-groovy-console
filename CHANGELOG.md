@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Compile with JDK 8 as to support AEM 6.5 customers who haven't updated yet
+
 ## [19.0.0] - 2023-02-15
 
 ### Changed

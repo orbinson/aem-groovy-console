@@ -16,13 +16,13 @@ scripts are included in the package for reference.
 
 ## Compatibility
 
+AEM Groovy Console 19.0.1+ runs on Java 8 and 11 with an embedded Groovy version of 4.0.9
+
 Supported versions:
 
 * AEM On premise: `>= 6.5.10`
 * AEM as a Cloud Service: `>= 2022.11`
 * Sling: `>=12`
-
-Embedded Groovy version: `2.4.15`
 
 To install the AEM Groovy Console on older AEM versions check the original
 project [aem-groovy-console](https://github.com/CID15/aem-groovy-console)
