@@ -37,7 +37,7 @@ class SlingScriptMetaClassExtensionProvider implements ScriptMetaClassExtensionP
                 def table = new Table()
 
                 closure.delegate = table
-                closure.resolveStrategy = closure.DELEGATE_FIRST
+                closure.resolveStrategy = Closure.DELEGATE_FIRST
                 closure()
 
                 table
