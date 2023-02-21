@@ -7,9 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [19.0.2] - 2023-02-21
+
 ### Fixed
 
-- Table component did not work anymore as expected  [#41](https://github.com/orbinson/aem-groovy-console/issues/41)
+-   Table component did not work anymore as expected  [#41](https://github.com/orbinson/aem-groovy-console/issues/41)
 
 ## [19.0.1] - 2023-02-17
 
@@ -71,7 +73,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 -   Last version released by [CID15](https://github.com/CID15/aem-groovy-console)
 
-[Unreleased]: https://github.com/orbinson/aem-groovy-console/compare/19.0.1...HEAD
+[Unreleased]: https://github.com/orbinson/aem-groovy-console/compare/19.0.2...HEAD
+
+[19.0.2]: https://github.com/orbinson/aem-groovy-console/compare/19.0.1...19.0.2
 
 [19.0.1]: https://github.com/orbinson/aem-groovy-console/compare/19.0.0...19.0.1
 
