@@ -8,6 +8,7 @@ import org.osgi.framework.BundleContext
 import org.osgi.service.component.annotations.Activate
 import org.osgi.service.component.annotations.Component
 
+
 @Component(service = ScriptMetaClassExtensionProvider, immediate = true)
 class SlingScriptMetaClassExtensionProvider implements ScriptMetaClassExtensionProvider {
 
@@ -36,7 +37,7 @@ class SlingScriptMetaClassExtensionProvider implements ScriptMetaClassExtensionP
                 def table = new Table()
 
                 closure.delegate = table
-                closure.resolveStrategy = DELEGATE_FIRST
+                closure.resolveStrategy = closure.DELEGATE_FIRST
                 closure()
 
                 table
