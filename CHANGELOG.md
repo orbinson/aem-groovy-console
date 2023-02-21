@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Table component did not work anymore as expected  [#41](https://github.com/orbinson/aem-groovy-console/issues/41)
+
 ## [19.0.1] - 2023-02-17
 
 ### Changed
