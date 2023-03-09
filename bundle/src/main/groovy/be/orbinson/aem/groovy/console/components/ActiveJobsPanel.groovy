@@ -13,7 +13,12 @@ class ActiveJobsPanel {
     @OSGiService
     private GroovyConsoleService groovyConsoleService
 
+    private List<ActiveJob> activeJobs
+
     List<ActiveJob> getActiveJobs() {
-        groovyConsoleService.activeJobs
+        if(activeJobs == null) {
+            activeJobs = groovyConsoleService.activeJobs
+        }
+        activeJobs
     }
 }
