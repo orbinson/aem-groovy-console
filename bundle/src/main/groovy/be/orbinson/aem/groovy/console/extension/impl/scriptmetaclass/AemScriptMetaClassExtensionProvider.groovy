@@ -53,6 +53,11 @@ class AemScriptMetaClassExtensionProvider implements ScriptMetaClassExtensionPro
                 replicator.replicate(session, ReplicationActionType.DELETE, path, options)
             }
 
+            delegate.distribute { String path, String agentId = "publish", boolean isDeep = false ->
+                DistributionRequest distributionRequest = new SimpleDistributionRequest(DistributionRequestType.ADD, isDeep, path);
+                distributor.distribute(agentId, resourceResolver, distributionRequest);
+            }
+
             delegate.invalidate { String path, String agentId = "publish", boolean isDeep = false ->
                 DistributionRequest distributionRequest = new SimpleDistributionRequest(DistributionRequestType.INVALIDATE, isDeep, path);
                 distributor.distribute(agentId, resourceResolver, distributionRequest);
