@@ -69,7 +69,7 @@ jobs:
 
       - name: Deploy package
         if: ${{ inputs.central }}
-        run: mvn --batch-mode deploy -Prelease
+        run: mvn --batch-mode deploy --activate-profiles release
         env:
           MAVEN_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
