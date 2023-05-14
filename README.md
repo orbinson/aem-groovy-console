@@ -1,6 +1,8 @@
 [![Maven Central](https://img.shields.io/maven-central/v/be.orbinson.aem/aem-groovy-console)](https://search.maven.org/artifact/be.orbinson.aem/aem-groovy-console-all)
 [![GitHub](https://img.shields.io/github/v/release/orbinson/aem-groovy-console)](https://github.com/orbinson/aem-groovy-console/releases)
 [![Build and test for AEM 6.5](https://github.com/orbinson/aem-groovy-console/actions/workflows/build.yml/badge.svg)](https://github.com/orbinson/aem-groovy-console/actions/workflows/build.yml)
+[![Build with AEM IDE](https://img.shields.io/badge/Built%20with-AEM%20IDE-orange)](https://plugins.jetbrains.com/plugin/9269-aem-ide)
+
 
 # AEM Groovy Console
 
