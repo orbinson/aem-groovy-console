@@ -7,12 +7,13 @@ $(function () {
 
                 scriptEditor.navigateFileEnd();
 
-                if (scriptEditor.getCursorPosition().column > 0) {
+                if (scriptEditor.getCursorPosition().column > 0 ) {
                     scriptEditor.insert('\n\n');
                 }
 
-                scriptEditor.insert(declaration);
-
+                if((event.keyCode === 13 || event.which === 13)) {
+                    scriptEditor.insert(declaration);
+                }
                 return '';
             }
         });
