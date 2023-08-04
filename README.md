@@ -34,7 +34,7 @@ project [aem-groovy-console](https://github.com/CID15/aem-groovy-console)
 ### Manual
 
 1. Download the
-   console [aem-groovy-console-all](https://github.com/orbinson/aem-groovy-console/releases/download/18.0.0/aem-groovy-console-all-18.0.0.zip)
+   console [aem-groovy-console-all](https://github.com/orbinson/aem-groovy-console/releases/download/19.0.3/aem-groovy-console-all-19.0.3.zip)
    content package and install with [PackMgr](http://localhost:4502/crx/packmgr). For previous versions you can search
    on the [Maven Central repository](https://search.maven.org/search?q=a:aem-groovy-console).
 
@@ -64,7 +64,7 @@ To deploy the Groovy Console as an embedded package you need to update your `pom
    <dependency>
      <groupId>be.orbinson.aem</groupId>
      <artifactId>aem-groovy-console-all</artifactId>
-     <version>18.0.0</version>
+     <version>19.0.3</version>
      <type>zip</type>
    </dependency>
    ```
