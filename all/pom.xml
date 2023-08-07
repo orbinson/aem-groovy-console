@@ -32,7 +32,7 @@
                 <artifactId>filevault-package-maven-plugin</artifactId>
                 <extensions>true</extensions>
                 <configuration>
-                    <group>${package.group}</group>
+                    <group>${project.artifactId}</group>
                     <packageType>container</packageType>
                     <properties>
                         <cloudManagerTarget>all</cloudManagerTarget>

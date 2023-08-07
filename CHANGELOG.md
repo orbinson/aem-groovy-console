@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Add distribute method using Sling Content Distribution: [#39](https://github.com/orbinson/aem-groovy-console/issues/39)
 
+### Fixed
+
+- Only insert service when searching after pressing <kbd>enter</kbd> when using arrow keys: [#43](https://github.com/orbinson/aem-groovy-console/issues/43)
+
 ## [19.0.3] - 2023-02-21
 
 ### Fixed

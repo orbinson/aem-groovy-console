@@ -20,7 +20,7 @@
                 <artifactId>filevault-package-maven-plugin</artifactId>
                 <extensions>true</extensions>
                 <configuration>
-                    <group>${package.group}</group>
+                    <group>${project.artifactId}</group>
                     <name>aem-groovy-console-ui.apps.aem</name>
                     <packageType>application</packageType>
                     <accessControlHandling>merge</accessControlHandling>
