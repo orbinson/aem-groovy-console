@@ -7,13 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [19.0.4] - 2023-08-14
+
 ### Added
 
-- Add distribute method using Sling Content Distribution: [#39](https://github.com/orbinson/aem-groovy-console/issues/39)
+-   Add distribute method using Sling Content Distribution: [#39](https://github.com/orbinson/aem-groovy-console/issues/39)
 
 ### Fixed
 
-- Only insert service when searching after pressing <kbd>enter</kbd> when using arrow keys: [#43](https://github.com/orbinson/aem-groovy-console/issues/43)
+-   Only insert service when searching after pressing <kbd>enter</kbd> when using arrow keys: [#43](https://github.com/orbinson/aem-groovy-console/issues/43)
 
 ## [19.0.3] - 2023-02-21
 
@@ -87,7 +89,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 -   Last version released by [CID15](https://github.com/CID15/aem-groovy-console)
 
-[Unreleased]: https://github.com/orbinson/aem-groovy-console/compare/19.0.3...HEAD
+[Unreleased]: https://github.com/orbinson/aem-groovy-console/compare/19.0.4...HEAD
+
+[19.0.4]: https://github.com/orbinson/aem-groovy-console/compare/19.0.3...19.0.4
 
 [19.0.3]: https://github.com/orbinson/aem-groovy-console/compare/19.0.2...19.0.3
 
