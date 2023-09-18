@@ -6,6 +6,9 @@
 
 # AEM Groovy Console
 
+> [!IMPORTANT]
+> Currently Adobe Managed Services is not allowing AEM Groovy Console to be installed on production publish environments for security reasons. We are taking actions in order to get it accepted.
+
 ## Overview
 
 The AEM Groovy Console provides an interface for running [Groovy](https://www.groovy-lang.org) scripts in Adobe
