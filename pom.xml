@@ -302,6 +302,7 @@
                                         <href>http://groovy.codehaus.org/api</href>
                                     </link>
                                 </links>
+                                <footer>&lt;a href=&quot;https://github.com/orbinson/aem-groovy-console&quot;&gt;GitHub&lt;/a&gt;</footer>
                             </configuration>
                         </execution>
                     </executions>
