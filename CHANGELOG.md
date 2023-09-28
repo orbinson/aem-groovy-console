@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+-   Permissions for the `aem-groovy-console-service` service user are limited to save scripts and read user groups, if distributed or scheduled execution is enabled you need to add extra permissions: [#46](https://github.com/orbinson/aem-groovy-console/issues/46)
+
 ## [19.0.4] - 2023-08-14
 
 ### Added
