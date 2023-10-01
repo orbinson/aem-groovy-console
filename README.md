@@ -3,25 +3,21 @@
 [![Build and test for AEM 6.5](https://github.com/orbinson/aem-groovy-console/actions/workflows/build.yml/badge.svg)](https://github.com/orbinson/aem-groovy-console/actions/workflows/build.yml)
 [![Build with AEM IDE](https://img.shields.io/badge/Built%20with-AEM%20IDE-orange)](https://plugins.jetbrains.com/plugin/9269-aem-ide)
 
-
 # AEM Groovy Console
 
-> [!IMPORTANT]
-> Currently Adobe Managed Services is not allowing AEM Groovy Console to be installed on production publish environments for security reasons. We are taking actions in order to get it accepted.
-
-## Overview
+> Adobe Managed Services is not allowing AEM Groovy Console to be installed currently on production publish environments for security reasons. We are taking actions in order to get it accepted.
 
 The AEM Groovy Console provides an interface for running [Groovy](https://www.groovy-lang.org) scripts in Adobe
 Experience Manager. Scripts can be created to manipulate content in the JCR, call OSGi services, or execute arbitrary
 code using the AEM, Sling, or JCR APIs. After installing the package in AEM (instructions below), see
-the [console page](http://localhost:4502/groovyconsole) for documentation on the available bindings and methods. Sample
-scripts are included in the package for reference.
+the [console page](http://localhost:4502/groovyconsole) for documentation on the available bindings and methods. [Sample
+scripts](ui.content/src/main/content/jcr_root/conf/groovyconsole/scripts/samples) are included in the package for reference.
 
 ![Screenshot](docs/assets/screenshot.png)
 
 ## Compatibility
 
-AEM Groovy Console 19.0.1+ runs on Java 8 and 11 with an embedded Groovy version of 4.0.9
+AEM Groovy Console `19.0.1+` runs on Java `8` and `11` with an embedded Groovy version of `4.0.9`.
 
 Supported versions:
 
@@ -29,176 +25,35 @@ Supported versions:
 * AEM as a Cloud Service: `>= 2022.11`
 * Sling: `>=12`
 
+Consult the [installation](docs/installation.md) documentation how you can start using the AEM Groovy Console.
+
 To install the AEM Groovy Console on older AEM versions check the original
-project [aem-groovy-console](https://github.com/CID15/aem-groovy-console)
+project [aem-groovy-console](https://github.com/CID15/aem-groovy-console).
 
-## Installation
+## Usage
 
-### Manual
+There are several ways to [execute](docs/execution.md) Groovy scripts. The AEM Groovy Console also comes with a lot of [configuration](docs/configuration.md) options. If you want to extend the AEM Groovy Console consult the [extension](docs/extension.md) documentation for extension hooks, registering additional metaclasses and how to add notifications.
 
-1. Download the
-   console [aem-groovy-console-all](https://github.com/orbinson/aem-groovy-console/releases/download/19.0.3/aem-groovy-console-all-19.0.3.zip)
-   content package and install with [PackMgr](http://localhost:4502/crx/packmgr). For previous versions you can search
-   on the [Maven Central repository](https://search.maven.org/search?q=a:aem-groovy-console).
+## Security
 
-2. Navigate to the [groovyconsole](http://localhost:4502/groovyconsole) page.
+When executing Groovy Scripts using the AEM Groovy Console web interface or with HTTP requests all bindings and methods will run in the context of the request. This means the user used to authenticate needs to have sufficient permissions to execute the content of the scripts.
 
-### Maven profiles
+The `aem-groovy-console-service` [service user](ui.config/src/main/content/jcr_root/apps/groovyconsole-config/osgiconfig/config/org.apache.sling.jcr.repoinit.RepositoryInitializer-groovyconsole.config) is used to save scripts to the default location and to create audit records.
 
-Maven profiles can be used to install the bundles to AEM / Sling
+In order to run distributed scripts or create scheduled jobs, which is disabled by default, you need [configure](docs/configuration.md) specific user groups to allow script execution and add permissions for the `aem-groovy-console-service`.
 
-* AEM Author running on localhost:4502
-    * api, bundle, ui.apps, ui.apps.aem, ui.config, ui.content: `-P auto-deploy`
-    * all: `-P auto-deploy-single-package,aem`
-* AEM Publish running on localhost:4503
-    * api, bundle, ui.apps, ui.apps.aem, ui.config, ui.content: `-P auto-deploy,publish`
-    * all: `-P auto-deploy-single-package,aem,publish`
-* Sling running on localhost:8080
-    * api, bundle, ui.apps, ui.apps.aem, ui.config, ui.content: `-P auto-deploy,sling`
-    * all: `-P auto-deploy-single-package,sling`
+If you need access to the repository for scheduled or distributed execution you need to configure extra permissions on the service user.
 
-### Embedded package
+If you want to use distributed execution make sure to add replication permissions on `/conf/groovyconsole/replication` and to add extra permissions for the service user.
 
-To deploy the Groovy Console as an embedded package you need to update your `pom.xml`
-
-1. Add the `aem-groovy-console-all` to the `<dependencies>` section
-
-   ```xml
-   <dependency>
-     <groupId>be.orbinson.aem</groupId>
-     <artifactId>aem-groovy-console-all</artifactId>
-     <version>19.0.3</version>
-     <type>zip</type>
-   </dependency>
-   ```
-2. Embed the package in with
-   the [filevault-package-maven-plugin](https://jackrabbit.apache.org/filevault-package-maven-plugin/) in
-   the `<embeddeds>` section
-
-   ```xml
-   <embedded>
-      <groupId>be.orbinson.aem</groupId>
-      <artifactId>aem-groovy-console-all</artifactId>
-      <target>/apps/vendor-packages/content/install</target>
-   </embedded>
-   ```
-
-### AEM Dispatcher
-
-If you need to have the Groovy Console available through the dispatcher on a publish instance you can add the filters
-following configuration.
+An example of a RepoInit script to achieve this would be
 
 ```text
-# Allow Groovy Console page
-/001 {
-    /type "allow"
-    /url "/groovyconsole"
-}
-/002 {
-    /type "allow"
-    /url "/apps/groovyconsole.html"
-}
-
-# Allow servlets
-/003 {
-    /type "allow"
-    /path "/bin/groovyconsole/*"
-}
+set ACL for aem-groovy-console-service
+    allow jcr:all,crx:replicate on /conf/groovyconsole/replication
+    allow jcr:all /content
+end
 ```
-
-## Building From Source
-
-To build and install the latest development version of the Groovy Console to use in AEM (or if you've made source
-modifications), run
-the following Maven command.
-
-```shell
-mvn clean install -P autoInstallSinglePackage
-```
-
-## OSGi Configuration
-
-To check the OSGi configuration navigate to
-the [Groovy Console Configuration Service](http://localhost:4502/system/console/configMgr/be.orbinson.aem.groovy.console.configuration.impl.DefaultConfigurationService)
-OSGi configuration page.
-
-| Property                        | Description                                                                                                                       | Default Value |
-|---------------------------------|-----------------------------------------------------------------------------------------------------------------------------------|---------------|
-| Email Enabled?                  | Check to enable email notification on completion of script execution.                                                             | `false`       |
-| Email Recipients                | Email addresses to receive notification.                                                                                          | `[]`          |
-| Script Execution Allowed Groups | List of group names that are authorized to use the console.  By default, only the 'admin' user has permission to execute scripts. | `[]`          |
-| Scheduled Jobs Allowed Groups   | List of group names that are authorized to schedule jobs.  By default, only the 'admin' user has permission to schedule jobs.     | `[]`          |
-| Audit Disabled?                 | Disables auditing of script execution history.                                                                                    | `false`       |
-| Display All Audit Records?      | If enabled, all audit records (including records for other users) will be displayed in the console history.                       | `false`       |
-| Thread Timeout                  | Time in seconds that scripts are allowed to execute before being interrupted.  If 0, no timeout is enforced.                      | 0             |
-| Distributed execution enabled?  | If enabled, a script will be able to be replicated from an author and executed on all default replication agents.                 | `false`       |
-
-## Batch script execution
-
-Saved scripts can be remotely executed by sending a POST request to the console servlet with either the `scriptPath`
-or `scriptPaths` query parameter.
-
-### Single script
-
-```shell
-curl -d "scriptPath=/conf/groovyconsole/scripts/samples/JcrSearch.groovy" -X POST -u admin:admin http://localhost:4502/bin/groovyconsole/post.json
-```
-
-### Multiple scripts
-
-```shell
-curl -d "scriptPaths=/conf/groovyconsole/scripts/samples/JcrSearch.groovy&scriptPaths=/conf/groovyconsole/scripts/samples/FulltextQuery.groovy" -X POST -u admin:admin http://localhost:4502/bin/groovyconsole/post.json
-```
-
-## Extensions
-
-The Groovy Console provides extension hooks to further customize script execution. The console provides an API
-containing extension provider interfaces that can be implemented as OSGi services in any bundle deployed to an AEM
-instance. See the default extension providers in the `be.orbinson.aem.groovy.console.extension.impl` package for
-examples of how a bundle can implement these services to supply additional script bindings, compilation customizers,
-metaclasses, and star imports.
-
-| Service Interface                                                           | Description                                                                                                                  |
-|-----------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------|
-| `be.orbinson.aem.groovy.console.api.BindingExtensionProvider`               | Customize the bindings that are provided for each script execution.                                                          |
-| `be.orbinson.aem.groovy.console.api.CompilationCustomizerExtensionProvider` | Restrict language features (via blacklist or whitelist) or provide AST transformations within the Groovy script compilation. |
-| `be.orbinson.aem.groovy.console.api.ScriptMetaClassExtensionProvider`       | Add runtime metaclasses (i.e. new methods) to the underlying script class.                                                   |
-| `be.orbinson.aem.groovy.console.api.StarImportExtensionProvider`            | Supply additional star imports that are added to the compiler configuration for each script execution.                       |
-
-## Registering Additional Metaclasses
-
-Services implementing the `be.orbinson.aem.groovy.console.extension.MetaClassExtensionProvider` will be automatically
-discovered and bound by the OSGi container. These services can be implemented in any deployed bundle. The AEM Groovy
-Extension bundle will handle the registration and removal of supplied metaclasses as these services are
-activated/deactivated in the container. See the `DefaultMetaClassExtensionProvider` service for the proper closure
-syntax for registering metaclasses.
-
-## Notifications
-
-To provide custom notifications for script executions, bundles may implement
-the `be.orbinson.aem.groovy.console.notification.NotificationService` interface (see
-the `be.orbinson.aem.groovy.console.notification.impl.EmailNotificationService` class for an example). These services
-will
-be dynamically bound by the Groovy Console service and all registered notification services will be called for each
-script execution.
-
-## Scheduler
-
-The Scheduler allows for immediate (asynchronous) or Cron-based script execution. Scripts are executed
-as [Sling Jobs](https://sling.apache.org/documentation/bundles/apache-sling-eventing-and-job-handling.html) and are
-audited in the same manner as scripts executed in the console.
-
-### Scheduled Job Event Handling
-
-Bundles may implement services
-extending `be.orbinson.aem.groovy.console.job.event.AbstractGroovyConsoleScheduledJobEventHandler` to provide
-additional post-processing or notifications for completed Groovy Console jobs.
-See `be.orbinson.aem.groovy.console.job.event.DefaultGroovyConsoleEmailNotificationEventHandler` for an example of the
-required annotations to register a custom event handler.
-
-## Sample Scripts
-
-Sample scripts can be found in the [samples](src/main/content/jcr_root/conf/groovyconsole/scripts/samples) directory.
 
 ## Kudos
 

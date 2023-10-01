@@ -106,7 +106,7 @@ class DefaultConfigurationService implements ConfigurationService {
         resourceResolverFactory.getServiceResourceResolver(null).withCloseable { resourceResolver ->
             def userManager = resourceResolver.adaptTo(UserManager);
             if (userManager != null) {
-                def user = resourceResolver.adaptTo(UserManager).getAuthorizable(request.userPrincipal) as User
+                def user = userManager.getAuthorizable(request.userPrincipal) as User
                 def memberOfGroupIds = user.memberOf()*.ID
 
                 LOG.debug("member of group IDs : {}, allowed group IDs : {}", memberOfGroupIds, groupIds)
