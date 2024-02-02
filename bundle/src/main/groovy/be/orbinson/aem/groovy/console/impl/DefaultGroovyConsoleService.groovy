@@ -9,6 +9,7 @@ import be.orbinson.aem.groovy.console.audit.AuditService
 import be.orbinson.aem.groovy.console.configuration.ConfigurationService
 import be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants
 import be.orbinson.aem.groovy.console.extension.ExtensionService
+import be.orbinson.aem.groovy.console.library.impl.LibraryCompilationCustomizer
 import be.orbinson.aem.groovy.console.notification.NotificationService
 import be.orbinson.aem.groovy.console.response.RunScriptResponse
 import be.orbinson.aem.groovy.console.response.SaveScriptResponse
@@ -65,7 +66,12 @@ class DefaultGroovyConsoleService implements GroovyConsoleService {
         def runScriptResponse = null
 
         try {
-            def script = new GroovyShell(binding, configuration).parse(scriptContext.script)
+            def libraryCompilationCustomizer = new LibraryCompilationCustomizer()
+            def configuration = getConfiguration(libraryCompilationCustomizer);
+            def shell = new GroovyShell(binding, configuration)
+            loadLibraries(shell, libraryCompilationCustomizer.getLibraries())
+
+            def script = shell.parse(scriptContext.script)
 
             extensionService.getScriptMetaClasses(scriptContext).each { meta ->
                 script.metaClass(meta)
@@ -183,8 +189,10 @@ class DefaultGroovyConsoleService implements GroovyConsoleService {
         binding
     }
 
-    private CompilerConfiguration getConfiguration() {
+    private CompilerConfiguration getConfiguration(LibraryCompilationCustomizer libraryCompilerCustomizer) {
         def configuration = new CompilerConfiguration()
+
+        configuration.addCompilationCustomizers(libraryCompilerCustomizer)
 
         if (configurationService.threadTimeout > 0) {
             // add timed interrupt using configured timeout value
@@ -194,6 +202,12 @@ class DefaultGroovyConsoleService implements GroovyConsoleService {
         configuration.addCompilationCustomizers(extensionService.compilationCustomizers
                 as CompilationCustomizer[])
     }
+
+    private void loadLibraries(GroovyShell shell, List<String> libraries) {
+        String test = "true";
+        return;
+    }
+
 
     private void saveFile(ResourceResolver resourceResolver, Resource folderResource, String script, String fileName, Date date,
                           String mimeType) {
