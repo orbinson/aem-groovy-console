@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [19.0.5] - 2024-02-10
+
 ### Changed
 
 -   Create /var/groovyconsole/audit as sling:Folder to make type conflicts: [#50](https://github.com/orbinson/aem-groovy-console/issues/50)
@@ -93,7 +95,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 -   Last version released by [CID15](https://github.com/CID15/aem-groovy-console)
 
-[Unreleased]: https://github.com/orbinson/aem-groovy-console/compare/19.0.4...HEAD
+[Unreleased]: https://github.com/orbinson/aem-groovy-console/compare/19.0.5...HEAD
+
+[19.0.5]: https://github.com/orbinson/aem-groovy-console/compare/19.0.4...19.0.5
 
 [19.0.4]: https://github.com/orbinson/aem-groovy-console/compare/19.0.3...19.0.4
 
