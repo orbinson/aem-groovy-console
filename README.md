@@ -198,7 +198,7 @@ required annotations to register a custom event handler.
 
 ## Sample Scripts
 
-Sample scripts can be found in the [samples](src/main/content/jcr_root/conf/groovyconsole/scripts/samples) directory.
+Sample scripts can be found in the [samples](ui.content/src/main/content/jcr_root/conf/groovyconsole/scripts/samples) directory.
 
 ## Kudos
 
