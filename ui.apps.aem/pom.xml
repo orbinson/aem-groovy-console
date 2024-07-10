@@ -23,7 +23,6 @@
                     <group>${project.artifactId}</group>
                     <name>aem-groovy-console-ui.apps.aem</name>
                     <packageType>application</packageType>
-                    <accessControlHandling>merge</accessControlHandling>
                     <properties>
                         <cloudManagerTarget>none</cloudManagerTarget>
                     </properties>
@@ -36,12 +35,17 @@
                     <validatorsSettings>
                         <jackrabbit-filter>
                             <options>
-                                <validRoots>/apps/groovyconsole/components/console</validRoots>
+                                <validRoots>/apps/groovyconsole-aem,/apps/cq/core/content</validRoots>
                             </options>
                         </jackrabbit-filter>
                         <jackrabbit-nodetypes>
                             <isDisabled>true</isDisabled>
                         </jackrabbit-nodetypes>
+                        <jackrabbit-packagetype>
+                            <options>
+                                <allowComplexFilterRulesInApplicationPackages>true</allowComplexFilterRulesInApplicationPackages>
+                            </options>
+                        </jackrabbit-packagetype>
                     </validatorsSettings>
                 </configuration>
             </plugin>

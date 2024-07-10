@@ -540,15 +540,23 @@ var GroovyConsole = function () {
     },
 
     showOpenDialog: function () {
-      var dialog = CQ.WCM.getDialog('/apps/groovyconsole/components/console/opendialog');
+      if (typeof CQ !== undefined) {
+        var dialog = CQ.WCM.getDialog('/apps/groovyconsole-aem/dialogs/opendialog');
 
-      dialog.show();
+        dialog.show();
+      } else {
+        alert("Open and saving currently only supported in AEM")
+      }
     },
 
     showSaveDialog: function () {
-      var dialog = CQ.WCM.getDialog('/apps/groovyconsole/components/console/savedialog');
+        if (typeof CQ !== undefined) {
+            var dialog = CQ.WCM.getDialog('/apps/groovyconsole-aem/dialogs/savedialog');
 
-      dialog.show();
+            dialog.show();
+        } else {
+            alert("Open and saving currently only supported in AEM")
+        }
     },
 
     loadScript: function (scriptPath) {

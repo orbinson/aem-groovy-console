@@ -29,6 +29,7 @@
                     <filters>
                         <filter><root>/apps</root></filter>
                         <filter><root>/apps/groovyconsole</root></filter>
+                        <filter><root>/apps/cq/core/content</root></filter>
                     </filters>
                 </configuration>
             </plugin>

@@ -23,7 +23,6 @@
                     <group>${project.artifactId}</group>
                     <name>aem-groovy-console-ui.apps</name>
                     <packageType>application</packageType>
-                    <accessControlHandling>merge</accessControlHandling>
                     <properties>
                         <cloudManagerTarget>none</cloudManagerTarget>
                     </properties>
