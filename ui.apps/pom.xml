@@ -26,12 +26,6 @@
                     <properties>
                         <cloudManagerTarget>none</cloudManagerTarget>
                     </properties>
-                    <repositoryStructurePackages>
-                        <repositoryStructurePackage>
-                            <groupId>be.orbinson.aem</groupId>
-                            <artifactId>aem-groovy-console-ui.apps.structure</artifactId>
-                        </repositoryStructurePackage>
-                    </repositoryStructurePackages>
                     <validatorsSettings>
                         <jackrabbit-nodetypes>
                             <isDisabled>true</isDisabled>

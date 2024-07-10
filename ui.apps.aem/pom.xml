@@ -35,7 +35,7 @@
                     <validatorsSettings>
                         <jackrabbit-filter>
                             <options>
-                                <validRoots>/apps/groovyconsole-aem,/apps/cq/core/content</validRoots>
+                                <validRoots>/apps,/apps/cq/core/content</validRoots>
                             </options>
                         </jackrabbit-filter>
                         <jackrabbit-nodetypes>

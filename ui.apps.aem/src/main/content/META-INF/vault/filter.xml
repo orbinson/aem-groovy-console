@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <workspaceFilter version="1.0">
-    <filter root="/apps/groovyconsole-aem/clientlibs"/>
-    <filter root="/apps/groovyconsole-aem/dialogs"/>
+    <filter root="/apps/groovyconsole-aem"/>
 
     <filter root="/apps/cq/core/content/nav">
         <include pattern="/apps/cq/core/content/nav"/>
