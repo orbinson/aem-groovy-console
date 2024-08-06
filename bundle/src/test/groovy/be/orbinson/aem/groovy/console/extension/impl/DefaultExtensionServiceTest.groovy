@@ -151,7 +151,7 @@ class DefaultExtensionServiceTest {
     }
 
     private void runScriptWithExtensionService(ExtensionService extensionService) {
-        def binding = new Binding(out: new PrintStream(OutputStream.nullOutputStream()))
+        def binding = new Binding(out: new PrintStream(new ByteArrayOutputStream()))
 
         def configuration = new CompilerConfiguration().addCompilationCustomizers(
                 extensionService.compilationCustomizers as CompilationCustomizer[])

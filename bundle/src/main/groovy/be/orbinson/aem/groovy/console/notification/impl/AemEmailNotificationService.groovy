@@ -14,6 +14,7 @@ import org.osgi.service.component.annotations.Component
 import org.osgi.service.component.annotations.Reference
 
 import javax.mail.util.ByteArrayDataSource
+import java.nio.charset.StandardCharsets
 
 @Component(service = [EmailNotificationService, NotificationService], immediate = true)
 @Slf4j("LOG")
@@ -70,14 +71,14 @@ class AemEmailNotificationService implements EmailNotificationService {
         }
 
         email.subject = SUBJECT
-        email.charset = "UTF-8"
+        email.charset = StandardCharsets.UTF_8.name()
 
         def message = getMessage(response, successTemplate, failureTemplate)
 
         if (attachOutput) {
             (email as MultiPartEmail).addPart(message, "text/html")
 
-            def dataSource = new ByteArrayDataSource(response.output.getBytes("UTF-8"), response.mediaType)
+            def dataSource = new ByteArrayDataSource(response.output.getBytes(StandardCharsets.UTF_8.name()), response.mediaType)
 
             // attach output file
             (email as MultiPartEmail).attach(dataSource, response.outputFileName, null)

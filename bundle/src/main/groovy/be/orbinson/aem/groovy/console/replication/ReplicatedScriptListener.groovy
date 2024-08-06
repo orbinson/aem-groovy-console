@@ -15,6 +15,7 @@ import org.osgi.service.component.annotations.Component
 import org.osgi.service.component.annotations.Reference
 
 import javax.jcr.Session
+import java.nio.charset.StandardCharsets
 
 @Component(property = [
         "resource.paths=glob:/conf/groovyconsole/replication/*.groovy",
@@ -49,7 +50,7 @@ public class ReplicatedScriptListener implements ResourceChangeListener {
         new ResourceScriptContext(
                 resourceResolver: resourceResolver,
                 outputStream: outputStream,
-                printStream: new PrintStream(outputStream, true, "UTF-8"),
+                printStream: new PrintStream(outputStream, true, StandardCharsets.UTF_8.name()),
                 script: Objects.requireNonNull(loadScript(resourceResolver, scriptPath), "Script cannot be empty.")
         )
     }

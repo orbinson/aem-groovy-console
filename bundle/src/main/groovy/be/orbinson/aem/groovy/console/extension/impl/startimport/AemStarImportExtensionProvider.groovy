@@ -11,13 +11,13 @@ class AemStarImportExtensionProvider implements StarImportExtensionProvider {
 
     private static final String JAVADOC_SUFFIX = "package-summary.html"
 
-    private static final Set<StarImport> IMPORTS = Set.of(
+    private static final Set<StarImport> IMPORTS = [
             new StarImport("com.day.cq.dam.api", "$AEM_JAVADOC_PREFIX/com/day/cq/dam/api/$JAVADOC_SUFFIX"),
             new StarImport("com.day.cq.search", "$AEM_JAVADOC_PREFIX/com/day/cq/search/$JAVADOC_SUFFIX"),
             new StarImport("com.day.cq.tagging", "$AEM_JAVADOC_PREFIX/com/day/cq/tagging/$JAVADOC_SUFFIX"),
             new StarImport("com.day.cq.wcm.api", "$AEM_JAVADOC_PREFIX/com/day/cq/wcm/api/$JAVADOC_SUFFIX"),
             new StarImport("com.day.cq.replication", "$AEM_JAVADOC_PREFIX/com/day/cq/replication/$JAVADOC_SUFFIX"),
-    )
+    ] as Set
 
     // TODO add check to see if it is an AEM system?
 

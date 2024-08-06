@@ -17,6 +17,7 @@ import org.osgi.service.component.annotations.Reference
 import javax.jcr.Session
 import javax.servlet.Servlet
 import javax.servlet.ServletException
+import java.nio.charset.StandardCharsets
 
 import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.*
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST
@@ -40,7 +41,7 @@ class ReplicateScriptServlet extends AbstractJsonResponseServlet {
     @Override
     protected void doPost(@NotNull SlingHttpServletRequest request, @NotNull SlingHttpServletResponse response) throws ServletException, IOException {
         if (configurationService.hasPermission(request) && configurationService.isDistributedExecutionEnabled()) {
-            def script = request.getRequestParameter(SCRIPT)?.getString("UTF-8")
+            def script = request.getRequestParameter(SCRIPT)?.getString(StandardCharsets.UTF_8.name())
             if (script) {
                 def resourceResolver = request.resourceResolver
                 def scriptName = createScriptResource(script)

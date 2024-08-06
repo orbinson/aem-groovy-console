@@ -14,6 +14,7 @@ import org.osgi.service.component.annotations.Reference
 import javax.jcr.Session
 import javax.servlet.Servlet
 import javax.servlet.ServletException
+import java.nio.charset.StandardCharsets
 
 import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.*
 import static javax.servlet.http.HttpServletResponse.SC_FORBIDDEN
@@ -69,7 +70,7 @@ class ScriptPostServlet extends AbstractJsonResponseServlet {
                 request: request,
                 response: response,
                 outputStream: outputStream,
-                printStream: new PrintStream(outputStream, true, "UTF-8"),
+                printStream: new PrintStream(outputStream, true, StandardCharsets.UTF_8.name()),
                 script: Objects.requireNonNull(getScript(request, scriptPath), "Script cannot be empty.")
         )
     }
@@ -78,7 +79,7 @@ class ScriptPostServlet extends AbstractJsonResponseServlet {
         if (scriptPath) {
             loadScript(request, scriptPath)
         } else {
-            request.getRequestParameter(SCRIPT)?.getString("UTF-8")
+            request.getRequestParameter(SCRIPT)?.getString(StandardCharsets.UTF_8.name())
         }
     }
 

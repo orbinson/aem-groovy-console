@@ -21,6 +21,8 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 
+import java.nio.charset.StandardCharsets
+
 import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.PATH_SCRIPTS_FOLDER
 import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.SCRIPT
 import static org.junit.jupiter.api.Assertions.*
@@ -65,7 +67,7 @@ class DefaultGroovyConsoleServiceTest {
                 request: request,
                 response: response,
                 outputStream: outputStream,
-                printStream: new PrintStream(outputStream, true, "UTF-8"),
+                printStream: new PrintStream(outputStream, true, StandardCharsets.UTF_8.name()),
                 script: scriptAsString
         )
 
@@ -89,7 +91,7 @@ class DefaultGroovyConsoleServiceTest {
         assertResourceExists(PATH_FILE, JcrConstants.NT_FILE)
         assertResourceExists(PATH_FILE_CONTENT, JcrConstants.NT_RESOURCE)
 
-        String script = IOUtils.toString(context.resourceResolver().getResource(PATH_FILE).adaptTo(InputStream.class), "UTF-8");
+        String script = IOUtils.toString(context.resourceResolver().getResource(PATH_FILE).adaptTo(InputStream.class), StandardCharsets.UTF_8.name());
         assertEquals("println \"BEER\"", script);
     }
 

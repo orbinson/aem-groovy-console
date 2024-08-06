@@ -11,11 +11,11 @@ class SlingStarImportExtensionProvider implements StarImportExtensionProvider {
 
     private static final String JAVADOC_SUFFIX = "package-summary.html"
 
-    private static final Set<StarImport> IMPORTS = Set.of(
+    private static final Set<StarImport> IMPORTS = [
             new StarImport("org.apache.sling.api", "$SLING_JAVADOC_PREFIX/org/apache/sling/api/$JAVADOC_SUFFIX"),
             new StarImport("org.apache.sling.api.resource", "$SLING_JAVADOC_PREFIX/org/apache/sling/api/resource/$JAVADOC_SUFFIX"),
             new StarImport("org.apache.sling.distribution", "$SLING_JAVADOC_PREFIX/org/apache/sling/api/distribution/$JAVADOC_SUFFIX")
-    )
+    ] as Set
 
     @Override
     Set<StarImport> getStarImports() {

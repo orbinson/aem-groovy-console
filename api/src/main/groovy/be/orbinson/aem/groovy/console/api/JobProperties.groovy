@@ -1,8 +1,6 @@
 package be.orbinson.aem.groovy.console.api
 
-
 import groovy.transform.TupleConstructor
-import org.apache.commons.collections4.SetUtils
 import org.apache.sling.api.SlingHttpServletRequest
 import org.apache.sling.api.resource.ValueMap
 import org.apache.sling.event.jobs.Job
@@ -12,7 +10,7 @@ import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.*
 @TupleConstructor
 class JobProperties {
 
-    private static final Set<String> ALL_JOB_PROPERTIES = SetUtils.union(JOB_PROPERTIES, Set.of(DATE_CREATED, SCHEDULED_JOB_ID)).toSet()
+    private static final Set<String> ALL_JOB_PROPERTIES = [*JOB_PROPERTIES.asList(), DATE_CREATED, SCHEDULED_JOB_ID] as Set
 
     Map<String, Object> properties
 

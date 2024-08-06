@@ -11,9 +11,9 @@ class JcrStarImportExtensionProvider implements StarImportExtensionProvider {
 
     private static final String JAVADOC_SUFFIX = "package-summary.html"
 
-    private static final Set<StarImport> IMPORTS = Set.of(
+    private static final Set<StarImport> IMPORTS = [
             new StarImport("javax.jcr", "$JCR_JAVADOC_PREFIX/javax/jcr/$JAVADOC_SUFFIX")
-    )
+    ] as Set
 
     @Override
     Set<StarImport> getStarImports() {
