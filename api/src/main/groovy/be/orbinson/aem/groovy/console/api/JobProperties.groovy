@@ -1,30 +1,18 @@
 package be.orbinson.aem.groovy.console.api
 
-import com.google.common.collect.ImmutableSet
+
 import groovy.transform.TupleConstructor
+import org.apache.commons.collections4.SetUtils
 import org.apache.sling.api.SlingHttpServletRequest
 import org.apache.sling.api.resource.ValueMap
 import org.apache.sling.event.jobs.Job
 
-import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.CRON_EXPRESSION
-import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.DATA
-import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.DATE_CREATED
-import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.EMAIL_TO
-import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.JOB_DESCRIPTION
-import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.JOB_PROPERTIES
-import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.JOB_TITLE
-import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.MEDIA_TYPE
-import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.SCHEDULED_JOB_ID
-import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.SCRIPT
+import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.*
 
 @TupleConstructor
 class JobProperties {
 
-    private static final Set<String> ALL_JOB_PROPERTIES = new ImmutableSet.Builder<String>()
-            .addAll(JOB_PROPERTIES)
-            .add(DATE_CREATED)
-            .add(SCHEDULED_JOB_ID)
-            .build()
+    private static final Set<String> ALL_JOB_PROPERTIES = SetUtils.union(JOB_PROPERTIES, Set.of(DATE_CREATED, SCHEDULED_JOB_ID)).toSet()
 
     Map<String, Object> properties
 

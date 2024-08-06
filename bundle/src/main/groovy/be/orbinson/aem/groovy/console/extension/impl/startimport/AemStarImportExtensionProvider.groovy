@@ -2,7 +2,6 @@ package be.orbinson.aem.groovy.console.extension.impl.startimport
 
 import be.orbinson.aem.groovy.console.api.StarImport
 import be.orbinson.aem.groovy.console.api.StarImportExtensionProvider
-import com.google.common.collect.ImmutableSet
 import org.osgi.service.component.annotations.Component
 
 @Component(service = StarImportExtensionProvider, immediate = true)
@@ -12,7 +11,7 @@ class AemStarImportExtensionProvider implements StarImportExtensionProvider {
 
     private static final String JAVADOC_SUFFIX = "package-summary.html"
 
-    private static final Set<StarImport> IMPORTS = ImmutableSet.of(
+    private static final Set<StarImport> IMPORTS = Set.of(
             new StarImport("com.day.cq.dam.api", "$AEM_JAVADOC_PREFIX/com/day/cq/dam/api/$JAVADOC_SUFFIX"),
             new StarImport("com.day.cq.search", "$AEM_JAVADOC_PREFIX/com/day/cq/search/$JAVADOC_SUFFIX"),
             new StarImport("com.day.cq.tagging", "$AEM_JAVADOC_PREFIX/com/day/cq/tagging/$JAVADOC_SUFFIX"),

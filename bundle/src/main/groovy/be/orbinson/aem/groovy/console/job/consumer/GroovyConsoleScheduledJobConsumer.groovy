@@ -3,7 +3,6 @@ package be.orbinson.aem.groovy.console.job.consumer
 import be.orbinson.aem.groovy.console.GroovyConsoleService
 import be.orbinson.aem.groovy.console.api.JobProperties
 import be.orbinson.aem.groovy.console.api.context.impl.ScheduledJobScriptContext
-import com.google.common.base.Charsets
 import groovy.util.logging.Slf4j
 import org.apache.sling.api.resource.ResourceResolverFactory
 import org.apache.sling.event.jobs.Job
@@ -35,7 +34,7 @@ class GroovyConsoleScheduledJobConsumer implements JobConsumer {
             def scriptContext = new ScheduledJobScriptContext(
                     resourceResolver: resourceResolver,
                     outputStream: outputStream,
-                    printStream: new PrintStream(outputStream, true, Charsets.UTF_8.name()),
+                    printStream: new PrintStream(outputStream, true, "UTF-8"),
                     jobId: job.id,
                     jobProperties: JobProperties.fromJob(job)
             )

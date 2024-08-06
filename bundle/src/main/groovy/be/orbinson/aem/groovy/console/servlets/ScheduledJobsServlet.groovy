@@ -7,7 +7,6 @@ import be.orbinson.aem.groovy.console.audit.AuditService
 import be.orbinson.aem.groovy.console.configuration.ConfigurationService
 import be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants
 import be.orbinson.aem.groovy.console.utils.GroovyScriptUtils
-import com.google.common.collect.ImmutableMap
 import groovy.util.logging.Slf4j
 import org.apache.sling.api.SlingHttpServletRequest
 import org.apache.sling.api.SlingHttpServletResponse
@@ -19,10 +18,7 @@ import org.osgi.service.component.annotations.Reference
 import javax.servlet.Servlet
 import javax.servlet.ServletException
 
-import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.DATE_CREATED
-import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.SCHEDULED_JOB_ID
-import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.SCRIPT
-
+import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.*
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST
 import static javax.servlet.http.HttpServletResponse.SC_FORBIDDEN
 
@@ -61,13 +57,12 @@ class ScheduledJobsServlet extends AbstractJsonResponseServlet {
                         def auditRecords = scheduledJobAuditRecords.findAll { record ->
                             isAuditRecordForScheduledJob(record, scheduledJobInfo)
                         }
+                        def properties = new HashMap<>(scheduledJobInfo.jobProperties)
+                        properties.put("downloadUrl", (auditRecords ? auditRecords.last().downloadUrl : null) ?: "")
+                        properties.put("scriptPreview", GroovyScriptUtils.getScriptPreview(scheduledJobInfo.jobProperties[SCRIPT] as String))
+                        properties.put("nextExecutionDate", scheduledJobInfo.nextScheduledExecution.format(GroovyConsoleConstants.DATE_FORMAT_DISPLAY))
 
-                        new ImmutableMap.Builder<String, Object>()
-                                .putAll(scheduledJobInfo.jobProperties)
-                                .put("downloadUrl", (auditRecords ? auditRecords.last().downloadUrl : null) ?: "")
-                                .put("scriptPreview", GroovyScriptUtils.getScriptPreview(scheduledJobInfo.jobProperties[SCRIPT] as String))
-                                .put("nextExecutionDate", scheduledJobInfo.nextScheduledExecution.format(GroovyConsoleConstants.DATE_FORMAT_DISPLAY))
-                                .build()
+                        properties
                     }
                     .sort { properties -> properties[DATE_CREATED] }
 

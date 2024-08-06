@@ -11,7 +11,6 @@ import be.orbinson.aem.groovy.console.extension.impl.binding.SlingBindingExtensi
 import be.orbinson.aem.groovy.console.extension.impl.scriptmetaclass.SlingScriptMetaClassExtensionProvider
 import com.day.cq.replication.Replicator
 import com.day.cq.search.QueryBuilder
-import com.google.common.base.Charsets
 import io.wcm.testing.mock.aem.junit5.AemContext
 import io.wcm.testing.mock.aem.junit5.AemContextExtension
 import org.apache.commons.io.IOUtils
@@ -66,7 +65,7 @@ class DefaultGroovyConsoleServiceTest {
                 request: request,
                 response: response,
                 outputStream: outputStream,
-                printStream: new PrintStream(outputStream, true, Charsets.UTF_8.name()),
+                printStream: new PrintStream(outputStream, true, "UTF-8"),
                 script: scriptAsString
         )
 

@@ -14,7 +14,6 @@ import be.orbinson.aem.groovy.console.response.RunScriptResponse
 import be.orbinson.aem.groovy.console.response.SaveScriptResponse
 import be.orbinson.aem.groovy.console.response.impl.DefaultRunScriptResponse
 import be.orbinson.aem.groovy.console.response.impl.DefaultSaveScriptResponse
-import com.google.common.net.MediaType
 import groovy.transform.Synchronized
 import groovy.transform.TimedInterrupt
 import groovy.util.logging.Slf4j
@@ -117,7 +116,7 @@ class DefaultGroovyConsoleService implements GroovyConsoleService {
             resourceResolver.commit();
         }
 
-        saveFile(resourceResolver, folderResource, scriptData.script, fileName, new Date(), MediaType.OCTET_STREAM.toString())
+        saveFile(resourceResolver, folderResource, scriptData.script, fileName, new Date(), "application/octet-stream")
 
         new DefaultSaveScriptResponse(fileName)
     }

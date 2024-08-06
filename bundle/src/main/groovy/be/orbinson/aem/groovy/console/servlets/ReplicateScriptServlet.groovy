@@ -2,13 +2,11 @@ package be.orbinson.aem.groovy.console.servlets
 
 import be.orbinson.aem.groovy.console.configuration.ConfigurationService
 import be.orbinson.aem.groovy.console.response.impl.DefaultReplicateScriptResponse
-import org.apache.jackrabbit.JcrConstants
 import com.day.cq.replication.ReplicationActionType
 import com.day.cq.replication.Replicator
-import com.google.common.base.Charsets
-import com.google.common.net.MediaType
 import groovy.util.logging.Slf4j
 import org.apache.commons.io.IOUtils
+import org.apache.jackrabbit.JcrConstants
 import org.apache.sling.api.SlingHttpServletRequest
 import org.apache.sling.api.SlingHttpServletResponse
 import org.apache.sling.api.resource.ResourceResolverFactory
@@ -42,7 +40,7 @@ class ReplicateScriptServlet extends AbstractJsonResponseServlet {
     @Override
     protected void doPost(@NotNull SlingHttpServletRequest request, @NotNull SlingHttpServletResponse response) throws ServletException, IOException {
         if (configurationService.hasPermission(request) && configurationService.isDistributedExecutionEnabled()) {
-            def script = request.getRequestParameter(SCRIPT)?.getString(Charsets.UTF_8.name())
+            def script = request.getRequestParameter(SCRIPT)?.getString("UTF-8")
             if (script) {
                 def resourceResolver = request.resourceResolver
                 def scriptName = createScriptResource(script)
@@ -72,7 +70,7 @@ class ReplicateScriptServlet extends AbstractJsonResponseServlet {
             properties.clear()
             properties.put(JcrConstants.JCR_PRIMARYTYPE, JcrConstants.NT_RESOURCE)
             properties.put(JcrConstants.JCR_ENCODING, CHARSET)
-            properties.put(JcrConstants.JCR_MIMETYPE, MediaType.OCTET_STREAM.toString())
+            properties.put(JcrConstants.JCR_MIMETYPE, "application/octet-stream")
             properties.put(JcrConstants.JCR_DATA, IOUtils.toInputStream(script, CHARSET))
             resourceResolver.create(scriptResource, JcrConstants.JCR_CONTENT, properties)
 

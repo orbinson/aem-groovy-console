@@ -4,9 +4,8 @@ import be.orbinson.aem.groovy.console.GroovyConsoleService
 import be.orbinson.aem.groovy.console.api.context.ScriptContext
 import be.orbinson.aem.groovy.console.api.context.impl.ResourceScriptContext
 import be.orbinson.aem.groovy.console.configuration.ConfigurationService
-import org.apache.jackrabbit.JcrConstants
-import com.google.common.base.Charsets
 import groovy.util.logging.Slf4j
+import org.apache.jackrabbit.JcrConstants
 import org.apache.sling.api.resource.ResourceResolver
 import org.apache.sling.api.resource.ResourceResolverFactory
 import org.apache.sling.api.resource.observation.ResourceChange
@@ -16,8 +15,6 @@ import org.osgi.service.component.annotations.Component
 import org.osgi.service.component.annotations.Reference
 
 import javax.jcr.Session
-
-import static com.google.common.base.Preconditions.checkNotNull
 
 @Component(property = [
         "resource.paths=glob:/conf/groovyconsole/replication/*.groovy",
@@ -52,8 +49,8 @@ public class ReplicatedScriptListener implements ResourceChangeListener {
         new ResourceScriptContext(
                 resourceResolver: resourceResolver,
                 outputStream: outputStream,
-                printStream: new PrintStream(outputStream, true, Charsets.UTF_8.name()),
-                script: checkNotNull(loadScript(resourceResolver, scriptPath), "Script cannot be empty.")
+                printStream: new PrintStream(outputStream, true, "UTF-8"),
+                script: Objects.requireNonNull(loadScript(resourceResolver, scriptPath), "Script cannot be empty.")
         )
     }
 
