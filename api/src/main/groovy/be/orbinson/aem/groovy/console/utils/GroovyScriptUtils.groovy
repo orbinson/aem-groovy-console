@@ -13,14 +13,16 @@ final class GroovyScriptUtils {
 
         def scriptPreview = new StringBuilder()
 
-        if (lines.first().length() > 50) {
-            scriptPreview.append(lines.first().take(50))
-            scriptPreview.append(" [...]")
-        } else {
-            scriptPreview.append(lines.first())
-
-            if (lines.size() > 1) {
+        if(!lines.isEmpty()) {
+            if (lines.first().length() > 50) {
+                scriptPreview.append(lines.first().take(50))
                 scriptPreview.append(" [...]")
+            } else {
+                scriptPreview.append(lines.first())
+
+                if (lines.size() > 1) {
+                    scriptPreview.append(" [...]")
+                }
             }
         }
 

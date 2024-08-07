@@ -1,7 +1,6 @@
 package be.orbinson.aem.groovy.console.extension.impl.metaclass
 
 import be.orbinson.aem.groovy.console.extension.MetaClassExtensionProvider
-import com.google.common.base.Optional
 import groovy.util.logging.Slf4j
 import org.osgi.service.component.annotations.Component
 
@@ -22,14 +21,6 @@ import javax.servlet.ServletRequest
 @Slf4j("LOG")
 class SlingMetaClassExtensionProvider implements MetaClassExtensionProvider {
 
-    static def OPTIONAL_METACLASS = {
-        asBoolean {
-            def optional = delegate as Optional
-
-            optional != null && optional.present
-        }
-    }
-
     static def SERVLET_REQUEST_METACLASS = {
         getAt { String parameterName ->
             def request = delegate as ServletRequest
@@ -47,7 +38,6 @@ class SlingMetaClassExtensionProvider implements MetaClassExtensionProvider {
     }
 
     static def DEFAULT_METACLASSES = [
-            (Optional)      : OPTIONAL_METACLASS,
             (ServletRequest): SERVLET_REQUEST_METACLASS
     ]
 

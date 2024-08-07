@@ -4,9 +4,8 @@ import be.orbinson.aem.groovy.console.GroovyConsoleService
 import be.orbinson.aem.groovy.console.api.context.ScriptContext
 import be.orbinson.aem.groovy.console.api.context.impl.RequestScriptContext
 import be.orbinson.aem.groovy.console.configuration.ConfigurationService
-import org.apache.jackrabbit.JcrConstants
-import com.google.common.base.Charsets
 import groovy.util.logging.Slf4j
+import org.apache.jackrabbit.JcrConstants
 import org.apache.sling.api.SlingHttpServletRequest
 import org.apache.sling.api.SlingHttpServletResponse
 import org.osgi.service.component.annotations.Component
@@ -15,12 +14,9 @@ import org.osgi.service.component.annotations.Reference
 import javax.jcr.Session
 import javax.servlet.Servlet
 import javax.servlet.ServletException
+import java.nio.charset.StandardCharsets
 
-import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.SCRIPT
-import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.SCRIPT_PATH
-import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.SCRIPT_PATHS
-
-import static com.google.common.base.Preconditions.checkNotNull
+import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.*
 import static javax.servlet.http.HttpServletResponse.SC_FORBIDDEN
 
 @Component(service = Servlet, immediate = true, property = [
@@ -74,8 +70,8 @@ class ScriptPostServlet extends AbstractJsonResponseServlet {
                 request: request,
                 response: response,
                 outputStream: outputStream,
-                printStream: new PrintStream(outputStream, true, Charsets.UTF_8.name()),
-                script: checkNotNull(getScript(request, scriptPath), "Script cannot be empty.")
+                printStream: new PrintStream(outputStream, true, StandardCharsets.UTF_8.name()),
+                script: Objects.requireNonNull(getScript(request, scriptPath), "Script cannot be empty.")
         )
     }
 
@@ -83,7 +79,7 @@ class ScriptPostServlet extends AbstractJsonResponseServlet {
         if (scriptPath) {
             loadScript(request, scriptPath)
         } else {
-            request.getRequestParameter(SCRIPT)?.getString(Charsets.UTF_8.name())
+            request.getRequestParameter(SCRIPT)?.getString(StandardCharsets.UTF_8.name())
         }
     }
 

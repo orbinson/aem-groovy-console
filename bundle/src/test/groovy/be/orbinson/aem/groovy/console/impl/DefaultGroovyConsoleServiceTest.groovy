@@ -11,7 +11,6 @@ import be.orbinson.aem.groovy.console.extension.impl.binding.SlingBindingExtensi
 import be.orbinson.aem.groovy.console.extension.impl.scriptmetaclass.SlingScriptMetaClassExtensionProvider
 import com.day.cq.replication.Replicator
 import com.day.cq.search.QueryBuilder
-import com.google.common.base.Charsets
 import io.wcm.testing.mock.aem.junit5.AemContext
 import io.wcm.testing.mock.aem.junit5.AemContextExtension
 import org.apache.commons.io.IOUtils
@@ -21,6 +20,8 @@ import org.apache.sling.jcr.resource.api.JcrResourceConstants
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+
+import java.nio.charset.StandardCharsets
 
 import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.PATH_SCRIPTS_FOLDER
 import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.SCRIPT
@@ -66,7 +67,7 @@ class DefaultGroovyConsoleServiceTest {
                 request: request,
                 response: response,
                 outputStream: outputStream,
-                printStream: new PrintStream(outputStream, true, Charsets.UTF_8.name()),
+                printStream: new PrintStream(outputStream, true, StandardCharsets.UTF_8.name()),
                 script: scriptAsString
         )
 
@@ -90,7 +91,7 @@ class DefaultGroovyConsoleServiceTest {
         assertResourceExists(PATH_FILE, JcrConstants.NT_FILE)
         assertResourceExists(PATH_FILE_CONTENT, JcrConstants.NT_RESOURCE)
 
-        String script = IOUtils.toString(context.resourceResolver().getResource(PATH_FILE).adaptTo(InputStream.class), "UTF-8");
+        String script = IOUtils.toString(context.resourceResolver().getResource(PATH_FILE).adaptTo(InputStream.class), StandardCharsets.UTF_8.name());
         assertEquals("println \"BEER\"", script);
     }
 
