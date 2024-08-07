@@ -7,14 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [19.0.6] - 2024-08-07
+
 ### Added
 
-- Add Groovy console to the Tools menu [#56](https://github.com/orbinson/aem-groovy-console/issues/56)
+-   Add Groovy console to the Tools menu [#56](https://github.com/orbinson/aem-groovy-console/issues/56)
 
 ### Changed
 
--  Remove all dependencies on Guava [#62](https://github.com/orbinson/aem-groovy-console/issues/62)
--  Fix Cloud pipeline package Overlap Issue [#52](https://github.com/orbinson/aem-groovy-console/issues/52)
+-   Remove all dependencies on Guava [#62](https://github.com/orbinson/aem-groovy-console/issues/62)
+-   Fix Cloud pipeline package Overlap Issue [#52](https://github.com/orbinson/aem-groovy-console/issues/52)
 
 ## [19.0.5] - 2024-02-10
 
@@ -104,7 +106,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 -   Last version released by [CID15](https://github.com/CID15/aem-groovy-console)
 
-[Unreleased]: https://github.com/orbinson/aem-groovy-console/compare/19.0.5...HEAD
+[Unreleased]: https://github.com/orbinson/aem-groovy-console/compare/19.0.6...HEAD
+
+[19.0.6]: https://github.com/orbinson/aem-groovy-console/compare/19.0.5...19.0.6
 
 [19.0.5]: https://github.com/orbinson/aem-groovy-console/compare/19.0.4...19.0.5
 
