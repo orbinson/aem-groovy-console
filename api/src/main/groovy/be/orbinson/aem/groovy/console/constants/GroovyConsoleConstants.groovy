@@ -1,8 +1,5 @@
 package be.orbinson.aem.groovy.console.constants
 
-import com.google.common.base.Charsets
-import com.google.common.net.MediaType
-
 class GroovyConsoleConstants {
 
     public static final String SYSTEM_USER_NAME = "aem-groovy-console-service"
@@ -15,7 +12,7 @@ class GroovyConsoleConstants {
 
     public static final String EXTENSION_GROOVY = ".groovy"
 
-    public static final String CHARSET = Charsets.UTF_8.name()
+    public static final String CHARSET = "UTF-8"
 
     public static final String FORMAT_RUNNING_TIME = "HH:mm:ss.SSS"
 
@@ -99,10 +96,10 @@ class GroovyConsoleConstants {
     public static final String AUDIT_PATH = "$PATH_CONSOLE_ROOT/$AUDIT_NODE_NAME"
 
     public static final Map<String, String> MEDIA_TYPE_EXTENSIONS = [
-            (MediaType.CSV_UTF_8.withoutParameters().toString())       : "csv",
-            (MediaType.PLAIN_TEXT_UTF_8.withoutParameters().toString()): "txt",
-            (MediaType.HTML_UTF_8.withoutParameters().toString())      : "html",
-            (MediaType.XML_UTF_8.withoutParameters().toString())       : "xml"
+            "text/csv"  : "csv",
+            "text/plain": "txt",
+            "test/html" : "html",
+            "text/xml"  : "xml"
     ]
 
     private GroovyConsoleConstants() {

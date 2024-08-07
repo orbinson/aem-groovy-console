@@ -4,10 +4,8 @@ import be.orbinson.aem.groovy.console.api.*
 import be.orbinson.aem.groovy.console.api.context.ScriptContext
 import be.orbinson.aem.groovy.console.api.context.impl.RequestScriptContext
 import be.orbinson.aem.groovy.console.extension.ExtensionService
-import com.google.common.io.ByteStreams
 import io.wcm.testing.mock.aem.junit5.AemContext
 import io.wcm.testing.mock.aem.junit5.AemContextExtension
-import org.apache.sling.testing.mock.sling.ResourceResolverType
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import org.codehaus.groovy.control.customizers.CompilationCustomizer
@@ -153,7 +151,7 @@ class DefaultExtensionServiceTest {
     }
 
     private void runScriptWithExtensionService(ExtensionService extensionService) {
-        def binding = new Binding(out: new PrintStream(ByteStreams.nullOutputStream()))
+        def binding = new Binding(out: new PrintStream(new ByteArrayOutputStream()))
 
         def configuration = new CompilerConfiguration().addCompilationCustomizers(
                 extensionService.compilationCustomizers as CompilationCustomizer[])

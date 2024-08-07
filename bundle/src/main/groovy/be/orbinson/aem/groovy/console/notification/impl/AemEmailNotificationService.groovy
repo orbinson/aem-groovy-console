@@ -5,8 +5,6 @@ import be.orbinson.aem.groovy.console.notification.EmailNotificationService
 import be.orbinson.aem.groovy.console.notification.NotificationService
 import be.orbinson.aem.groovy.console.response.RunScriptResponse
 import com.day.cq.mailer.MailService
-import com.google.common.base.Charsets
-import com.google.common.net.MediaType
 import groovy.text.GStringTemplateEngine
 import groovy.util.logging.Slf4j
 import org.apache.commons.mail.Email
@@ -14,10 +12,9 @@ import org.apache.commons.mail.HtmlEmail
 import org.apache.commons.mail.MultiPartEmail
 import org.osgi.service.component.annotations.Component
 import org.osgi.service.component.annotations.Reference
-import org.osgi.service.component.annotations.ReferenceCardinality
-import org.osgi.service.component.annotations.ReferencePolicy
 
 import javax.mail.util.ByteArrayDataSource
+import java.nio.charset.StandardCharsets
 
 @Component(service = [EmailNotificationService, NotificationService], immediate = true)
 @Slf4j("LOG")
@@ -74,15 +71,14 @@ class AemEmailNotificationService implements EmailNotificationService {
         }
 
         email.subject = SUBJECT
-        email.charset = Charsets.UTF_8.name()
+        email.charset = StandardCharsets.UTF_8.name()
 
         def message = getMessage(response, successTemplate, failureTemplate)
 
         if (attachOutput) {
-            (email as MultiPartEmail).addPart(message, MediaType.HTML_UTF_8.toString())
+            (email as MultiPartEmail).addPart(message, "text/html")
 
-            def dataSource = new ByteArrayDataSource(response.output.getBytes(Charsets.UTF_8.name()),
-                    MediaType.parse(response.mediaType).toString())
+            def dataSource = new ByteArrayDataSource(response.output.getBytes(StandardCharsets.UTF_8.name()), response.mediaType)
 
             // attach output file
             (email as MultiPartEmail).attach(dataSource, response.outputFileName, null)

@@ -2,7 +2,6 @@ package be.orbinson.aem.groovy.console.servlets
 
 import be.orbinson.aem.groovy.console.audit.AuditService
 import be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants
-import com.google.common.net.HttpHeaders
 import org.apache.sling.api.SlingHttpServletRequest
 import org.apache.sling.api.SlingHttpServletResponse
 import org.apache.sling.api.servlets.SlingSafeMethodsServlet
@@ -29,7 +28,7 @@ class ScriptDownloadServlet extends SlingSafeMethodsServlet {
         def auditRecord = auditService.getAuditRecord(userId, script)
 
         if (auditRecord) {
-            response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=${auditRecord.outputFileName}")
+            response.setHeader("Content-Disposition", "attachment; filename=${auditRecord.outputFileName}")
 
             response.contentType = auditRecord.mediaType
             response.characterEncoding = GroovyConsoleConstants.CHARSET

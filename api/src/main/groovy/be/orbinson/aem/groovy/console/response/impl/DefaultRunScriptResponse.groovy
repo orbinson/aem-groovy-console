@@ -5,24 +5,15 @@ import be.orbinson.aem.groovy.console.api.context.JobScriptContext
 import be.orbinson.aem.groovy.console.api.context.ScriptContext
 import be.orbinson.aem.groovy.console.response.RunScriptResponse
 import be.orbinson.aem.groovy.console.table.Table
-import org.apache.jackrabbit.JcrConstants
-import org.apache.jackrabbit.util.Text
-import com.google.common.net.MediaType
 import groovy.json.JsonBuilder
 import groovy.transform.TupleConstructor
 import org.apache.commons.lang3.exception.ExceptionUtils
+import org.apache.jackrabbit.JcrConstants
+import org.apache.jackrabbit.util.Text
 import org.apache.sling.api.resource.Resource
 import org.apache.sling.api.resource.ResourceUtil
 
-import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.DATA
-import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.DATE_FORMAT_FILE_NAME
-import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.EXCEPTION_STACK_TRACE
-import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.JOB_ID
-import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.MEDIA_TYPE_EXTENSIONS
-import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.OUTPUT
-import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.RESULT
-import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.RUNNING_TIME
-import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.SCRIPT
+import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.*
 
 @TupleConstructor
 class DefaultRunScriptResponse implements RunScriptResponse {
@@ -114,13 +105,9 @@ class DefaultRunScriptResponse implements RunScriptResponse {
     String getMediaType() {
         def mediaType
 
-        if (jobProperties?.mediaType) {
-            mediaType = MediaType.parse(jobProperties.mediaType)
-        } else {
-            mediaType = MediaType.PLAIN_TEXT_UTF_8
-        }
+        mediaType = jobProperties?.mediaType ? jobProperties.mediaType : "text/plain"
 
-        mediaType.withoutParameters().toString()
+        mediaType
     }
 
     @Override
