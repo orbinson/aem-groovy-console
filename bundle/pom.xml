@@ -8,7 +8,7 @@
     <parent>
         <groupId>be.orbinson.aem</groupId>
         <artifactId>aem-groovy-console</artifactId>
-        <version>19.0.6</version>
+        <version>19.0.7-SNAPSHOT</version>
     </parent>
 
     <artifactId>aem-groovy-console-bundle</artifactId>
