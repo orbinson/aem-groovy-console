@@ -7,9 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [19.0.7] - 2024-08-07
+
 ### Changed
 
-- Updated to latest groovy version [#53](https://github.com/orbinson/aem-groovy-console/issues/53)
+-   Updated to latest groovy version [#53](https://github.com/orbinson/aem-groovy-console/issues/53)
 
 ## [19.0.6] - 2024-08-07
 
@@ -110,7 +112,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 -   Last version released by [CID15](https://github.com/CID15/aem-groovy-console)
 
-[Unreleased]: https://github.com/orbinson/aem-groovy-console/compare/19.0.6...HEAD
+[Unreleased]: https://github.com/orbinson/aem-groovy-console/compare/19.0.7...HEAD
+
+[19.0.7]: https://github.com/orbinson/aem-groovy-console/compare/19.0.6...19.0.7
 
 [19.0.6]: https://github.com/orbinson/aem-groovy-console/compare/19.0.5...19.0.6
 
