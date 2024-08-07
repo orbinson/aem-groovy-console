@@ -1,4 +1,4 @@
-#base=../clientlibs/css
+#base=/apps/groovyconsole/clientlibs/css
 
 bootstrap.css
 bootstrap-theme.css

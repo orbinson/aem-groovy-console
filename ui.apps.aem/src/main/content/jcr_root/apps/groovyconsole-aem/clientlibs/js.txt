@@ -1,4 +1,4 @@
-#base=../clientlibs/js
+#base=/apps/groovyconsole/clientlibs/js
 
 datatables.js
 jquery-ui.min.js

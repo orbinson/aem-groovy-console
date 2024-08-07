@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jcr:root xmlns:jcr="http://www.jcp.org/jcr/1.0"
+          xmlns:nt="http://www.jcp.org/jcr/nt/1.0"
+          jcr:description="The AEM Groovy Console provides an interface for running Groovy scripts"
+          jcr:primaryType="nt:unstructured"
+          jcr:title="AEM Groovy Console"
+          href="/apps/groovyconsole.html"
+          icon="actions"
+          id="granite-general-groovyconsole">
+</jcr:root>

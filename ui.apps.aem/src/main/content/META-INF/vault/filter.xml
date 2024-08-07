@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <workspaceFilter version="1.0">
-    <filter root="/apps/groovyconsole/clientlibs-aem"/>
-    <filter root="/apps/groovyconsole/components/console/opendialog"/>
-    <filter root="/apps/groovyconsole/components/console/savedialog"/>
+    <filter root="/apps/groovyconsole-aem"/>
+
+    <filter root="/apps/cq/core/content/nav">
+        <include pattern="/apps/cq/core/content/nav"/>
+        <include pattern="/apps/cq/core/content/nav/tools"/>
+        <include pattern="/apps/cq/core/content/nav/tools/general"/>
+        <include pattern="/apps/cq/core/content/nav/tools/general/groovyconsole(.*)?"/>
+    </filter>
 </workspaceFilter>

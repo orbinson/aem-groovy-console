@@ -23,16 +23,9 @@
                     <group>${project.artifactId}</group>
                     <name>aem-groovy-console-ui.apps</name>
                     <packageType>application</packageType>
-                    <accessControlHandling>merge</accessControlHandling>
                     <properties>
                         <cloudManagerTarget>none</cloudManagerTarget>
                     </properties>
-                    <repositoryStructurePackages>
-                        <repositoryStructurePackage>
-                            <groupId>be.orbinson.aem</groupId>
-                            <artifactId>aem-groovy-console-ui.apps.structure</artifactId>
-                        </repositoryStructurePackage>
-                    </repositoryStructurePackages>
                     <validatorsSettings>
                         <jackrabbit-nodetypes>
                             <isDisabled>true</isDisabled>

@@ -37,6 +37,8 @@
                     <properties>
                         <cloudManagerTarget>all</cloudManagerTarget>
                     </properties>
+                    <!-- all sub packages have been validated already -->
+                    <skipSubPackageValidation>true</skipSubPackageValidation>
                     <embeddeds>
                         <embedded>
                             <groupId>be.orbinson.aem</groupId>
