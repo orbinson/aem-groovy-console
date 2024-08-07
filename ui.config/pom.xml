@@ -20,12 +20,6 @@
                 <configuration>
                     <packageType>container</packageType>
                     <showImportPackageReport>false</showImportPackageReport>
-                    <repositoryStructurePackages>
-                        <repositoryStructurePackage>
-                            <groupId>be.orbinson.aem</groupId>
-                            <artifactId>aem-groovy-console-ui.apps.structure</artifactId>
-                        </repositoryStructurePackage>
-                    </repositoryStructurePackages>
                 </configuration>
             </plugin>
             <plugin>
@@ -34,15 +28,6 @@
             </plugin>
         </plugins>
     </build>
-
-    <dependencies>
-        <dependency>
-            <groupId>be.orbinson.aem</groupId>
-            <artifactId>aem-groovy-console-ui.apps.structure</artifactId>
-            <version>${project.version}</version>
-            <type>zip</type>
-        </dependency>
-    </dependencies>
 
     <profiles>
         <profile>
