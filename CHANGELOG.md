@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Updated to latest groovy version [#53](https://github.com/orbinson/aem-groovy-console/issues/53)
+
 ## [19.0.6] - 2024-08-07
 
 ### Added
