@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+-  Remove all dependencies on Guava [#62](https://github.com/orbinson/aem-groovy-console/issues/62)
+
 ## [19.0.5] - 2024-02-10
 
 ### Changed
