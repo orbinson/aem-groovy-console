@@ -1,0 +1,8 @@
+{
+  "bundles": [
+    {
+      "id": "org.apache.groovy:groovy-dateutil:${groovy.version}",
+      "start-order": "20"
+    }
+  ]
+}
