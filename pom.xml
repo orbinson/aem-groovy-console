@@ -93,6 +93,7 @@
         <bnd.version>6.4.0</bnd.version>
         <aem.version>6.5.10</aem.version>
         <groovy.version>4.0.22</groovy.version>
+        <asm.version>9.7</asm.version>
 
         <!-- SonarCloud -->
         <sonar.organization>orbinson</sonar.organization>
