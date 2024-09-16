@@ -26,6 +26,7 @@
         <module>ui.apps.aem</module>
         <module>ui.config</module>
         <module>ui.content</module>
+        <module>it.tests</module>
     </modules>
 
     <url>https://github.com/orbinson/aem-groovy-console</url>
