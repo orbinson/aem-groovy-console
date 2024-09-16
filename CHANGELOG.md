@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Update to version of ASM that supports JDK21 [#65](https://github.com/orbinson/aem-groovy-console/issues/65)
+
 ## [19.0.7] - 2024-08-07
 
 ### Changed
