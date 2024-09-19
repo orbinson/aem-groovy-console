@@ -39,7 +39,7 @@ jobs:
         run: mvn --batch-mode --update-snapshots install
 
       - name: Integration tests
-        run: mvn --batch-mode verify -pl it.tests -Pit
+        run: mvn --batch-mode clean verify -pl it.tests -Pit
 
       # Save logs only if the job fails
       - name: Upload logs on failure
