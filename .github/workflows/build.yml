@@ -40,3 +40,11 @@ jobs:
 
       - name: Integration tests
         run: mvn --batch-mode verify -pl it.tests -Pit
+
+      # Save logs only if the job fails
+      - name: Upload logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: failure-logs
+          path: it.tests/target/launchers/model/logs/*
