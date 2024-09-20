@@ -1,0 +1,25 @@
+
+{
+  "bundles":[
+    {
+      "id": "be.orbinson.aem:groovy-osgi:${project.version}",
+      "start-order": "19"
+    },
+    {
+      "id":"be.orbinson.aem:aem-groovy-console-api:${project.version}",
+      "start-order":"20"
+    },
+    {
+      "id":"be.orbinson.aem:aem-groovy-console-bundle:${project.version}",
+      "start-order":"20"
+    }
+  ],
+  "configurations": {
+    "org.apache.sling.serviceusermapping.impl.ServiceUserMapperImpl.amended~groovyconsole":{
+      "user.mapping":[
+        "aem-groovy-console-bundle=[aem-groovy-console-service]"
+      ]
+    }
+  },
+  "repoinit:TEXT|true":"@file"
+}

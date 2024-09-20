@@ -1,6 +1,17 @@
 name: Build
 
-on: [push, pull_request]
+on:
+  # Trigger on push to develop or main branches
+  push:
+    branches:
+      - develop
+      - main
+
+  # Trigger on pull request (any branch that creates a PR)
+  pull_request:
+    branches:
+      - develop
+      - main
 
 jobs:
   build:
@@ -26,3 +37,14 @@ jobs:
 
       - name: Build
         run: mvn --batch-mode --update-snapshots install
+
+      - name: Integration tests
+        run: mvn --batch-mode clean verify -pl it.tests -Pit
+
+      # Save logs only if the job fails
+      - name: Upload logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: failure-logs
+          path: it.tests/target/launchers/model/logs/*
