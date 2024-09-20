@@ -11,30 +11,32 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.awaitility.Awaitility.await;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class GroovyConsoleServiceIT {
+class GroovyConsoleServiceIT {
 
     private static final int SLING_PORT = Integer.getInteger("HTTP_PORT", 8080);
 
+    @BeforeEach
+    void beforeEach() throws IOException {
+        await().atMost(30, TimeUnit.SECONDS)  // Set maximum wait time to 30 seconds
+                .pollInterval(5, TimeUnit.SECONDS)
+                .untilAsserted(() -> assertTrue(servicesAreAvailable()));
+    }
+
     @Test
     void testScriptReturnsResult() throws Exception {
-        printHealth();
-        System.out.println("Starting test at " + Instant.now());
-        Thread.sleep(3000); // TODO, fix to use system health
-        System.out.println("Executing script  at " + Instant.now());
-        printHealth();
-
 
         String script = "print 'test'";
         Map response = executeScript(script);
@@ -44,16 +46,28 @@ public class GroovyConsoleServiceIT {
         assertEquals("test", response.get("output"));
     }
 
-    private void printHealth() throws IOException {
+    private static boolean servicesAreAvailable() throws IOException {
+        System.out.println("Checking if services are available");
         try (CloseableHttpClient httpclient = HttpClients.createDefault()) {
-            HttpGet printHealth = new HttpGet("http://localhost:" + SLING_PORT + "/system/health.json");
+            HttpGet printHealth = new HttpGet("http://localhost:" + SLING_PORT + "/system/health.json?tags=systemalive,bundles");
             printHealth.addHeader("Authorization", "Basic " + Base64.encodeBase64String("admin:admin".getBytes(StandardCharsets.UTF_8)));
             try (CloseableHttpResponse response = httpclient.execute(printHealth)) {
                 String body = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
-                System.out.println(body);
+                Map jsonResponse = new Gson().fromJson(body, Map.class);
+                try {
+                    boolean systemAlive = "OK".equals(jsonResponse.get("overallResult"));
+                    if (!systemAlive) {
+                        System.out.println("Not alive yet:");
+                        System.out.println(body);
+                    }
+                    return systemAlive;
+                } catch (JsonSyntaxException e) {
+                    return false;
+                }
             }
         }
     }
+
 
     private static Map executeScript(String script) throws IOException {
         try (CloseableHttpClient httpclient = HttpClients.createDefault()) {
@@ -63,16 +77,7 @@ public class GroovyConsoleServiceIT {
             executeScript.setEntity(new UrlEncodedFormEntity(basicNameValuePairs, StandardCharsets.UTF_8));
             executeScript.addHeader("Authorization", "Basic " + Base64.encodeBase64String("admin:admin".getBytes(StandardCharsets.UTF_8)));
 
-            System.out.println("Request headers");
-            Arrays.stream(executeScript.getAllHeaders()).forEach(header ->
-                    System.out.println(header.getName() + ": " + header.getValue())
-            );
             try (CloseableHttpResponse response = httpclient.execute(executeScript)) {
-                System.out.println("Response headers");
-
-                Arrays.stream(response.getAllHeaders()).forEach(header ->
-                        System.out.println(header.getName() + ": " + header.getValue())
-                );
                 System.out.println(response.getStatusLine());
 
                 String body = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
@@ -80,7 +85,6 @@ public class GroovyConsoleServiceIT {
                     return new Gson().fromJson(body, Map.class);
                 } catch (JsonSyntaxException e) {
                     System.out.println("Could not parse body from JSON: " + e.getMessage());
-                   // System.out.println(body);
                     return null;
                 }
             }
