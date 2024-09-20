@@ -1,6 +1,7 @@
 package be.orbinson.aem.groovy.console.it;
 
-import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
@@ -18,7 +19,6 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import static org.awaitility.Awaitility.await;
@@ -29,7 +29,7 @@ class GroovyConsoleServiceIT {
     private static final int SLING_PORT = Integer.getInteger("HTTP_PORT", 8080);
 
     @BeforeEach
-    void beforeEach() throws IOException {
+    void beforeEach() {
         await().atMost(30, TimeUnit.SECONDS)  // Set maximum wait time to 30 seconds
                 .pollInterval(5, TimeUnit.SECONDS)
                 .untilAsserted(() -> assertTrue(servicesAreAvailable()));
@@ -37,13 +37,12 @@ class GroovyConsoleServiceIT {
 
     @Test
     void testScriptReturnsResult() throws Exception {
-
         String script = "print 'test'";
-        Map response = executeScript(script);
+        JsonObject response = executeScript(script);
         System.out.println("Got response script  at " + Instant.now());
 
         assertNotNull(response, "Could not get response from API");
-        assertEquals("test", response.get("output"));
+        assertEquals("test", response.get("output").getAsString());
     }
 
     private static boolean servicesAreAvailable() throws IOException {
@@ -53,9 +52,9 @@ class GroovyConsoleServiceIT {
             printHealth.addHeader("Authorization", "Basic " + Base64.encodeBase64String("admin:admin".getBytes(StandardCharsets.UTF_8)));
             try (CloseableHttpResponse response = httpclient.execute(printHealth)) {
                 String body = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
-                Map jsonResponse = new Gson().fromJson(body, Map.class);
+                JsonObject jsonResponse = JsonParser.parseString(body).getAsJsonObject();
                 try {
-                    boolean systemAlive = "OK".equals(jsonResponse.get("overallResult"));
+                    boolean systemAlive = "OK".equals(jsonResponse.get("overallResult").getAsString());
                     if (!systemAlive) {
                         System.out.println("Not alive yet:");
                         System.out.println(body);
@@ -69,7 +68,7 @@ class GroovyConsoleServiceIT {
     }
 
 
-    private static Map executeScript(String script) throws IOException {
+    private static JsonObject executeScript(String script) throws IOException {
         try (CloseableHttpClient httpclient = HttpClients.createDefault()) {
             HttpPost executeScript = new HttpPost("http://localhost:" + SLING_PORT + "/bin/groovyconsole/post");
             List<BasicNameValuePair> basicNameValuePairs = new java.util.ArrayList<>();
@@ -82,7 +81,7 @@ class GroovyConsoleServiceIT {
 
                 String body = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
                 try {
-                    return new Gson().fromJson(body, Map.class);
+                    return JsonParser.parseString(body).getAsJsonObject();
                 } catch (JsonSyntaxException e) {
                     System.out.println("Could not parse body from JSON: " + e.getMessage());
                     return null;
