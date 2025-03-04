@@ -87,7 +87,7 @@
                                                 <artifactId>org.apache.sling.starter</artifactId>
                                                 <classifier>oak_tar</classifier>
                                                 <type>slingosgifeature</type>
-                                                <version>13-SNAPSHOT</version>
+                                                <version>13</version>
                                             </includeArtifact>
                                             <filesInclude>*.json</filesInclude>
                                         </aggregate>
