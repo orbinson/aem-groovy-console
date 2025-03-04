@@ -4,5 +4,10 @@
       "id": "org.apache.groovy:groovy-dateutil:${groovy.version}",
       "start-order": "20"
     }
+    // Uncomment if you want to see the groovy-macro effect
+//    ,{
+//      "id": "org.apache.groovy:groovy-macro:${groovy.version}",
+//      "start-order": "20"
+//    }
   ]
 }

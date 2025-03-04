@@ -36,6 +36,14 @@ class GroovyConsoleServiceIT {
     }
 
     @Test
+    public void testOsgi() throws InterruptedException {
+        System.out.println("http://localhost:" + SLING_PORT + "/system/console");
+        if (System.getProperty("debug.osgi") != null) {
+            Thread.sleep(1000000);
+        }
+    }
+
+    @Test
     void testScriptReturnsResult() throws Exception {
         String script = "print 'test'";
         JsonObject response = executeScript(script);
