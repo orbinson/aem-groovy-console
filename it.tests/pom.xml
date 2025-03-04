@@ -15,14 +15,6 @@
     <artifactId>aem-groovy-console-it-tests</artifactId>
     <name>AEM Groovy Console - IT Tests</name>
 
-    <repositories>
-        <!-- Be able to depend on the latest Sling feature releases -->
-        <repository>
-            <id>apache-snapshot</id>
-            <url>https://repository.apache.org/content/groups/snapshots</url>
-        </repository>
-    </repositories>
-
     <build>
         <plugins>
             <plugin>
