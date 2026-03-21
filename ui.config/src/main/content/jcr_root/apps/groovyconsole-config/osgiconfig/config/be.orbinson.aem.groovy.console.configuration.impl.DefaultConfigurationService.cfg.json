@@ -1,0 +1,12 @@
+{
+    "allowedGroups": [
+        "admin",
+        "administrators",
+        "$[env:aemCloudAdministrators;default=administrators]"
+    ],
+    "allowedScheduledJobsGroups": [
+        "admin",
+        "administrators",
+        "$[env:aemCloudAdministrators;default=administrators]"
+    ]
+}
