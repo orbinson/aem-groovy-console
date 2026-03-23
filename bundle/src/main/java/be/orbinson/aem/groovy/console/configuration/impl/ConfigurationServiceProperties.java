@@ -43,4 +43,9 @@ public @interface ConfigurationServiceProperties {
             description = "If enabled, a script will be able to be replicated from an author and executed on all default replication agents."
     )
     boolean distributedExecutionEnabled() default false;
+
+    @AttributeDefinition(name = "Add AEM Cloud product administrators?",
+            description = "If enabled, the group referenced by the 'aemCloudAdministrators' environment variable (set by AEM as a Cloud Service) will automatically be added to the allowed groups. Has no effect if the environment variable is not set (e.g. on AEM 6.5)."
+    )
+    boolean addAemCloudProductAdministrators() default true;
 }
