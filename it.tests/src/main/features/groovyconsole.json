@@ -1,5 +1,5 @@
 {
-  "content-packages:ARTIFACTS|required":[
+  "content-packages:ARTIFACTS|required": [
     {
       "id": "be.orbinson.aem:aem-groovy-console-all:zip:${project.version}"
     }

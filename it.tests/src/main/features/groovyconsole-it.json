@@ -1,0 +1,9 @@
+{
+  "repoinit:TEXT|true": [
+    "create user it-test-unprivileged with password ItTest1234",
+    "create group it-test-cloud-group",
+    "create user it-test-cloud-user with password ItTest1234",
+    "add it-test-cloud-user to group it-test-cloud-group",
+    "set ACL for it-test-cloud-group\n    allow jcr:read on /\nend"
+  ]
+}
