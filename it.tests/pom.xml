@@ -120,6 +120,10 @@
                                         <!--    <value>-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5000</value>-->
                                         <!--</vmOptions>-->
                                     </launcherArguments>
+                                    <environmentVariables>
+                                        <!-- Simulates the AEM Cloud aemCloudAdministrators environment variable -->
+                                        <aemCloudAdministrators>it-test-cloud-group</aemCloudAdministrators>
+                                    </environmentVariables>
                                     <startTimeoutSeconds>180</startTimeoutSeconds>
                                 </launch>
                             </launches>

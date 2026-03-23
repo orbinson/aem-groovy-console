@@ -3,10 +3,13 @@ package be.orbinson.aem.groovy.console.configuration.impl
 import be.orbinson.aem.groovy.console.configuration.ConfigurationService
 import groovy.transform.Synchronized
 import groovy.util.logging.Slf4j
+import org.apache.jackrabbit.api.JackrabbitSession
 import org.apache.jackrabbit.api.security.user.User
 import org.apache.jackrabbit.api.security.user.UserManager
 import org.apache.sling.api.SlingHttpServletRequest
+import javax.jcr.Session
 import org.apache.sling.api.resource.ResourceResolverFactory
+import org.apache.sling.serviceusermapping.ServiceUserMapped
 import org.osgi.framework.BundleContext
 import org.osgi.service.component.annotations.Activate
 import org.osgi.service.component.annotations.Component
@@ -21,6 +24,9 @@ class DefaultConfigurationService implements ConfigurationService {
 
     @Reference
     private ResourceResolverFactory resourceResolverFactory
+
+    @Reference(target = "(!(subServiceName=*))")
+    private ServiceUserMapped serviceUserMapped
 
     private boolean emailEnabled
 
@@ -100,20 +106,42 @@ class DefaultConfigurationService implements ConfigurationService {
         if (bundleContext.getProperty("sling.run.modes") != null) {
             author = bundleContext.getProperty("sling.run.modes").contains("author")
         }
+        if (properties.addAemCloudProductAdministrators()) {
+            def aemCloudAdministrators = System.getenv("aemCloudAdministrators")
+            if (aemCloudAdministrators) {
+                LOG.debug("Adding AEM Cloud product administrators group '{}' to allowed groups", aemCloudAdministrators)
+                allowedGroups = allowedGroups + [aemCloudAdministrators] as Set
+                allowedScheduledJobsGroups = allowedScheduledJobsGroups + [aemCloudAdministrators] as Set
+            }
+        }
     }
 
     private boolean isAdminOrAllowedGroupMember(SlingHttpServletRequest request, Set<String> groupIds) {
         resourceResolverFactory.getServiceResourceResolver(null).withCloseable { resourceResolver ->
-            def userManager = resourceResolver.adaptTo(UserManager);
+            def userManager = resourceResolver.adaptTo(UserManager)
+            if (userManager == null) {
+                // AEM provides a ResourceResolver -> UserManager adapter factory; Sling Starter does not.
+                // Fall back to obtaining the UserManager directly from the JCR session.
+                def session = resourceResolver.adaptTo(Session)
+                if (session instanceof JackrabbitSession) {
+                    userManager = ((JackrabbitSession) session).userManager
+                }
+            }
             if (userManager != null) {
-                def user = resourceResolver.adaptTo(UserManager).getAuthorizable(request.userPrincipal) as User
+                def principal = request.getUserPrincipal()
+                def user = (principal != null ? userManager.getAuthorizable(principal) : null) as User
+                         ?: userManager.getAuthorizable(request.getResourceResolver().getUserID()) as User
+                if (user == null) {
+                    LOG.debug("Could not find user in UserManager, denying access")
+                    return false
+                }
                 def memberOfGroupIds = user.memberOf()*.ID
 
                 LOG.debug("member of group IDs : {}, allowed group IDs : {}", memberOfGroupIds, groupIds)
 
                 user.admin || (groupIds ? memberOfGroupIds.intersect(groupIds as Iterable) : false)
             } else {
-                LOG.debug("UserManager not available, probably in a Sling Based application, falling back to is admin check")
+                LOG.debug("UserManager not available, falling back to is admin check")
                 return request.getResourceResolver().getUserID() == "admin"
             }
         }

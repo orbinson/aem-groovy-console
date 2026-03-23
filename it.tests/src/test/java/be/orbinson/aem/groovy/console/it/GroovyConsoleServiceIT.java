@@ -31,6 +31,11 @@ class GroovyConsoleServiceIT {
     private static final String BASE_URL = "http://localhost:" + SLING_PORT;
     private static final String AUTH_HEADER = "Basic " + Base64.encodeBase64String("admin:admin".getBytes(StandardCharsets.UTF_8));
 
+    // Users and groups created via repoinit in groovyconsole-it.json feature model
+    private static final String UNPRIVILEGED_USER = "it-test-unprivileged";
+    private static final String CLOUD_USER = "it-test-cloud-user";
+    private static final String TEST_PASSWORD = "ItTest1234";
+
     private static CloseableHttpClient httpClient;
 
     @BeforeAll
@@ -175,6 +180,47 @@ class GroovyConsoleServiceIT {
         assertEquals("{\"a\":1}", response.get("result").getAsString());
     }
 
+    @Test
+    void testUnauthenticatedUserCannotExecuteScript() throws Exception {
+        HttpPost post = new HttpPost(BASE_URL + "/bin/groovyconsole/post");
+        List<BasicNameValuePair> params = new ArrayList<>();
+        params.add(new BasicNameValuePair("script", "return 1"));
+        post.setEntity(new UrlEncodedFormEntity(params, StandardCharsets.UTF_8));
+        // No Authorization header
+
+        try (CloseableHttpResponse response = httpClient.execute(post)) {
+            int status = response.getStatusLine().getStatusCode();
+            assertTrue(status == 401 || status == 403,
+                    "Expected 401 or 403 for unauthenticated request, got " + status);
+        }
+    }
+
+    /**
+     * Verifies that a user without any allowed group membership cannot execute scripts.
+     * The 'it-test-unprivileged' user is created at startup via repoinit in groovyconsole.json.
+     */
+    @Test
+    void testNonPrivilegedUserCannotExecuteScript() throws Exception {
+        int status = executeScriptStatus("return 1", UNPRIVILEGED_USER, TEST_PASSWORD);
+        assertTrue(status == 401 || status == 403,
+                "Expected 401 or 403 for non-privileged user, got " + status);
+    }
+
+    /**
+     * Verifies that a user in a group referenced by the 'aemCloudAdministrators' system property
+     * (simulating the AEM Cloud environment variable) is automatically granted access.
+     *
+     * The Sling JVM is started with environmentVariable aemCloudAdministrators=it-test-cloud-group (see pom.xml),
+     * and 'it-test-cloud-user' is added to 'it-test-cloud-group' via repoinit in groovyconsole-it.json.
+     */
+    @Test
+    void testAemCloudProductAdministratorsGroupGrantsAccess() throws Exception {
+        JsonObject response = executeScript("return 'cloud-access-granted'", CLOUD_USER, TEST_PASSWORD);
+        assertNotNull(response, "Could not get response from API");
+        assertEquals("", response.get("exceptionStackTrace").getAsString());
+        assertEquals("cloud-access-granted", response.get("result").getAsString());
+    }
+
     private static boolean isHealthy() {
         try {
             HttpGet healthCheck = new HttpGet(BASE_URL + "/system/health.json?tags=systemalive,groovyconsole");
@@ -182,7 +228,20 @@ class GroovyConsoleServiceIT {
             try (CloseableHttpResponse response = httpClient.execute(healthCheck)) {
                 String body = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
                 JsonObject jsonResponse = JsonParser.parseString(body).getAsJsonObject();
-                return "OK".equals(jsonResponse.get("overallResult").getAsString());
+                if (!"OK".equals(jsonResponse.get("overallResult").getAsString())) {
+                    return false;
+                }
+            }
+            // Also verify the ScriptPostServlet is actually registered and available.
+            // The health check may pass before the servlet resource providers are bound
+            // (returning 0 groovyconsole-tagged results counts as OK). A GET to the
+            // endpoint returns 405 when the servlet is up, 404 when it is not yet ready.
+            HttpGet servletCheck = new HttpGet(BASE_URL + "/bin/groovyconsole/post");
+            servletCheck.addHeader("Authorization", AUTH_HEADER);
+            try (CloseableHttpResponse response = httpClient.execute(servletCheck)) {
+                int status = response.getStatusLine().getStatusCode();
+                EntityUtils.consume(response.getEntity());
+                return status != 404;
             }
         } catch (Exception e) {
             return false;
@@ -207,17 +266,35 @@ class GroovyConsoleServiceIT {
         }
     }
 
-    private static JsonObject executeScript(String script) throws IOException {
+    private static int executeScriptStatus(String script, String user, String password) throws IOException {
         HttpPost post = new HttpPost(BASE_URL + "/bin/groovyconsole/post");
-        List<BasicNameValuePair> params = new java.util.ArrayList<>();
+        post.addHeader("Authorization", authHeader(user, password));
+        List<BasicNameValuePair> params = new ArrayList<>();
         params.add(new BasicNameValuePair("script", script));
         post.setEntity(new UrlEncodedFormEntity(params, StandardCharsets.UTF_8));
-        post.addHeader("Authorization", AUTH_HEADER);
+        try (CloseableHttpResponse response = httpClient.execute(post)) {
+            EntityUtils.consume(response.getEntity());
+            return response.getStatusLine().getStatusCode();
+        }
+    }
 
+    private static JsonObject executeScript(String script) throws IOException {
+        return executeScript(script, AUTH_HEADER);
+    }
+
+    private static JsonObject executeScript(String script, String user, String password) throws IOException {
+        return executeScript(script, authHeader(user, password));
+    }
+
+    private static JsonObject executeScript(String script, String authHeader) throws IOException {
+        HttpPost post = new HttpPost(BASE_URL + "/bin/groovyconsole/post");
+        post.addHeader("Authorization", authHeader);
+        List<BasicNameValuePair> params = new ArrayList<>();
+        params.add(new BasicNameValuePair("script", script));
+        post.setEntity(new UrlEncodedFormEntity(params, StandardCharsets.UTF_8));
         try (CloseableHttpResponse response = httpClient.execute(post)) {
             assertEquals(200, response.getStatusLine().getStatusCode(),
                     "Expected HTTP 200 but got " + response.getStatusLine());
-
             String body = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
             try {
                 return JsonParser.parseString(body).getAsJsonObject();
@@ -226,5 +303,9 @@ class GroovyConsoleServiceIT {
                 return null;
             }
         }
+    }
+
+    private static String authHeader(String user, String password) {
+        return "Basic " + Base64.encodeBase64String((user + ":" + password).getBytes(StandardCharsets.UTF_8));
     }
 }
