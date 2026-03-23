@@ -7,6 +7,7 @@ import org.apache.jackrabbit.api.JackrabbitSession
 import org.apache.jackrabbit.api.security.user.User
 import org.apache.sling.api.SlingHttpServletRequest
 import org.apache.sling.api.resource.ResourceResolverFactory
+import org.apache.sling.serviceusermapping.ServiceUserMapped
 import org.osgi.framework.BundleContext
 import org.osgi.service.component.annotations.Activate
 import org.osgi.service.component.annotations.Component
@@ -23,6 +24,9 @@ class DefaultConfigurationService implements ConfigurationService {
 
     @Reference
     private ResourceResolverFactory resourceResolverFactory
+
+    @Reference(target = "(!(subServiceName=*))")
+    private ServiceUserMapped serviceUserMapped
 
     private boolean emailEnabled
 

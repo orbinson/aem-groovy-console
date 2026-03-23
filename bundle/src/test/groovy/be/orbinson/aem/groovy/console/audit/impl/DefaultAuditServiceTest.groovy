@@ -8,6 +8,7 @@ import be.orbinson.aem.groovy.console.response.impl.DefaultRunScriptResponse
 import io.wcm.testing.mock.aem.junit5.AemContext
 import io.wcm.testing.mock.aem.junit5.AemContextExtension
 import org.apache.commons.lang3.exception.ExceptionUtils
+import org.apache.sling.serviceusermapping.ServiceUserMapped
 import org.apache.sling.testing.mock.sling.ResourceResolverType
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -26,6 +27,7 @@ class DefaultAuditServiceTest {
     @BeforeEach
     void beforeEach() {
         context.build().resource("/var/groovyconsole").commit();
+        context.registerService(ServiceUserMapped, {} as ServiceUserMapped)
         context.registerInjectActivateService(new DefaultConfigurationService())
         auditService = context.registerInjectActivateService(new DefaultAuditService())
     }
