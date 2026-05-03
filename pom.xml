@@ -70,14 +70,14 @@
 
     <distributionManagement>
         <snapshotRepository>
-            <id>ossrh</id>
-            <name>Central Repository OSSRH - Snapshots</name>
-            <url>https://s01.oss.sonatype.org/content/repositories/snapshots</url>
+            <id>sonatype-central-portal</id>
+            <name>Central Portal SNAPSHOT</name>
+            <url>https://central.sonatype.com/repository/maven-snapshots</url>
         </snapshotRepository>
         <repository>
-            <id>ossrh</id>
-            <name>Central Repository OSSRH</name>
-            <url>https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+            <id>sonatype-central-portal</id>
+            <name>Maven Central</name>
+            <url>https://repo.maven.apache.org/maven2</url>
         </repository>
     </distributionManagement>
 
@@ -95,6 +95,7 @@
         <aem.version>6.5.10</aem.version>
         <groovy.version>4.0.22</groovy.version>
         <asm.version>9.7</asm.version>
+        <njord.version>0.9.4</njord.version>
 
         <!-- SonarCloud -->
         <sonar.organization>orbinson</sonar.organization>
@@ -150,6 +151,13 @@
     </profiles>
 
     <build>
+        <extensions>
+            <extension>
+                <groupId>eu.maveniverse.maven.njord</groupId>
+                <artifactId>extension3</artifactId>
+                <version>${njord.version}</version>
+            </extension>
+        </extensions>
         <plugins>
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -176,10 +184,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-gpg-plugin</artifactId>
-            </plugin>
-            <plugin>
-                <groupId>org.sonatype.plugins</groupId>
-                <artifactId>nexus-staging-maven-plugin</artifactId>
             </plugin>
         </plugins>
 
