@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+-   Integration tests using the Sling feature model launcher [#67](https://github.com/orbinson/aem-groovy-console/pull/67)
+-   Documentation for AEMaaCS Publish/Preview write operations [#72](https://github.com/orbinson/aem-groovy-console/issues/72)
+-   Documentation of binding variables and methods [#46](https://github.com/orbinson/aem-groovy-console/issues/46)
+
+### Changed
+
+-   Upgrade integration test instance to Sling Starter 14 and use the all content package instead of a custom feature model
+
+### Fixed
+
+-   Installation failure on AEMaaCS due to missing `/conf/groovyconsole` parent node [#74](https://github.com/orbinson/aem-groovy-console/issues/74)
+
 ## [19.0.8] - 2024-09-16
 
 ### Changed
