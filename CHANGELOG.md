@@ -14,9 +14,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Workaround for [SLING-13123](https://issues.apache.org/jira/browse/SLING-13123): Groovy bundles became fragments in 4.0.23+, but the Sling installer's `RestartActiveBundlesTask` would still try to restart them and fail. New `GroovyBundleToFragmentFixer` removes the fragments from that task. No-op when the Sling installer is not present (e.g. AEMaaCS) or when installer-core ≥ 3.14.6 is detected.
+- IT coverage for fragment-contributed extension methods (`Date.format`, `groovy.json.*`, `groovy.xml.*`)
 
 ### Fixed
 
+- `groovy-osgi` activator now correctly registers extension modules contributed by fragment bundles (e.g. `groovy-dateutil`, `groovy-json`, `groovy-xml`). Without this, `Date.format(String, TimeZone)` and similar fragment-contributed extension methods threw `MissingMethodException` at runtime. The activator walks to the host bundle's classloader for fragments and refreshes any modules pre-registered by Groovy's own scanner with a stale classloader.
 - Move `maven-gpg-plugin` to the `release` profile so local builds don't require a GPG key
 - Bump `aemanalyser-maven-plugin` from 1.5.8 to 1.6.18 (was emitting an outdated-version warning)
 

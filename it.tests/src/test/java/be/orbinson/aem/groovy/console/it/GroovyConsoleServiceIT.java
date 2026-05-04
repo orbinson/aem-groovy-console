@@ -175,6 +175,54 @@ class GroovyConsoleServiceIT {
         assertEquals("{\"a\":1}", response.get("result").getAsString());
     }
 
+    @Test
+    void testDateutilFragmentExtensions() throws Exception {
+        // Date.format(String, TimeZone) and Calendar.format(String) are extension methods
+        // contributed by groovy-dateutil, which ships as a fragment in Groovy 4.0.23+.
+        // groovy-osgi must register these against the runtime MetaClassRegistry or every
+        // call site that uses them will fail with MissingMethodException.
+        JsonObject response = executeScript(
+                "def date = new Date(0)\n" +
+                "def gmt = TimeZone.getTimeZone('GMT')\n" +
+                "return date.format('yyyy-MM-dd', gmt)"
+        );
+
+        assertNotNull(response, "Could not get response from API");
+        assertEquals("", response.get("exceptionStackTrace").getAsString(),
+                "Date.format should be available; groovy-dateutil fragment extensions not registered");
+        assertEquals("1970-01-01", response.get("result").getAsString());
+    }
+
+    @Test
+    void testJsonFragmentExtensions() throws Exception {
+        // toJson() / parseJson() ship in groovy-json (fragment in 4.0.23+).
+        JsonObject response = executeScript(
+                "import groovy.json.JsonOutput\n" +
+                "import groovy.json.JsonSlurper\n" +
+                "def json = JsonOutput.toJson([a: 1, b: [2, 3]])\n" +
+                "return new JsonSlurper().parseText(json)"
+        );
+
+        assertNotNull(response, "Could not get response from API");
+        assertEquals("", response.get("exceptionStackTrace").getAsString(),
+                "groovy-json fragment extensions not registered");
+        assertEquals("[a:1, b:[2, 3]]", response.get("result").getAsString());
+    }
+
+    @Test
+    void testXmlFragmentExtensions() throws Exception {
+        // XmlSlurper / XmlParser ship in groovy-xml (fragment in 4.0.23+).
+        JsonObject response = executeScript(
+                "def xml = new groovy.xml.XmlSlurper().parseText('<root><a>1</a></root>')\n" +
+                "return xml.a.text()"
+        );
+
+        assertNotNull(response, "Could not get response from API");
+        assertEquals("", response.get("exceptionStackTrace").getAsString(),
+                "groovy-xml fragment extensions not registered");
+        assertEquals("1", response.get("result").getAsString());
+    }
+
     private static boolean isHealthy() {
         try {
             HttpGet healthCheck = new HttpGet(BASE_URL + "/system/health.json?tags=systemalive,groovyconsole");
