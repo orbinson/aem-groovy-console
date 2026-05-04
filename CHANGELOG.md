@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Upgrade Groovy from 4.0.22 to 4.0.31
+
+### Added
+
+- Workaround for [SLING-13123](https://issues.apache.org/jira/browse/SLING-13123): Groovy bundles became fragments in 4.0.23+, but the Sling installer's `RestartActiveBundlesTask` would still try to restart them and fail. New `GroovyBundleToFragmentFixer` removes the fragments from that task. No-op when the Sling installer is not present (e.g. AEMaaCS) or when installer-core ≥ 3.14.6 is detected.
+
+### Fixed
+
+- Move `maven-gpg-plugin` to the `release` profile so local builds don't require a GPG key
+- Bump `aemanalyser-maven-plugin` from 1.5.8 to 1.6.18 (was emitting an outdated-version warning)
+
 ## [19.0.9] - 2026-05-03
 
 ### Added
