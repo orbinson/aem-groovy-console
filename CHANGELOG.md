@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [19.1.0] - 2026-05-04
+
 ### Changed
 
 - Upgrade Groovy from 4.0.22 to 4.0.31
@@ -149,7 +151,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Last version released by [CID15](https://github.com/CID15/aem-groovy-console)
 
-[unreleased]: https://github.com/orbinson/aem-groovy-console/compare/19.0.9...HEAD
+[unreleased]: https://github.com/orbinson/aem-groovy-console/compare/19.1.0...HEAD
+[19.1.0]: https://github.com/orbinson/aem-groovy-console/compare/19.0.9...19.1.0
 [19.0.9]: https://github.com/orbinson/aem-groovy-console/compare/19.0.8...19.0.9
 [19.0.8]: https://github.com/orbinson/aem-groovy-console/compare/19.0.7...19.0.8
 [19.0.7]: https://github.com/orbinson/aem-groovy-console/compare/19.0.6...19.0.7
