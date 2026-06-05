@@ -22,11 +22,13 @@
         <module>api</module>
         <module>bundle</module>
         <module>groovy</module>
+        <module>ui.frontend</module>
         <module>ui.apps</module>
         <module>ui.apps.aem</module>
         <module>ui.config</module>
         <module>ui.content</module>
         <module>it.tests</module>
+        <module>ui.tests</module>
     </modules>
 
     <url>https://github.com/orbinson/aem-groovy-console</url>

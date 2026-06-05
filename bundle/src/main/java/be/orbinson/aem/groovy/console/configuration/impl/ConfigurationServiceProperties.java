@@ -2,6 +2,7 @@ package be.orbinson.aem.groovy.console.configuration.impl;
 
 import org.osgi.service.metatype.annotations.AttributeDefinition;
 import org.osgi.service.metatype.annotations.ObjectClassDefinition;
+import org.osgi.service.metatype.annotations.Option;
 
 @ObjectClassDefinition(name = "Groovy Console Configuration Service")
 public @interface ConfigurationServiceProperties {
@@ -43,4 +44,12 @@ public @interface ConfigurationServiceProperties {
             description = "If enabled, a script will be able to be replicated from an author and executed on all default replication agents."
     )
     boolean distributedExecutionEnabled() default false;
+
+    @AttributeDefinition(name = "Default UI",
+            description = "Which console UI the /groovyconsole path resolves to.  The other UI always remains reachable via the 'classic' or 'modern' selector.",
+            options = {
+                    @Option(label = "Classic", value = "classic"),
+                    @Option(label = "Modern", value = "modern")
+            })
+    String defaultUi() default "classic";
 }

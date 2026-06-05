@@ -120,6 +120,59 @@ the following Maven command.
 mvn clean install -P autoInstallSinglePackage
 ```
 
+The build is self-contained: the `ui.frontend` module downloads a pinned Node.js version and builds the modern UI
+into the `ui.apps` content package automatically.
+
+## Modern UI
+
+Next to the classic UI, the console ships a modern UI built
+with [Spectrum Web Components](https://opensource.adobe.com/spectrum-web-components/) and
+the [Monaco Editor](https://microsoft.github.io/monaco-editor/) (the editor that powers VS Code). It has no
+dependency on AEM Granite/Coral UI and runs on both AEM and plain Sling.
+
+* `/groovyconsole` serves the UI selected by the **Default UI** OSGi property (`classic` by default)
+* `/apps/groovyconsole.classic.html` always serves the classic UI
+* `/apps/groovyconsole.modern.html` always serves the modern UI
+* Both UIs have a header link to switch to the other
+
+Developer-experience features of the modern UI:
+
+* IDE-like completions backed by the `/bin/groovyconsole/assist/*` endpoints: classes visible to the script
+  classloader (with auto-import), methods and properties after a dot (including Groovy metaclass/GDK methods),
+  script bindings, OSGi service names inside `getService("...")`, and snippets
+* On-the-fly compile diagnostics: scripts are compiled (never executed) server-side with the same compiler
+  configuration as script execution, and errors appear as markers in the editor
+* Open/Save script dialogs that also work on plain Sling (the classic UI only supports these on AEM)
+* Light/dark Spectrum theme synced with the editor, `Ctrl/Cmd+Enter` to run, `Ctrl/Cmd+S` to save
+
+### Frontend development
+
+The modern UI lives in `ui.frontend` (Lit + TypeScript + Vite). For local development with hot reload against a
+running AEM or Sling instance:
+
+```shell
+cd ui.frontend
+npm install
+GC_PROXY_TARGET=http://localhost:4502 npm run dev # default proxy target is http://localhost:8080
+```
+
+### End-to-end tests
+
+Playwright tests for the modern UI live in `ui.tests`. The `ui-tests` Maven profile boots a Sling feature-model
+instance with the Groovy Console installed, runs the tests against it, and shuts it down again:
+
+```shell
+mvn verify -P ui-tests -pl ui.tests
+```
+
+To run the tests against an already-running AEM or Sling instance instead:
+
+```shell
+cd ui.tests
+npm install
+GC_BASE_URL=http://localhost:4502 npx playwright test
+```
+
 ## OSGi Configuration
 
 To check the OSGi configuration navigate to
@@ -136,6 +189,7 @@ OSGi configuration page.
 | Display All Audit Records?      | If enabled, all audit records (including records for other users) will be displayed in the console history.                       | `false`       |
 | Thread Timeout                  | Time in seconds that scripts are allowed to execute before being interrupted.  If 0, no timeout is enforced.                      | 0             |
 | Distributed execution enabled?  | If enabled, scripts saved under `/conf/groovyconsole/replication/` and replicated from author will be automatically executed on publish/preview instances. See [Distributed Execution](#distributed-execution-aemaacs-publishpreview). | `false`       |
+| Default UI                      | Which console UI (`classic` or `modern`) the `/groovyconsole` path resolves to. See [Modern UI](#modern-ui).                       | `classic`     |
 
 ## Distributed Execution (AEMaaCS Publish/Preview)
 

@@ -1,5 +1,6 @@
 package be.orbinson.aem.groovy.console.servlets
 
+import be.orbinson.aem.groovy.console.configuration.ConfigurationService
 import org.apache.commons.lang3.StringUtils
 import org.apache.sling.api.SlingHttpServletRequest
 import org.apache.sling.api.SlingHttpServletResponse
@@ -8,10 +9,12 @@ import org.apache.sling.api.resource.ResourceResolver
 import org.osgi.framework.BundleContext
 import org.osgi.service.component.annotations.Activate
 import org.osgi.service.component.annotations.Component
+import org.osgi.service.component.annotations.Reference
 
 import javax.servlet.Servlet
 import javax.servlet.ServletException
 
+import static javax.servlet.http.HttpServletResponse.SC_FORBIDDEN
 import static org.apache.sling.api.adapter.AdapterFactory.ADAPTABLE_CLASSES
 import static org.apache.sling.api.adapter.AdapterFactory.ADAPTER_CLASSES
 import static org.osgi.framework.Constants.OBJECTCLASS
@@ -23,9 +26,17 @@ class ServicesListServlet extends AbstractJsonResponseServlet {
 
     private BundleContext bundleContext
 
+    @Reference
+    private ConfigurationService configurationService
+
     @Override
     protected void doGet(SlingHttpServletRequest request,
                          SlingHttpServletResponse response) throws ServletException, IOException {
+        if (!configurationService.hasPermission(request)) {
+            response.status = SC_FORBIDDEN
+            return
+        }
+
         writeJsonResponse(response, adaptersMap + servicesMap)
     }
 

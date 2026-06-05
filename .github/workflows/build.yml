@@ -30,6 +30,11 @@ jobs:
       - name: Integration tests
         run: mvn --batch-mode verify -pl it.tests -Pit
 
+      - name: UI tests (Playwright)
+        run: mvn --batch-mode verify -pl ui.tests -Pui-tests
+        env:
+          CI: true
+
       # Save logs only if the job fails
       - name: Upload logs on failure
         if: failure()
@@ -37,3 +42,12 @@ jobs:
         with:
           name: failure-logs
           path: it.tests/target/launchers/model/logs/*
+
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            ui.tests/playwright-report
+            ui.tests/test-results
