@@ -144,21 +144,35 @@ export class GcApp extends LitElement {
         const executionId = start.executionId;
         store.setState({ liveOutput: '' });
 
-        let offset = 0;
-        for (;;) {
-          const poll = await pollExecution(executionId, offset);
+        try {
+          let offset = 0;
+          for (;;) {
+            const poll = await pollExecution(executionId, offset);
 
-          if (poll.chunk) {
-            store.setState({ liveOutput: (store.getState().liveOutput ?? '') + poll.chunk });
+            if (poll.chunk) {
+              store.setState({ liveOutput: (store.getState().liveOutput ?? '') + poll.chunk });
+            }
+            offset = poll.offset;
+
+            if (poll.done) {
+              store.setState({ result: poll.response ?? null, liveOutput: null });
+              break;
+            }
+
+            await new Promise((resolve) => setTimeout(resolve, 500));
           }
-          offset = poll.offset;
-
-          if (poll.done) {
-            store.setState({ result: poll.response ?? null, liveOutput: null });
-            break;
+        } catch (error) {
+          // the execution lives in-memory on one instance; on clustered authors (AEMaaCS)
+          // a re-routed poll can lose it while the script itself keeps running
+          if (error instanceof ApiError && error.status === 404) {
+            store.setState({ liveOutput: null });
+            store.showToast(
+              'Live output is no longer available — the script may still be running. Check History for the result.',
+              'negative',
+            );
+            return;
           }
-
-          await new Promise((resolve) => setTimeout(resolve, 500));
+          throw error;
         }
       } else {
         const response = await distributeScript(script, data);

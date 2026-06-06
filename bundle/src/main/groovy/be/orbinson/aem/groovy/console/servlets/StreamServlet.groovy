@@ -36,6 +36,9 @@ class StreamServlet extends AbstractJsonResponseServlet {
             return
         }
 
+        // polling responses must never be cached (e.g. by the AEMaaCS CDN)
+        response.setHeader("Cache-Control", "no-store")
+
         def executionId = request.getParameter("executionId")
         def offset = (request.getParameter("offset") ?: "0") as int
 

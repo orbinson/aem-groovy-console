@@ -38,10 +38,7 @@ class StreamingIT {
     @BeforeAll
     static void setUp() {
         httpClient = HttpClients.createDefault();
-
-        await().atMost(120, TimeUnit.SECONDS)
-                .pollInterval(5, TimeUnit.SECONDS)
-                .untilAsserted(() -> assertTrue(isHealthy(), "System not healthy"));
+        waitForStableReadiness(300, 15);
     }
 
     @AfterAll
@@ -131,14 +128,52 @@ class StreamingIT {
         }
     }
 
-    private static boolean isHealthy() {
-        try {
-            HttpGet healthCheck = new HttpGet(BASE_URL + "/system/health.json?tags=systemalive,groovyconsole");
-            healthCheck.addHeader("Authorization", AUTH_HEADER);
-            try (CloseableHttpResponse response = httpClient.execute(healthCheck)) {
+    /**
+     * Wait until the Groovy Console servlet answers successfully for a continuous window, matching
+     * the readiness strategy used by the other integration tests. Tolerates transient connection
+     * failures during startup.
+     */
+    private static void waitForStableReadiness(long overallTimeoutSec, long stabilityWindowSec) {
+        long deadline = System.currentTimeMillis() + overallTimeoutSec * 1000;
+        long stableSince = -1;
+        while (System.currentTimeMillis() < deadline) {
+            boolean ready = isGroovyConsoleReady();
+            long now = System.currentTimeMillis();
+            if (ready) {
+                if (stableSince < 0) {
+                    stableSince = now;
+                } else if (now - stableSince >= stabilityWindowSec * 1000) {
+                    return;
+                }
+            } else {
+                stableSince = -1;
+            }
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                fail("Interrupted while waiting for Groovy Console readiness");
+            }
+        }
+        fail("Groovy Console did not become stable within " + overallTimeoutSec
+                + "s (need " + stabilityWindowSec + "s of continuous OK)");
+    }
+
+    private static boolean isGroovyConsoleReady() {
+        try (CloseableHttpClient client = HttpClients.createDefault()) {
+            HttpPost post = new HttpPost(BASE_URL + "/bin/groovyconsole/post.json");
+            List<BasicNameValuePair> params = new ArrayList<>();
+            params.add(new BasicNameValuePair("script", "return 'ready'"));
+            post.setEntity(new UrlEncodedFormEntity(params, StandardCharsets.UTF_8));
+            post.addHeader("Authorization", AUTH_HEADER);
+            post.addHeader("Connection", "close");
+            try (CloseableHttpResponse response = client.execute(post)) {
+                if (response.getStatusLine().getStatusCode() != 200) {
+                    return false;
+                }
                 String body = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
-                JsonObject jsonResponse = JsonParser.parseString(body).getAsJsonObject();
-                return "OK".equals(jsonResponse.get("overallResult").getAsString());
+                JsonObject json = JsonParser.parseString(body).getAsJsonObject();
+                return "ready".equals(json.get("result").getAsString());
             }
         } catch (Exception e) {
             return false;

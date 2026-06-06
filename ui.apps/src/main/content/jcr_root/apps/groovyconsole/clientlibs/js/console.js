@@ -381,8 +381,14 @@ var GroovyConsole = function () {
           } else {
             setTimeout(poll, 500);
           }
-        }).fail(function () {
-          GroovyConsole.showError('Script execution failed.  Check error.log file.');
+        }).fail(function (jqXHR) {
+          if (jqXHR.status === 404) {
+            // execution state lives in-memory on one instance; on clustered authors a
+            // re-routed poll can lose it while the script itself keeps running
+            GroovyConsole.showError('Live output is no longer available - the script may still be running. Check the History panel for the result.');
+          } else {
+            GroovyConsole.showError('Script execution failed.  Check error.log file.');
+          }
           finish();
         });
       };

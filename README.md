@@ -208,6 +208,35 @@ automatically executed on all publish instances.
    instances, and the `ReplicatedScriptListener` on each publish instance executes it upon arrival.
 
 
+## Streaming script execution
+
+Scripts can be executed asynchronously so that their output can be read while they are still running. This also
+avoids gateway timeouts for long-running scripts on AEM as a Cloud Service, where synchronous requests are cut off
+after about a minute.
+
+1. Start the execution with the additional `async=true` parameter:
+
+   ```shell
+   curl -u admin:admin -d "script=..." -d "async=true" -X POST http://localhost:4502/bin/groovyconsole/post.json
+   # → {"executionId":"<uuid>"}
+   ```
+
+2. Poll for output until `done` is `true` (pass back the returned `offset` to only receive new output):
+
+   ```shell
+   curl -u admin:admin "http://localhost:4502/bin/groovyconsole/stream.json?executionId=<uuid>&offset=0"
+   # → {"chunk":"...","offset":42,"done":false}
+   # → {"chunk":"...","offset":97,"done":true,"response":{ ...full run response... }}
+   ```
+
+Both console UIs use this transparently; audit records are created exactly as for synchronous executions, and
+without the `async` parameter the endpoint behaves exactly as before (existing integrations are unaffected).
+
+> [!NOTE]
+> Execution state is held in memory on the instance that started the script and is retained for ten minutes after
+> completion. On clustered authors (AEM as a Cloud Service) polling relies on session affinity; if a poll is routed
+> to another instance the live output is unavailable, but the script keeps running and its result is still audited.
+
 ## Batch script execution
 
 Saved scripts can be remotely executed by sending a POST request to the console servlet with either the `scriptPath`
