@@ -13,6 +13,29 @@ function url(path: string): string {
   return `${config.contextPath}${path}`;
 }
 
+let csrfToken: { value: string; fetchedAt: number } | null = null;
+
+/** AEM's Granite CSRF filter requires a token for mutating requests from cookie-authenticated sessions. */
+async function getCsrfToken(): Promise<string | null> {
+  if (!config.aem) {
+    return null;
+  }
+
+  if (csrfToken && Date.now() - csrfToken.fetchedAt < 60_000) {
+    return csrfToken.value;
+  }
+
+  try {
+    const response = await fetch(url('/libs/granite/csrf/token.json'), { credentials: 'same-origin' });
+    const { token } = (await response.json()) as { token: string };
+
+    csrfToken = { value: token, fetchedAt: Date.now() };
+    return token;
+  } catch {
+    return null;
+  }
+}
+
 async function check(response: Response): Promise<Response> {
   if (!response.ok) {
     throw new ApiError(response.status, `${response.status} ${response.statusText}`);
@@ -40,11 +63,17 @@ export async function postForm<T>(path: string, form: Record<string, string | un
     }
   }
 
+  const headers: Record<string, string> = { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' };
+  const token = await getCsrfToken();
+  if (token) {
+    headers['CSRF-Token'] = token;
+  }
+
   const response = await check(
     await fetch(url(path), {
       method: 'POST',
       credentials: 'same-origin',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+      headers,
       body,
     }),
   );
@@ -55,5 +84,12 @@ export async function postForm<T>(path: string, form: Record<string, string | un
 
 export async function del(path: string, params?: Record<string, string>): Promise<void> {
   const query = params ? `?${new URLSearchParams(params)}` : '';
-  await check(await fetch(`${url(path)}${query}`, { method: 'DELETE', credentials: 'same-origin' }));
+
+  const headers: Record<string, string> = {};
+  const token = await getCsrfToken();
+  if (token) {
+    headers['CSRF-Token'] = token;
+  }
+
+  await check(await fetch(`${url(path)}${query}`, { method: 'DELETE', credentials: 'same-origin', headers }));
 }
