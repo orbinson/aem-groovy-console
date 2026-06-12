@@ -8,7 +8,7 @@
     <groupId>be.orbinson.aem</groupId>
     <artifactId>aem-groovy-console</artifactId>
     <packaging>pom</packaging>
-    <version>19.1.1-SNAPSHOT</version>
+    <version>20.0.0-SNAPSHOT</version>
 
     <name>AEM Groovy Console</name>
     <description>
@@ -84,8 +84,8 @@
     <properties>
         <!-- Maven -->
         <maven.build.timestamp.format>yyyy-MM-dd'T'HH:mm:ss.SSSZ</maven.build.timestamp.format>
-        <maven.compiler.source>1.8</maven.compiler.source>
-        <maven.compiler.target>1.8</maven.compiler.target>
+        <maven.compiler.source>11</maven.compiler.source>
+        <maven.compiler.target>11</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <timestamp>${maven.build.timestamp}</timestamp>
@@ -93,8 +93,8 @@
         <!-- Versions -->
         <bnd.version>6.4.0</bnd.version>
         <aem.version>6.5.10</aem.version>
-        <groovy.version>4.0.31</groovy.version>
-        <asm.version>9.7</asm.version>
+        <groovy.version>5.0.6</groovy.version>
+        <asm.version>9.9.1</asm.version>
         <njord.version>0.9.4</njord.version>
 
         <!-- SonarCloud -->
@@ -168,8 +168,8 @@
                 <version>3.8.1</version>
                 <configuration>
                     <compilerId>groovy-eclipse-compiler</compilerId>
-                    <source>1.8</source>
-                    <target>1.8</target>
+                    <source>11</source>
+                    <target>11</target>
                     <encoding>utf-8</encoding>
                 </configuration>
                 <dependencies>

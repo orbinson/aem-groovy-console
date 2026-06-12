@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **BREAKING:** Upgrade Groovy from 4.0.31 to 5.0.6
+- **BREAKING:** Drop Java 8 support — minimum is now Java 11 (Groovy 5.x requires JDK 11+)
+- Bump exported API package versions to 20.0.0
+
 ## [19.1.0] - 2026-05-04
 
 ### Changed

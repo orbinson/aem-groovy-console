@@ -9,7 +9,7 @@
     <parent>
         <groupId>be.orbinson.aem</groupId>
         <artifactId>aem-groovy-console</artifactId>
-        <version>19.1.1-SNAPSHOT</version>
+        <version>20.0.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>aem-groovy-console-it-tests</artifactId>
@@ -86,6 +86,11 @@
                                                 <version>14</version>
                                             </includeArtifact>
                                             <filesInclude>*.json</filesInclude>
+                                            <!-- WORKAROUND: Starter 14 ships jetty12 1.1.8; jetty12.json pins 1.2.0,
+                                                 take the highest. Remove once we move to Sling Starter 15. -->
+                                            <artifactsOverrides>
+                                                <artifactsOverride>org.apache.felix:org.apache.felix.http.jetty12:HIGHEST</artifactsOverride>
+                                            </artifactsOverrides>
                                         </aggregate>
                                     </aggregates>
                                     <replacePropertyVariables>project.version</replacePropertyVariables>

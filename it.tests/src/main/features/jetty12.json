@@ -1,0 +1,11 @@
+{
+  // WORKAROUND: Sling Starter 14 ships org.apache.felix.http.jetty12 1.1.8, which
+  // intermittently fails IT startup. Pin 1.2.0 here (the aggregate's artifactsOverrides
+  // takes HIGHEST). Remove this file and the override once we move to Sling Starter 15.
+  "bundles": [
+    {
+      "id": "org.apache.felix:org.apache.felix.http.jetty12:1.2.0",
+      "start-order": "5"
+    }
+  ]
+}
