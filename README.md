@@ -22,7 +22,7 @@ in the package for reference.
 
 ## Compatibility
 
-AEM Groovy Console 20.x requires **Java 11, 17 or 21** with an embedded Groovy version of 5.0.5.
+AEM Groovy Console 20.x requires **Java 11, 17 or 21** with an embedded Groovy version of 5.0.6.
 
 For environments still on Java 8, use AEM Groovy Console 19.x (last release on the Groovy 4.x line).
 
