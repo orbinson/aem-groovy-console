@@ -2,6 +2,7 @@ import { html, LitElement, nothing } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import type { ScheduleJobRequest } from '../api/types';
 import { config } from '../config';
+import { mutePlaceholders } from '../util/mute-placeholders';
 
 export interface SchedulerFormValues {
   scheduledJobId: string;
@@ -33,6 +34,10 @@ export class GcScheduler extends LitElement {
 
   createRenderRoot(): this {
     return this;
+  }
+
+  protected updated(): void {
+    mutePlaceholders(this);
   }
 
   populate(values: Partial<SchedulerFormValues>): void {

@@ -422,6 +422,11 @@ gc-data-editor.gc-hidden {
   color: var(--spectrum-gray-700);
 }
 
+/* keep timestamp links (Date / Next Execution Date) on a single line */
+.gc-table td > a {
+  white-space: nowrap;
+}
+
 .gc-table code {
   font-family: var(--spectrum-code-font-family-stack);
   font-size: 12px;

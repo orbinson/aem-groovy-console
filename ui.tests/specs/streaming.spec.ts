@@ -15,12 +15,14 @@ test.describe('streaming output', () => {
     await expect(dock.locator('.gc-dock-pre')).toContainText('stream 0', { timeout: 10_000 });
     await expect(page.locator('.gc-status-bar')).toContainText('Running');
 
-    // and the run completes with the full log + result
-    await expect(dock.locator('.gc-dock-tab.is-active')).toHaveText('Result', { timeout: 30_000 });
+    // on completion the Log tab is selected by default and holds the full output
+    await expect(dock.locator('.gc-dock-tab.is-active')).toHaveText('Log', { timeout: 30_000 });
     await expect(page.locator('.gc-status-bar')).toContainText('Ready');
-
-    await dock.locator('.gc-dock-tab', { hasText: 'Log' }).click();
     await expect(dock.locator('.gc-dock-pre')).toContainText('stream 5');
+
+    // the returned value is available on the secondary Result tab
+    await dock.locator('.gc-dock-tab', { hasText: 'Result' }).click();
+    await expect(dock.locator('.gc-dock-pre')).toContainText('streamed');
   });
 
   test('classic UI shows live output while a script runs', async ({ page }) => {

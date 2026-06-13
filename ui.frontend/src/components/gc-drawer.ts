@@ -21,7 +21,7 @@ export class GcDrawer extends LitElement {
       top: 0;
       bottom: 0;
       left: 48px;
-      width: min(720px, calc(100vw - 48px));
+      width: min(960px, calc(100vw - 48px));
       display: flex;
       flex-direction: column;
       background: var(--spectrum-gray-50);

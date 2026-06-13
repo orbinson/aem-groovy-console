@@ -22,7 +22,7 @@ function parseTable(result?: string): TableResult | null {
 export class GcResult extends LitElement {
   private store = new StoreController(this);
 
-  @state() private selectedTab: DockTab = 'result';
+  @state() private selectedTab: DockTab = 'log';
 
   private lastResult: RunScriptResponse | null = null;
 
@@ -35,17 +35,18 @@ export class GcResult extends LitElement {
 
     if (result !== this.lastResult) {
       this.lastResult = result;
-      // auto-select the most relevant tab for the new response
+      // Default to the Log (output) tab — it's what's wanted most of the time. Errors still
+      // jump to the trace; tables and the raw result are available as secondary tabs.
       if (result?.exceptionStackTrace?.length) {
         this.selectedTab = 'trace';
+      } else if (result?.output?.length) {
+        this.selectedTab = 'log';
       } else if (parseTable(result?.result)) {
         this.selectedTab = 'table';
       } else if (result?.result?.length) {
         this.selectedTab = 'result';
-      } else if (result?.output?.length) {
-        this.selectedTab = 'log';
       } else {
-        this.selectedTab = 'result';
+        this.selectedTab = 'log';
       }
     }
   }
@@ -164,9 +165,9 @@ export class GcResult extends LitElement {
     const error = !!response.exceptionStackTrace?.length;
 
     const tabs: Array<{ id: DockTab; label: string; show: boolean }> = [
+      { id: 'log', label: 'Log', show: !!response.output?.length },
       { id: 'result', label: 'Result', show: !table && !!response.result?.length },
       { id: 'table', label: 'Table', show: !!table },
-      { id: 'log', label: 'Log', show: !!response.output?.length },
       { id: 'trace', label: 'Trace', show: error },
     ];
     const visibleTabs = tabs.filter((tab) => tab.show);

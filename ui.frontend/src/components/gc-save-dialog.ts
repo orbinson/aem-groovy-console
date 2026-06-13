@@ -1,6 +1,7 @@
 import { html, LitElement, nothing } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { persistence } from '../state/local-storage';
+import { mutePlaceholders } from '../util/mute-placeholders';
 
 /** Save-as dialog: prompts for a file name and emits gc-save-script. */
 @customElement('gc-save-dialog')
@@ -10,6 +11,10 @@ export class GcSaveDialog extends LitElement {
 
   createRenderRoot(): this {
     return this;
+  }
+
+  protected updated(): void {
+    mutePlaceholders(this);
   }
 
   show(): void {
