@@ -20,6 +20,71 @@
     </properties>
 
     <build>
+        <pluginManagement>
+            <plugins>
+                <!--
+                    Shared configuration for the Sling feature aggregation and launch, reused by both the
+                    `it` profile (automated integration tests) and the `run` profile (manual instance).
+                    Each profile only declares the executions it needs; the verbose config lives here once.
+                -->
+                <plugin>
+                    <groupId>org.apache.sling</groupId>
+                    <artifactId>slingfeature-maven-plugin</artifactId>
+                    <version>1.9.4</version>
+                    <extensions>true</extensions>
+                    <configuration>
+                        <aggregates>
+                            <aggregate>
+                                <includeArtifact>
+                                    <groupId>org.apache.sling</groupId>
+                                    <artifactId>org.apache.sling.starter</artifactId>
+                                    <classifier>oak_tar</classifier>
+                                    <type>slingosgifeature</type>
+                                    <version>14</version>
+                                </includeArtifact>
+                                <filesInclude>*.json</filesInclude>
+                                <!-- WORKAROUND: Starter 14 ships jetty12 1.1.8; jetty12.json pins 1.2.0,
+                                     take the highest. Remove once we move to Sling Starter 15. -->
+                                <artifactsOverrides>
+                                    <artifactsOverride>org.apache.felix:org.apache.felix.http.jetty12:HIGHEST</artifactsOverride>
+                                </artifactsOverrides>
+                            </aggregate>
+                        </aggregates>
+                        <replacePropertyVariables>project.version</replacePropertyVariables>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.sling</groupId>
+                    <artifactId>feature-launcher-maven-plugin</artifactId>
+                    <version>1.0.4</version>
+                    <configuration>
+                        <launches>
+                            <launch>
+                                <id>model</id>
+                                <skip>${skipTests}</skip>
+                                <feature>
+                                    <groupId>${project.groupId}</groupId>
+                                    <artifactId>${project.artifactId}</artifactId>
+                                    <version>${project.version}</version>
+                                    <type>slingosgifeature</type>
+                                </feature>
+                                <launcherArguments>
+                                    <frameworkProperties>
+                                        <org.osgi.service.http.port>${http.port}</org.osgi.service.http.port>
+                                    </frameworkProperties>
+                                    <!-- Uncomment to enable debugging
+                                    <vmOptions>
+                                        <value>-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5000</value>
+                                    </vmOptions>
+                                    -->
+                                </launcherArguments>
+                                <startTimeoutSeconds>180</startTimeoutSeconds>
+                            </launch>
+                        </launches>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
         <plugins>
             <plugin>
                 <groupId>biz.aQute.bnd</groupId>
@@ -41,6 +106,7 @@
     </build>
 
     <profiles>
+        <!-- Automated integration tests: random port, launch, run failsafe, tear down. -->
         <profile>
             <id>it</id>
             <build>
@@ -67,7 +133,6 @@
                     <plugin>
                         <groupId>org.apache.sling</groupId>
                         <artifactId>slingfeature-maven-plugin</artifactId>
-                        <version>1.9.4</version>
                         <extensions>true</extensions>
                         <executions>
                             <execution>
@@ -75,66 +140,21 @@
                                 <goals>
                                     <goal>aggregate-features</goal>
                                 </goals>
-                                <configuration>
-                                    <aggregates>
-                                        <aggregate>
-                                            <includeArtifact>
-                                                <groupId>org.apache.sling</groupId>
-                                                <artifactId>org.apache.sling.starter</artifactId>
-                                                <classifier>oak_tar</classifier>
-                                                <type>slingosgifeature</type>
-                                                <version>14</version>
-                                            </includeArtifact>
-                                            <filesInclude>*.json</filesInclude>
-                                            <!-- WORKAROUND: Starter 14 ships jetty12 1.1.8; jetty12.json pins 1.2.0,
-                                                 take the highest. Remove once we move to Sling Starter 15. -->
-                                            <artifactsOverrides>
-                                                <artifactsOverride>org.apache.felix:org.apache.felix.http.jetty12:HIGHEST</artifactsOverride>
-                                            </artifactsOverrides>
-                                        </aggregate>
-                                    </aggregates>
-                                    <replacePropertyVariables>project.version</replacePropertyVariables>
-                                </configuration>
                             </execution>
                             <execution>
+                                <id>attach-features</id>
                                 <goals>
                                     <goal>attach-features</goal>
                                 </goals>
-                                <id>attach-features</id>
                             </execution>
                         </executions>
                     </plugin>
                     <plugin>
                         <groupId>org.apache.sling</groupId>
                         <artifactId>feature-launcher-maven-plugin</artifactId>
-                        <version>1.0.4</version>
-                        <configuration>
-                            <launches>
-                                <launch>
-                                    <id>model</id>
-                                    <skip>${skipTests}</skip>
-                                    <feature>
-                                        <groupId>${project.groupId}</groupId>
-                                        <artifactId>${project.artifactId}</artifactId>
-                                        <version>${project.version}</version>
-                                        <type>slingosgifeature</type>
-                                    </feature>
-
-                                    <launcherArguments>
-                                        <frameworkProperties>
-                                            <org.osgi.service.http.port>${http.port}</org.osgi.service.http.port>
-                                        </frameworkProperties>
-                                        <!-- Uncomment to enable debugging of IT tests -->
-                                        <!--<vmOptions>-->
-                                        <!--    <value>-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5000</value>-->
-                                        <!--</vmOptions>-->
-                                    </launcherArguments>
-                                    <startTimeoutSeconds>180</startTimeoutSeconds>
-                                </launch>
-                            </launches>
-                        </configuration>
                         <executions>
                             <execution>
+                                <id>start-stop-console</id>
                                 <goals>
                                     <goal>start</goal>
                                     <goal>stop</goal>
@@ -157,6 +177,82 @@
                                     <goal>integration-test</goal>
                                     <goal>verify</goal>
                                 </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <!--
+            Launch the same aggregated Sling feature the integration tests use, on a fixed port, and
+            keep it running for manual verification:
+
+                mvn clean install                        # build the current SNAPSHOT artifacts first
+                mvn verify -Prun -pl it.tests            # boot Sling on http://localhost:8080 (admin/admin)
+
+            The instance runs in the foreground and tails its error log; press Ctrl+C to stop it.
+            Override the port with -Dhttp.port=xxxx.
+        -->
+        <profile>
+            <id>run</id>
+            <properties>
+                <http.port>8080</http.port>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.sling</groupId>
+                        <artifactId>slingfeature-maven-plugin</artifactId>
+                        <extensions>true</extensions>
+                        <executions>
+                            <execution>
+                                <id>aggregate-features</id>
+                                <goals>
+                                    <goal>aggregate-features</goal>
+                                </goals>
+                            </execution>
+                            <execution>
+                                <id>attach-features</id>
+                                <goals>
+                                    <goal>attach-features</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.sling</groupId>
+                        <artifactId>feature-launcher-maven-plugin</artifactId>
+                        <executions>
+                            <!-- start only; the foreground tail below keeps the build (and instance) alive -->
+                            <execution>
+                                <id>start-console</id>
+                                <phase>pre-integration-test</phase>
+                                <goals>
+                                    <goal>start</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <version>3.1.0</version>
+                        <executions>
+                            <!-- block in the foreground streaming the log; Ctrl+C stops Maven and the instance -->
+                            <execution>
+                                <id>tail-console-log</id>
+                                <phase>integration-test</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>tail</executable>
+                                    <arguments>
+                                        <argument>-F</argument>
+                                        <argument>${project.build.directory}/launchers/model/logs/error.log</argument>
+                                    </arguments>
+                                </configuration>
                             </execution>
                         </executions>
                     </plugin>
