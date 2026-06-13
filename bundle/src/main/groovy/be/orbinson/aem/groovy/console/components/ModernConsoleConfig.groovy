@@ -1,5 +1,8 @@
 package be.orbinson.aem.groovy.console.components
 
+import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.SCRIPT
+import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.USER_ID
+
 import be.orbinson.aem.groovy.console.GroovyConsoleService
 import be.orbinson.aem.groovy.console.audit.AuditService
 import be.orbinson.aem.groovy.console.configuration.ConfigurationService
@@ -10,9 +13,6 @@ import org.apache.sling.models.annotations.Model
 import org.apache.sling.models.annotations.injectorspecific.InjectionStrategy
 import org.apache.sling.models.annotations.injectorspecific.OSGiService
 import org.apache.sling.models.annotations.injectorspecific.Self
-
-import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.SCRIPT
-import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.USER_ID
 
 /**
  * Builds the bootstrap configuration (window.__GC_CONFIG__) consumed by the modern console SPA on load:

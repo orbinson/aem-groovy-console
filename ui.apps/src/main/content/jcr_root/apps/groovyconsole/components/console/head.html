@@ -9,7 +9,7 @@
 
 </style>
 
-<script>window.groovyConsoleContextPath = '${request.contextPath @ context="scriptString"}';</script>
+<script>globalThis.groovyConsoleContextPath = '${request.contextPath @ context="scriptString"}';</script>
 
 <sly data-sly-use.application="be.orbinson.aem.groovy.console.components.Application">
     <sly data-sly-test="${application.sling}" data-sly-include="headlibs-sling.jsp"></sly>

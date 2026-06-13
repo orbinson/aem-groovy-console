@@ -25,6 +25,9 @@ import java.lang.reflect.Modifier
 class DefaultAssistService implements AssistService, BundleListener {
 
     private static final int MEMBERS_CACHE_SIZE = 256
+
+    private static final String SEVERITY_ERROR = "error"
+
     private BundleContext bundleContext
 
     private volatile Map<String, Boolean> classIndex
@@ -205,7 +208,7 @@ class DefaultAssistService implements AssistService, BundleListener {
                     def cause = error.cause
 
                     markers << [
-                            severity       : "error",
+                            severity       : SEVERITY_ERROR,
                             message        : cause.originalMessage ?: cause.message,
                             startLineNumber: Math.max(cause.startLine, 1),
                             startColumn    : Math.max(cause.startColumn, 1),
@@ -215,7 +218,7 @@ class DefaultAssistService implements AssistService, BundleListener {
                     ]
                 } else {
                     markers << [
-                            severity       : "error",
+                            severity       : SEVERITY_ERROR,
                             message        : error.toString(),
                             startLineNumber: 1,
                             startColumn    : 1,
@@ -227,7 +230,7 @@ class DefaultAssistService implements AssistService, BundleListener {
         } catch (Throwable t) {
             // non-compilation failure (e.g. AST transform error); report as a generic marker
             markers << [
-                    severity       : "error",
+                    severity       : SEVERITY_ERROR,
                     message        : t.message ?: t.toString(),
                     startLineNumber: 1,
                     startColumn    : 1,

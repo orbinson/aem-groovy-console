@@ -1,5 +1,7 @@
 package be.orbinson.aem.groovy.console.servlets.assist
 
+import static javax.servlet.http.HttpServletResponse.SC_FORBIDDEN
+
 import be.orbinson.aem.groovy.console.api.context.impl.RequestScriptContext
 import be.orbinson.aem.groovy.console.configuration.ConfigurationService
 import be.orbinson.aem.groovy.console.extension.ExtensionService
@@ -8,11 +10,8 @@ import org.apache.sling.api.SlingHttpServletRequest
 import org.apache.sling.api.SlingHttpServletResponse
 import org.osgi.service.component.annotations.Component
 import org.osgi.service.component.annotations.Reference
-
 import javax.servlet.Servlet
 import javax.servlet.ServletException
-
-import static javax.servlet.http.HttpServletResponse.SC_FORBIDDEN
 
 /**
  * Script context metadata (bindings, star imports, metaclasses) consumed by the modern UI's

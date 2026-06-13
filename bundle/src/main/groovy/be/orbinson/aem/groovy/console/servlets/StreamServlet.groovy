@@ -1,17 +1,16 @@
 package be.orbinson.aem.groovy.console.servlets
 
+import static javax.servlet.http.HttpServletResponse.SC_FORBIDDEN
+import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND
+
 import be.orbinson.aem.groovy.console.configuration.ConfigurationService
 import be.orbinson.aem.groovy.console.streaming.ExecutionRegistry
 import org.apache.sling.api.SlingHttpServletRequest
 import org.apache.sling.api.SlingHttpServletResponse
 import org.osgi.service.component.annotations.Component
 import org.osgi.service.component.annotations.Reference
-
 import javax.servlet.Servlet
 import javax.servlet.ServletException
-
-import static javax.servlet.http.HttpServletResponse.SC_FORBIDDEN
-import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND
 
 /**
  * Polling endpoint for asynchronous (streaming) script executions started via

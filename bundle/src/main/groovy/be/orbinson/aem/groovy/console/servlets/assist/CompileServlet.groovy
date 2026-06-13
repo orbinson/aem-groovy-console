@@ -1,5 +1,9 @@
 package be.orbinson.aem.groovy.console.servlets.assist
 
+import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.SCRIPT
+import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST
+import static javax.servlet.http.HttpServletResponse.SC_FORBIDDEN
+
 import be.orbinson.aem.groovy.console.api.context.impl.RequestScriptContext
 import be.orbinson.aem.groovy.console.assist.AssistService
 import be.orbinson.aem.groovy.console.configuration.ConfigurationService
@@ -8,14 +12,9 @@ import org.apache.sling.api.SlingHttpServletRequest
 import org.apache.sling.api.SlingHttpServletResponse
 import org.osgi.service.component.annotations.Component
 import org.osgi.service.component.annotations.Reference
-
 import javax.servlet.Servlet
 import javax.servlet.ServletException
 import java.nio.charset.StandardCharsets
-
-import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.SCRIPT
-import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST
-import static javax.servlet.http.HttpServletResponse.SC_FORBIDDEN
 
 /**
  * Compiles (without running) the submitted script using the same shell configuration as script

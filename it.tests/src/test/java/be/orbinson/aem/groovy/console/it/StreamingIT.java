@@ -27,6 +27,9 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Integration tests for asynchronous (streaming) script execution.
  */
+// Thread.sleep is intentional here: these tests poll a remote endpoint and assert on partial
+// output observed over time, matching the readiness polling in GroovyConsoleServiceIT.
+@SuppressWarnings("java:S2925")
 class StreamingIT {
 
     private static final int SLING_PORT = Integer.getInteger("HTTP_PORT", 8080);

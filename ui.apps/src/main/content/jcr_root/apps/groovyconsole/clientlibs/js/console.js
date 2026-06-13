@@ -4,7 +4,7 @@ var GroovyConsole = function () {
 
   return {
     getContextPath: function() {
-          return window.groovyConsoleContextPath || '';
+          return globalThis.groovyConsoleContextPath || '';
     },
 
     initializeEditors: function () {
@@ -234,7 +234,7 @@ var GroovyConsole = function () {
 
           $('#run-script-text').text('Running...');
 
-          var finish = function () {
+          const finish = function () {
             scriptEditor.setReadOnly(false);
             dataEditor.setReadOnly(false);
 
@@ -250,7 +250,7 @@ var GroovyConsole = function () {
             data: dataEditor.getSession().getValue(),
             async: 'true'
           }).done(function (response) {
-            if (response && response.executionId) {
+            if (response?.executionId) {
               // streaming execution: output appears live while the script runs
               GroovyConsole.streamExecution(response.executionId, finish);
             } else {
@@ -359,15 +359,15 @@ var GroovyConsole = function () {
     },
 
     streamExecution: function (executionId, finish) {
-      var offset = 0;
-      var $output = $('#output');
+      let offset = 0;
+      const $output = $('#output');
 
-      var poll = function () {
+      const poll = function () {
         $.getJSON(GroovyConsole.getContextPath() + '/bin/groovyconsole/stream.json', {
           executionId: executionId,
           offset: offset
         }).done(function (progress) {
-          if (progress.chunk && progress.chunk.length) {
+          if (progress.chunk?.length) {
             $output.find('pre').append(document.createTextNode(progress.chunk));
             $output.removeClass('alert-danger').addClass('alert-success').show();
           }
@@ -610,16 +610,16 @@ var GroovyConsole = function () {
     },
 
     showOpenDialog: function () {
-      var scriptsFolder = '/conf/groovyconsole/scripts';
-      var $list = $('#open-script-list');
-      var $empty = $('#open-script-empty');
+      const scriptsFolder = '/conf/groovyconsole/scripts';
+      const $list = $('#open-script-list');
+      const $empty = $('#open-script-empty');
 
       $list.empty();
       $empty.hide();
 
       $.getJSON(GroovyConsole.getContextPath() + scriptsFolder + '.1.json').done(function (folder) {
-        var names = $.map(folder, function (value, name) {
-          return (value && value['jcr:primaryType'] === 'nt:file') ? name : null;
+        const names = $.map(folder, function (value, name) {
+          return value?.['jcr:primaryType'] === 'nt:file' ? name : null;
         }).sort();
 
         if (names.length) {
@@ -651,9 +651,9 @@ var GroovyConsole = function () {
     },
 
     submitSaveDialog: function () {
-      var fileName = $('#save-script-file-name').val();
+      const fileName = $('#save-script-file-name').val();
 
-      if (/^[a-zA-Z0-9_.\-]+$/.test(fileName)) {
+      if (/^[a-zA-Z0-9_.-]+$/.test(fileName)) {
         GroovyConsole.saveScript(fileName);
 
         $('#save-script-modal').modal('hide');
