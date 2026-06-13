@@ -2,11 +2,11 @@ import { expect, test } from '@playwright/test';
 import { CLASSIC_URL, DEFAULT_URL, MODERN_URL } from './helpers';
 
 test.describe('UI routing', () => {
-  test('default path serves the classic UI (defaultUi=classic)', async ({ page }) => {
+  test('default path serves the modern UI (defaultUi=modern)', async ({ page }) => {
     await page.goto(DEFAULT_URL);
 
-    await expect(page.locator('#script-editor')).toBeVisible({ timeout: 30_000 });
-    await expect(page.locator('gc-app')).toHaveCount(0);
+    await expect(page.locator('gc-app')).toBeVisible({ timeout: 30_000 });
+    await expect(page.locator('#script-editor')).toHaveCount(0);
   });
 
   test('classic selector always serves the classic UI', async ({ page }) => {

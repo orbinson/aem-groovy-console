@@ -31,7 +31,7 @@ class ConsoleRouter {
         } else if (selectors.contains(UI_MODERN)) {
             UI_MODERN
         } else {
-            configurationService.defaultUi == UI_MODERN ? UI_MODERN : UI_CLASSIC
+            configurationService.defaultUi == UI_CLASSIC ? UI_CLASSIC : UI_MODERN
         }
     }
 

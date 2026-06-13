@@ -190,11 +190,11 @@ class AssistIT {
     }
 
     @Test
-    void testDefaultUiServesClassicConsole() throws Exception {
+    void testDefaultUiServesModernConsole() throws Exception {
         String html = getHtml("/apps/groovyconsole.html");
 
-        assertTrue(html.contains("script-editor"), "Expected classic UI editor element");
-        assertFalse(html.contains("<gc-app>"), "Did not expect modern UI markup on default path");
+        assertTrue(html.contains("<gc-app>"), "Expected modern UI app element on default path");
+        assertFalse(html.contains("script-editor"), "Did not expect classic UI markup on default path");
     }
 
     @Test

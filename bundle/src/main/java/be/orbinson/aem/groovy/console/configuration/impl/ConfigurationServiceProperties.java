@@ -48,8 +48,8 @@ public @interface ConfigurationServiceProperties {
     @AttributeDefinition(name = "Default UI",
             description = "Which console UI the /groovyconsole path resolves to.  The other UI always remains reachable via the 'classic' or 'modern' selector.",
             options = {
-                    @Option(label = "Classic", value = "classic"),
-                    @Option(label = "Modern", value = "modern")
+                    @Option(label = "Modern", value = "modern"),
+                    @Option(label = "Classic", value = "classic")
             })
-    String defaultUi() default "classic";
+    String defaultUi() default "modern";
 }

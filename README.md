@@ -18,6 +18,16 @@ the [console page](http://localhost:4502/groovyconsole) for documentation on the
 complete reference of all default [bindings and methods](docs/bindings.md) is also available. Sample scripts are included
 in the package for reference.
 
+The console ships with two UIs:
+
+* a **modern UI** (the default) — an IDE-style interface built with [Spectrum Web Components](https://opensource.adobe.com/spectrum-web-components/)
+  and the [Monaco Editor](https://microsoft.github.io/monaco-editor/), featuring code completion, live compile
+  diagnostics and streaming output. It has no dependency on AEM Granite/Coral UI and runs on both AEM and plain Sling.
+* the **classic UI** — the original Bootstrap interface, still available and fully supported.
+
+`/groovyconsole` serves whichever UI is configured as the [default](#osgi-configuration); both are always reachable
+directly via the `.modern.html` / `.classic.html` selectors. See [Modern UI](#modern-ui) for details.
+
 ![Screenshot](docs/assets/screenshot.png)
 
 ## Compatibility
@@ -125,25 +135,34 @@ into the `ui.apps` content package automatically.
 
 ## Modern UI
 
-Next to the classic UI, the console ships a modern UI built
+The modern UI is an IDE-style interface built
 with [Spectrum Web Components](https://opensource.adobe.com/spectrum-web-components/) and
 the [Monaco Editor](https://microsoft.github.io/monaco-editor/) (the editor that powers VS Code). It has no
 dependency on AEM Granite/Coral UI and runs on both AEM and plain Sling.
 
-* `/groovyconsole` serves the UI selected by the **Default UI** OSGi property (`classic` by default)
-* `/apps/groovyconsole.classic.html` always serves the classic UI
-* `/apps/groovyconsole.modern.html` always serves the modern UI
-* Both UIs have a header link to switch to the other
+Routing:
 
-Developer-experience features of the modern UI:
+* `/groovyconsole` serves the UI selected by the **Default UI** OSGi property (`modern` by default)
+* `/apps/groovyconsole.modern.html` always serves the modern UI
+* `/apps/groovyconsole.classic.html` always serves the classic UI
+* the classic UI has a "Try the new UI" link; the modern UI links back from its Help panel
+
+Layout — a resizable split between a hero editor and an output dock, an activity rail opening slide-out drawers for
+**History**, **Scheduled Jobs** and **Help/Reference**, and a status bar showing run state, Groovy version and the
+keyboard shortcuts. The output dock has tabs for **Log** (selected by default), **Result**, **Table** and **Trace**.
+
+Developer-experience features:
 
 * IDE-like completions backed by the `/bin/groovyconsole/assist/*` endpoints: classes visible to the script
   classloader (with auto-import), methods and properties after a dot (including Groovy metaclass/GDK methods),
   script bindings, OSGi service names inside `getService("...")`, and snippets
 * On-the-fly compile diagnostics: scripts are compiled (never executed) server-side with the same compiler
   configuration as script execution, and errors appear as markers in the editor
-* Open/Save script dialogs that also work on plain Sling (the classic UI only supports these on AEM)
-* Light/dark Spectrum theme synced with the editor, `Ctrl/Cmd+Enter` to run, `Ctrl/Cmd+S` to save
+* [Streaming output](#streaming-script-execution): script output appears live in the dock while the script runs
+* Clickable stack-trace frames that jump to the offending line in the editor
+* Folder-navigable Open/Save script dialogs that also work on plain Sling (the classic UI's dialogs were AEM-only)
+* Light/dark Spectrum theme synced with the editor; `Ctrl/Cmd+Enter` to run, `Ctrl/Cmd+S` to save, `Ctrl/Cmd+K` for
+  the editor command palette
 
 ### Frontend development
 
@@ -173,6 +192,19 @@ npm install
 GC_BASE_URL=http://localhost:4502 npx playwright test
 ```
 
+### Run a local instance
+
+To launch a standalone Sling instance with the console installed — the same aggregated feature model the integration
+tests use — for manual testing:
+
+```shell
+mvn clean install                  # build the current SNAPSHOT artifacts
+mvn verify -Prun -pl it.tests      # boot Sling on http://localhost:8080 (admin/admin)
+```
+
+The instance runs in the foreground and tails its log; press `Ctrl+C` to stop it. Override the port
+with `-Dhttp.port=xxxx`.
+
 ## OSGi Configuration
 
 To check the OSGi configuration navigate to
@@ -189,7 +221,7 @@ OSGi configuration page.
 | Display All Audit Records?      | If enabled, all audit records (including records for other users) will be displayed in the console history.                       | `false`       |
 | Thread Timeout                  | Time in seconds that scripts are allowed to execute before being interrupted.  If 0, no timeout is enforced.                      | 0             |
 | Distributed execution enabled?  | If enabled, scripts saved under `/conf/groovyconsole/replication/` and replicated from author will be automatically executed on publish/preview instances. See [Distributed Execution](#distributed-execution-aemaacs-publishpreview). | `false`       |
-| Default UI                      | Which console UI (`classic` or `modern`) the `/groovyconsole` path resolves to. See [Modern UI](#modern-ui).                       | `classic`     |
+| Default UI                      | Which console UI (`modern` or `classic`) the `/groovyconsole` path resolves to. The other is always reachable via the `.modern.html` / `.classic.html` selector. See [Modern UI](#modern-ui). | `modern`      |
 
 ## Distributed Execution (AEMaaCS Publish/Preview)
 

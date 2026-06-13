@@ -104,7 +104,7 @@ class DefaultConfigurationService implements ConfigurationService {
         displayAllAuditRecords = properties.auditDisplayAll()
         threadTimeout = properties.threadTimeout()
         distributedExecutionEnabled = properties.distributedExecutionEnabled()
-        defaultUi = properties.defaultUi() ?: "classic"
+        defaultUi = properties.defaultUi() ?: "modern"
         if (bundleContext.getProperty("sling.run.modes") != null) {
             author = bundleContext.getProperty("sling.run.modes").contains("author")
         }
