@@ -4,10 +4,7 @@ var GroovyConsole = function () {
 
   return {
     getContextPath: function() {
-          if (typeof CQ !== 'undefined' && typeof CQ.shared !== 'undefined' && typeof CQ.shared.HTTP !== 'undefined') {
-              return CQ.shared.HTTP.getContextPath();
-          }
-          return ""
+          return globalThis.groovyConsoleContextPath || '';
     },
 
     initializeEditors: function () {
@@ -237,18 +234,7 @@ var GroovyConsole = function () {
 
           $('#run-script-text').text('Running...');
 
-          $.post(GroovyConsole.getContextPath() + '/bin/groovyconsole/post.json', {
-            script: script,
-            data: dataEditor.getSession().getValue()
-          }).done(function (response) {
-            GroovyConsole.showResult(response);
-          }).fail(function (jqXHR) {
-            if (jqXHR.status === 403) {
-              GroovyConsole.showError('You do not have permission to run scripts in the Groovy Console.');
-            } else {
-              GroovyConsole.showError('Script execution failed.  Check error.log file.');
-            }
-          }).always(function () {
+          const finish = function () {
             scriptEditor.setReadOnly(false);
             dataEditor.setReadOnly(false);
 
@@ -257,6 +243,27 @@ var GroovyConsole = function () {
             GroovyConsole.Audit.refreshAuditRecords();
 
             $('#run-script-text').text('Run Script');
+          };
+
+          $.post(GroovyConsole.getContextPath() + '/bin/groovyconsole/post.json', {
+            script: script,
+            data: dataEditor.getSession().getValue(),
+            async: 'true'
+          }).done(function (response) {
+            if (response?.executionId) {
+              // streaming execution: output appears live while the script runs
+              GroovyConsole.streamExecution(response.executionId, finish);
+            } else {
+              GroovyConsole.showResult(response);
+              finish();
+            }
+          }).fail(function (jqXHR) {
+            if (jqXHR.status === 403) {
+              GroovyConsole.showError('You do not have permission to run scripts in the Groovy Console.');
+            } else {
+              GroovyConsole.showError('Script execution failed.  Check error.log file.');
+            }
+            finish();
           });
         } else {
           GroovyConsole.showError('Script is empty.');
@@ -349,6 +356,44 @@ var GroovyConsole = function () {
           $('input[name="cronExpression"]').attr('disabled', false);
         }
       });
+    },
+
+    streamExecution: function (executionId, finish) {
+      let offset = 0;
+      const $output = $('#output');
+
+      const poll = function () {
+        $.getJSON(GroovyConsole.getContextPath() + '/bin/groovyconsole/stream.json', {
+          executionId: executionId,
+          offset: offset
+        }).done(function (progress) {
+          if (progress.chunk?.length) {
+            $output.find('pre').append(document.createTextNode(progress.chunk));
+            $output.removeClass('alert-danger').addClass('alert-success').show();
+          }
+
+          offset = progress.offset;
+
+          if (progress.done) {
+            GroovyConsole.reset();
+            GroovyConsole.showResult(progress.response || {});
+            finish();
+          } else {
+            setTimeout(poll, 500);
+          }
+        }).fail(function (jqXHR) {
+          if (jqXHR.status === 404) {
+            // execution state lives in-memory on one instance; on clustered authors a
+            // re-routed poll can lose it while the script itself keeps running
+            GroovyConsole.showError('Live output is no longer available - the script may still be running. Check the History panel for the result.');
+          } else {
+            GroovyConsole.showError('Script execution failed.  Check error.log file.');
+          }
+          finish();
+        });
+      };
+
+      poll();
     },
 
     reset: function () {
@@ -539,24 +584,82 @@ var GroovyConsole = function () {
       }, 3000);
     },
 
-    showOpenDialog: function () {
-      if (typeof CQ !== undefined) {
-        var dialog = CQ.WCM.getDialog('/apps/groovyconsole-aem/dialogs/opendialog');
+    initializeDialogs: function () {
+      // re-enable the toolbar buttons whenever a dialog is dismissed
+      $('#open-script-modal,#save-script-modal').on('hidden.bs.modal', function () {
+        GroovyConsole.enableButtons();
+      });
 
-        dialog.show();
-      } else {
-        alert("Open and saving currently only supported in AEM")
-      }
+      $('#open-script-list').on('click', 'a', function (e) {
+        e.preventDefault();
+
+        GroovyConsole.loadScript($(this).data('path'));
+
+        $('#open-script-modal').modal('hide');
+      });
+
+      $('#save-script-confirm').click(function () {
+        GroovyConsole.submitSaveDialog();
+      });
+
+      $('#save-script-form').submit(function (e) {
+        e.preventDefault();
+
+        GroovyConsole.submitSaveDialog();
+      });
+    },
+
+    showOpenDialog: function () {
+      const scriptsFolder = '/conf/groovyconsole/scripts';
+      const $list = $('#open-script-list');
+      const $empty = $('#open-script-empty');
+
+      $list.empty();
+      $empty.hide();
+
+      $.getJSON(GroovyConsole.getContextPath() + scriptsFolder + '.1.json').done(function (folder) {
+        const names = $.map(folder, function (value, name) {
+          return value?.['jcr:primaryType'] === 'nt:file' ? name : null;
+        }).sort();
+
+        if (names.length) {
+          $.each(names, function (i, name) {
+            $('<a href="#" class="list-group-item"></a>')
+              .text(name)
+              .attr('data-path', scriptsFolder + '/' + name)
+              .appendTo($list);
+          });
+        } else {
+          $empty.show();
+        }
+      }).fail(function () {
+        $empty.show();
+      }).always(function () {
+        $('#open-script-modal').modal('show');
+      });
     },
 
     showSaveDialog: function () {
-        if (typeof CQ !== undefined) {
-            var dialog = CQ.WCM.getDialog('/apps/groovyconsole-aem/dialogs/savedialog');
+      $('#save-script-file-name').val(GroovyConsole.localStorage.getScriptName());
+      $('#save-script-error').hide();
 
-            dialog.show();
-        } else {
-            alert("Open and saving currently only supported in AEM")
-        }
+      $('#save-script-modal').modal('show');
+
+      $('#save-script-modal').one('shown.bs.modal', function () {
+        $('#save-script-file-name').focus();
+      });
+    },
+
+    submitSaveDialog: function () {
+      const fileName = $('#save-script-file-name').val();
+
+      if (/^[a-zA-Z0-9_.-]+$/.test(fileName)) {
+        GroovyConsole.saveScript(fileName);
+
+        $('#save-script-modal').modal('hide');
+      } else {
+        $('#save-script-error').show();
+      }
     },
 
     loadScript: function (scriptPath) {
@@ -588,20 +691,6 @@ var GroovyConsole = function () {
       }).always(function () {
         GroovyConsole.enableButtons();
       });
-    },
-
-    refreshOpenDialog: function (dialog) {
-      var tp, root;
-
-      if (dialog.loadedFlag == null) {
-        dialog.loadedFlag = true;
-      } else {
-        tp = dialog.treePanel;
-        root = tp.getRootNode();
-
-        tp.getLoader().load(root);
-        root.expand();
-      }
     }
   };
 }();
@@ -612,4 +701,5 @@ $(function () {
   GroovyConsole.initializeButtons();
   GroovyConsole.initializeEvents();
   GroovyConsole.initializeTooltips();
+  GroovyConsole.initializeDialogs();
 });

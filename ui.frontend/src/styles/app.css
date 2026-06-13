@@ -1,0 +1,567 @@
+:root {
+  /* Adobe Clean is proprietary; use an open fallback stack with the Spectrum look. */
+  --spectrum-sans-font-family-stack: 'Source Sans 3', 'Source Sans Pro', system-ui, -apple-system, 'Segoe UI',
+    Roboto, Helvetica, Arial, sans-serif;
+  --spectrum-code-font-family-stack: 'Source Code Pro', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+.gc-root-theme {
+  display: block;
+  height: 100vh;
+  background-color: var(--spectrum-gray-100);
+  color: var(--spectrum-gray-800);
+  font-family: var(--spectrum-sans-font-family-stack);
+}
+
+/* ---- app frame ---- */
+
+.gc-frame {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.gc-app-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--spectrum-gray-300);
+  background: var(--spectrum-gray-50);
+}
+
+.gc-brand {
+  font-weight: 700;
+  font-size: 15px;
+  white-space: nowrap;
+}
+
+.gc-script-name {
+  font-family: var(--spectrum-code-font-family-stack);
+  font-size: 13px;
+  color: var(--spectrum-gray-600);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gc-dirty-dot {
+  color: var(--spectrum-blue-800);
+  margin-inline-start: 4px;
+  font-size: 10px;
+  vertical-align: middle;
+}
+
+.gc-app-bar-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-inline-start: auto;
+}
+
+.gc-overflow {
+  position: relative;
+}
+
+.gc-overflow-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  min-width: 160px;
+  display: flex;
+  flex-direction: column;
+  background: var(--spectrum-gray-50);
+  border: 1px solid var(--spectrum-gray-300);
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  padding: 4px;
+  z-index: 300;
+}
+
+.gc-overflow-menu button {
+  border: none;
+  background: transparent;
+  font: inherit;
+  font-size: 13px;
+  color: var(--spectrum-gray-800);
+  text-align: left;
+  padding: 8px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.gc-overflow-menu button:hover {
+  background: var(--spectrum-gray-200);
+}
+
+.gc-classic-link {
+  font-size: 13px;
+  color: var(--spectrum-blue-900);
+  text-decoration: underline;
+}
+
+.gc-classic-link:hover {
+  color: var(--spectrum-blue-1000);
+}
+
+.gc-workspace {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+
+/* ---- activity rail ---- */
+
+.gc-rail {
+  width: 48px;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding-top: 8px;
+  border-right: 1px solid var(--spectrum-gray-300);
+  background: var(--spectrum-gray-75);
+}
+
+.gc-rail-button {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--spectrum-gray-600);
+  cursor: pointer;
+}
+
+.gc-rail-button:hover {
+  background: var(--spectrum-gray-200);
+  color: var(--spectrum-gray-800);
+}
+
+.gc-rail-button.is-active {
+  background: var(--spectrum-gray-200);
+  color: var(--spectrum-blue-900);
+  box-shadow: inset 2px 0 0 var(--spectrum-blue-900);
+}
+
+.gc-rail-badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  min-width: 14px;
+  height: 14px;
+  border-radius: 7px;
+  background: var(--spectrum-blue-900);
+  color: #fff;
+  font-size: 10px;
+  line-height: 14px;
+  text-align: center;
+  padding: 0 3px;
+}
+
+/* ---- split: editor / output ---- */
+
+.gc-split {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.gc-editor-pane {
+  display: flex;
+  flex-direction: column;
+  flex: 0 1 auto;
+  min-height: 120px;
+  max-height: calc(100% - 80px);
+}
+
+.gc-split-handle {
+  flex: none;
+  height: 6px;
+  cursor: row-resize;
+  background: var(--spectrum-gray-200);
+  border-top: 1px solid var(--spectrum-gray-300);
+  touch-action: none;
+}
+
+.gc-split-handle:hover {
+  background: var(--spectrum-blue-400);
+}
+
+.gc-pane-header {
+  display: flex;
+  gap: 2px;
+  padding: 4px 8px 0;
+  background: var(--spectrum-gray-75);
+  border-bottom: 1px solid var(--spectrum-gray-300);
+}
+
+.gc-pane-tab,
+.gc-dock-tab {
+  border: none;
+  background: transparent;
+  font: inherit;
+  font-size: 13px;
+  color: var(--spectrum-gray-600);
+  padding: 6px 12px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+}
+
+.gc-pane-tab:hover,
+.gc-dock-tab:hover {
+  color: var(--spectrum-gray-800);
+}
+
+.gc-pane-tab.is-active,
+.gc-dock-tab.is-active {
+  color: var(--spectrum-gray-900);
+  border-bottom-color: var(--spectrum-blue-900);
+  font-weight: 600;
+}
+
+gc-script-editor,
+gc-data-editor {
+  display: block;
+  flex: 1;
+  min-height: 0;
+}
+
+gc-script-editor.gc-hidden,
+gc-data-editor.gc-hidden {
+  display: none;
+}
+
+.gc-editor-container {
+  height: 100%;
+}
+
+/* ---- output dock ---- */
+
+.gc-output {
+  display: block;
+  flex: 1;
+  min-height: 48px;
+}
+
+.gc-dock {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  border-top: 1px solid var(--spectrum-gray-300);
+  background: var(--spectrum-gray-50);
+}
+
+.gc-dock-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 12px;
+  border-bottom: 1px solid var(--spectrum-gray-300);
+  background: var(--spectrum-gray-75);
+}
+
+.gc-dock-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--spectrum-gray-600);
+  margin-inline-end: 8px;
+}
+
+.gc-dock-tabs {
+  display: flex;
+  gap: 2px;
+}
+
+.gc-dock-body {
+  flex: 1;
+  overflow: auto;
+  min-height: 0;
+}
+
+.gc-dock-pre {
+  margin: 0;
+  padding: 10px 14px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: var(--spectrum-code-font-family-stack);
+  font-size: 12px;
+}
+
+.gc-dock-pre-error {
+  color: var(--spectrum-red-900);
+}
+
+.gc-trace-link {
+  color: var(--spectrum-blue-900);
+  text-decoration: underline;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.gc-trace-link:hover {
+  color: var(--spectrum-blue-1000);
+}
+
+.gc-dock-error .gc-dock-header {
+  box-shadow: inset 0 2px 0 var(--spectrum-red-700);
+}
+
+.gc-dock-empty {
+  padding: 16px;
+  color: var(--spectrum-gray-600);
+  font-size: 13px;
+}
+
+.gc-dock-table {
+  margin: 8px 12px;
+}
+
+/* ---- status bar ---- */
+
+.gc-status-bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 3px 16px;
+  font-size: 12px;
+  color: var(--spectrum-gray-600);
+  border-top: 1px solid var(--spectrum-gray-300);
+  background: var(--spectrum-gray-75);
+}
+
+.gc-status-state.is-running {
+  color: var(--spectrum-blue-900);
+}
+
+.gc-status-state.is-error {
+  color: var(--spectrum-red-900);
+}
+
+.gc-status-state.is-ready {
+  color: var(--spectrum-green-900);
+}
+
+.gc-status-spacer {
+  flex: 1;
+}
+
+.gc-status-hint {
+  color: var(--spectrum-gray-500);
+}
+
+/* ---- drawers ---- */
+
+.gc-drawer-subheading {
+  margin: 16px 0 4px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.gc-drawer-content {
+  display: block;
+}
+
+/* ---- shared: tables, forms, reference content ---- */
+
+.gc-section {
+  border: 1px solid var(--spectrum-gray-300);
+  border-radius: 4px;
+  padding: 8px 16px;
+  background-color: var(--spectrum-gray-50);
+  margin-bottom: 8px;
+}
+
+.gc-section > summary {
+  cursor: pointer;
+  font-weight: 600;
+  padding: 4px 0;
+}
+
+.gc-muted {
+  color: var(--spectrum-gray-600);
+  font-size: 13px;
+  margin: 4px 0 8px;
+}
+
+.gc-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin: 8px 0;
+}
+
+.gc-table th,
+.gc-table td {
+  text-align: left;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--spectrum-gray-300);
+  vertical-align: middle;
+}
+
+.gc-table th {
+  font-weight: 600;
+  color: var(--spectrum-gray-700);
+}
+
+/* keep timestamp links (Date / Next Execution Date) on a single line */
+.gc-table td > a {
+  white-space: nowrap;
+}
+
+.gc-table code {
+  font-family: var(--spectrum-code-font-family-stack);
+  font-size: 12px;
+}
+
+.gc-row-actions {
+  white-space: nowrap;
+  text-align: right;
+}
+
+.gc-panel-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 8px 0;
+}
+
+.gc-date-input {
+  font-family: inherit;
+  font-size: 13px;
+  padding: 4px 8px;
+  border: 1px solid var(--spectrum-gray-400);
+  border-radius: 4px;
+  background: var(--spectrum-gray-50);
+  color: inherit;
+}
+
+.gc-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 480px;
+  margin: 8px 0 16px;
+}
+
+.gc-reference-list {
+  margin: 8px 0;
+  padding-inline-start: 20px;
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.gc-reference-list code {
+  font-family: var(--spectrum-code-font-family-stack);
+  font-size: 12px;
+}
+
+.gc-code {
+  font-family: var(--spectrum-code-font-family-stack);
+  font-size: 12px;
+  background: var(--spectrum-gray-200);
+  border-radius: 4px;
+  padding: 12px;
+  overflow-x: auto;
+}
+
+.gc-toast {
+  position: fixed;
+  bottom: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+}
+
+/* ---- script browser dialog ---- */
+
+.gc-browser-breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+
+.gc-browser-crumb {
+  border: none;
+  background: transparent;
+  font: inherit;
+  font-size: 13px;
+  color: var(--spectrum-blue-900);
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+
+.gc-browser-crumb:hover {
+  background: var(--spectrum-gray-200);
+}
+
+.gc-browser-crumb.is-current {
+  color: var(--spectrum-gray-800);
+  font-weight: 600;
+  cursor: default;
+}
+
+.gc-browser-crumb-sep {
+  color: var(--spectrum-gray-500);
+}
+
+.gc-browser-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 380px;
+  max-height: 50vh;
+  overflow-y: auto;
+}
+
+.gc-browser-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: none;
+  background: transparent;
+  font: inherit;
+  font-size: 13px;
+  color: var(--spectrum-gray-800);
+  text-align: left;
+  padding: 8px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.gc-browser-item:hover {
+  background: var(--spectrum-gray-200);
+}
+
+.gc-browser-name {
+  flex: 1;
+  font-family: var(--spectrum-code-font-family-stack);
+  font-size: 12px;
+}
+
+.gc-browser-chevron {
+  color: var(--spectrum-gray-500);
+}

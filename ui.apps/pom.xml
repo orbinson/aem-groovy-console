@@ -48,6 +48,14 @@
             <version>${project.version}</version>
         </dependency>
 
+        <!-- Build-order dependency: the frontend build writes the modern UI SPA into this module's jcr_root -->
+        <dependency>
+            <groupId>be.orbinson.aem</groupId>
+            <artifactId>aem-groovy-console-ui.frontend</artifactId>
+            <version>${project.version}</version>
+            <type>pom</type>
+        </dependency>
+
         <dependency>
             <groupId>com.adobe.aem</groupId>
             <artifactId>uber-jar</artifactId>

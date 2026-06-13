@@ -18,6 +18,16 @@ the [console page](http://localhost:4502/groovyconsole) for documentation on the
 complete reference of all default [bindings and methods](docs/bindings.md) is also available. Sample scripts are included
 in the package for reference.
 
+The console ships with two UIs:
+
+* a **modern UI** (the default) — an IDE-style interface built with [Spectrum Web Components](https://opensource.adobe.com/spectrum-web-components/)
+  and the [Monaco Editor](https://microsoft.github.io/monaco-editor/), featuring code completion, live compile
+  diagnostics and streaming output. It has no dependency on AEM Granite/Coral UI and runs on both AEM and plain Sling.
+* the **classic UI** — the original Bootstrap interface, still available and fully supported.
+
+`/groovyconsole` serves whichever UI is configured as the [default](#osgi-configuration); both are always reachable
+directly via the `.modern.html` / `.classic.html` selectors. See [Modern UI](#modern-ui) for details.
+
 ![Screenshot](docs/assets/screenshot.png)
 
 ## Compatibility
@@ -120,6 +130,81 @@ the following Maven command.
 mvn clean install -P autoInstallSinglePackage
 ```
 
+The build is self-contained: the `ui.frontend` module downloads a pinned Node.js version and builds the modern UI
+into the `ui.apps` content package automatically.
+
+## Modern UI
+
+The modern UI is an IDE-style interface built
+with [Spectrum Web Components](https://opensource.adobe.com/spectrum-web-components/) and
+the [Monaco Editor](https://microsoft.github.io/monaco-editor/) (the editor that powers VS Code). It has no
+dependency on AEM Granite/Coral UI and runs on both AEM and plain Sling.
+
+Routing:
+
+* `/groovyconsole` serves the UI selected by the **Default UI** OSGi property (`modern` by default)
+* `/apps/groovyconsole.modern.html` always serves the modern UI
+* `/apps/groovyconsole.classic.html` always serves the classic UI
+* the classic UI has a "Try the new UI" link; the modern UI links back from its Help panel
+
+Layout — a resizable split between a hero editor and an output dock, an activity rail opening slide-out drawers for
+**History**, **Scheduled Jobs** and **Help/Reference**, and a status bar showing run state, Groovy version and the
+keyboard shortcuts. The output dock has tabs for **Log** (selected by default), **Result**, **Table** and **Trace**.
+
+Developer-experience features:
+
+* IDE-like completions backed by the `/bin/groovyconsole/assist/*` endpoints: classes visible to the script
+  classloader (with auto-import), methods and properties after a dot (including Groovy metaclass/GDK methods),
+  script bindings, OSGi service names inside `getService("...")`, and snippets
+* On-the-fly compile diagnostics: scripts are compiled (never executed) server-side with the same compiler
+  configuration as script execution, and errors appear as markers in the editor
+* [Streaming output](#streaming-script-execution): script output appears live in the dock while the script runs
+* Clickable stack-trace frames that jump to the offending line in the editor
+* Folder-navigable Open/Save script dialogs that also work on plain Sling (the classic UI's dialogs were AEM-only)
+* Light/dark Spectrum theme synced with the editor; `Ctrl/Cmd+Enter` to run, `Ctrl/Cmd+S` to save, `Ctrl/Cmd+K` for
+  the editor command palette
+
+### Frontend development
+
+The modern UI lives in `ui.frontend` (Lit + TypeScript + Vite). For local development with hot reload against a
+running AEM or Sling instance:
+
+```shell
+cd ui.frontend
+npm install
+GC_PROXY_TARGET=http://localhost:4502 npm run dev # default proxy target is http://localhost:8080
+```
+
+### End-to-end tests
+
+Playwright tests for the modern UI live in `ui.tests`. The `ui-tests` Maven profile boots a Sling feature-model
+instance with the Groovy Console installed, runs the tests against it, and shuts it down again:
+
+```shell
+mvn verify -P ui-tests -pl ui.tests
+```
+
+To run the tests against an already-running AEM or Sling instance instead:
+
+```shell
+cd ui.tests
+npm install
+GC_BASE_URL=http://localhost:4502 npx playwright test
+```
+
+### Run a local instance
+
+To launch a standalone Sling instance with the console installed — the same aggregated feature model the integration
+tests use — for manual testing:
+
+```shell
+mvn clean install                  # build the current SNAPSHOT artifacts
+mvn verify -Prun -pl it.tests      # boot Sling on http://localhost:8080 (admin/admin)
+```
+
+The instance runs in the foreground and tails its log; press `Ctrl+C` to stop it. Override the port
+with `-Dhttp.port=xxxx`.
+
 ## OSGi Configuration
 
 To check the OSGi configuration navigate to
@@ -136,6 +221,7 @@ OSGi configuration page.
 | Display All Audit Records?      | If enabled, all audit records (including records for other users) will be displayed in the console history.                       | `false`       |
 | Thread Timeout                  | Time in seconds that scripts are allowed to execute before being interrupted.  If 0, no timeout is enforced.                      | 0             |
 | Distributed execution enabled?  | If enabled, scripts saved under `/conf/groovyconsole/replication/` and replicated from author will be automatically executed on publish/preview instances. See [Distributed Execution](#distributed-execution-aemaacs-publishpreview). | `false`       |
+| Default UI                      | Which console UI (`modern` or `classic`) the `/groovyconsole` path resolves to. The other is always reachable via the `.modern.html` / `.classic.html` selector. See [Modern UI](#modern-ui). | `modern`      |
 
 ## Distributed Execution (AEMaaCS Publish/Preview)
 
@@ -153,6 +239,35 @@ automatically executed on all publish instances.
 4. The console automatically saves the script to `/conf/groovyconsole/replication/`, replicates it to all publish
    instances, and the `ReplicatedScriptListener` on each publish instance executes it upon arrival.
 
+
+## Streaming script execution
+
+Scripts can be executed asynchronously so that their output can be read while they are still running. This also
+avoids gateway timeouts for long-running scripts on AEM as a Cloud Service, where synchronous requests are cut off
+after about a minute.
+
+1. Start the execution with the additional `async=true` parameter:
+
+   ```shell
+   curl -u admin:admin -d "script=..." -d "async=true" -X POST http://localhost:4502/bin/groovyconsole/post.json
+   # → {"executionId":"<uuid>"}
+   ```
+
+2. Poll for output until `done` is `true` (pass back the returned `offset` to only receive new output):
+
+   ```shell
+   curl -u admin:admin "http://localhost:4502/bin/groovyconsole/stream.json?executionId=<uuid>&offset=0"
+   # → {"chunk":"...","offset":42,"done":false}
+   # → {"chunk":"...","offset":97,"done":true,"response":{ ...full run response... }}
+   ```
+
+Both console UIs use this transparently; audit records are created exactly as for synchronous executions, and
+without the `async` parameter the endpoint behaves exactly as before (existing integrations are unaffected).
+
+> [!NOTE]
+> Execution state is held in memory on the instance that started the script and is retained for ten minutes after
+> completion. On clustered authors (AEM as a Cloud Service) polling relies on session affinity; if a poll is routed
+> to another instance the live output is unavailable, but the script keeps running and its result is still audited.
 
 ## Batch script execution
 

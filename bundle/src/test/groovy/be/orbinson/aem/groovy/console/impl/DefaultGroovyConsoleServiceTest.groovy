@@ -51,6 +51,7 @@ class DefaultGroovyConsoleServiceTest {
         context.registerInjectActivateService(new SlingBindingExtensionProvider())
         context.registerInjectActivateService(new DefaultExtensionService())
         context.registerInjectActivateService(new SlingScriptMetaClassExtensionProvider())
+        context.registerInjectActivateService(new GroovyShellFactory())
         context.registerInjectActivateService(new DefaultGroovyConsoleService())
     }
 

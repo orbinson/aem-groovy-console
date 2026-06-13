@@ -40,6 +40,8 @@ class DefaultConfigurationService implements ConfigurationService {
 
     private boolean author
 
+    private String defaultUi
+
     @Override
     boolean hasPermission(SlingHttpServletRequest request) {
         isAdminOrAllowedGroupMember(request, allowedGroups)
@@ -85,6 +87,11 @@ class DefaultConfigurationService implements ConfigurationService {
         return author
     }
 
+    @Override
+    String getDefaultUi() {
+        defaultUi
+    }
+
     @Activate
     @Modified
     @Synchronized
@@ -97,6 +104,7 @@ class DefaultConfigurationService implements ConfigurationService {
         displayAllAuditRecords = properties.auditDisplayAll()
         threadTimeout = properties.threadTimeout()
         distributedExecutionEnabled = properties.distributedExecutionEnabled()
+        defaultUi = properties.defaultUi() ?: "modern"
         if (bundleContext.getProperty("sling.run.modes") != null) {
             author = bundleContext.getProperty("sling.run.modes").contains("author")
         }

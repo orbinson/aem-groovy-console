@@ -1,6 +1,17 @@
 name: Build
 
-on: [push, pull_request]
+# Build pushes to main and all pull requests. Restricting push to main avoids the duplicate
+# run that `on: [push, pull_request]` produces for same-repo PR branches (both events fire).
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+# Cancel an in-progress run when a newer commit is pushed to the same branch/PR.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
@@ -30,6 +41,11 @@ jobs:
       - name: Integration tests
         run: mvn --batch-mode verify -pl it.tests -Pit
 
+      - name: UI tests (Playwright)
+        run: mvn --batch-mode verify -pl ui.tests -Pui-tests
+        env:
+          CI: true
+
       # Save logs only if the job fails
       - name: Upload logs on failure
         if: failure()
@@ -37,3 +53,12 @@ jobs:
         with:
           name: failure-logs
           path: it.tests/target/launchers/model/logs/*
+
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            ui.tests/playwright-report
+            ui.tests/test-results
