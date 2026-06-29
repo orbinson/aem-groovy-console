@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit && vite build",
+    "test": "vitest run",
+    "build": "vitest run && tsc --noEmit && vite build",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -42,7 +43,9 @@
   },
   "devDependencies": {
     "@types/node": "^25.9.1",
+    "jsdom": "^25.0.1",
     "typescript": "~5.6.3",
-    "vite": "^5.4.11"
+    "vite": "^5.4.11",
+    "vitest": "^2.1.8"
   }
 }
