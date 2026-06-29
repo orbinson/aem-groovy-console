@@ -15,7 +15,8 @@ import javax.servlet.ServletException
 import static javax.servlet.http.HttpServletResponse.*
 
 /**
- * Executes a report synchronously and persists the result.
+ * Starts a report execution and returns immediately with a RUNNING execution; the script runs asynchronously
+ * and the result is persisted. Clients poll <code>execution.json</code> for the outcome.
  *
  * <code>POST /bin/groovyconsole/reports/execute</code> with JSON body
  * <code>{"name": "...", "parameters": {"key": "value"}}</code>.

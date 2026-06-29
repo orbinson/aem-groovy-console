@@ -48,9 +48,6 @@ class DefaultReportService implements ReportService {
 
     private static final String PROPERTY_LAST_MODIFIED_BY = "lastModifiedBy"
 
-    // obsolete properties removed on save when migrating older definitions
-    private static final List<String> OBSOLETE_PROPERTIES = ["scriptPath", "viewGroups", "editGroups"]
-
     @Override
     List<ReportDefinition> getReports(ResourceResolver resourceResolver) {
         def reportsFolder = resourceResolver.getResource(PATH_REPORTS_FOLDER)
@@ -98,7 +95,6 @@ class DefaultReportService implements ReportService {
             putOrRemove(valueMap, PROPERTY_CATEGORY, reportDefinition.category)
             putOrRemove(valueMap, PROPERTY_SCRIPT, reportDefinition.script)
             putOrRemove(valueMap, PROPERTY_PAGE_SIZE, reportDefinition.pageSize)
-            OBSOLETE_PROPERTIES.each { valueMap.remove(it) }
             valueMap.put(PROPERTY_LAST_MODIFIED, Calendar.instance)
             valueMap.put(PROPERTY_LAST_MODIFIED_BY, userId)
 
