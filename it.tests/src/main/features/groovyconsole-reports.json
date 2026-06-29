@@ -1,0 +1,21 @@
+{
+  "bundles":[
+    {
+      "id": "org.apache.servicemix.bundles:org.apache.servicemix.bundles.poi:5.2.3_1",
+      "start-order": "20"
+    },
+    {
+      "id": "org.apache.logging.log4j:log4j-api:2.20.0",
+      "start-order": "19"
+    },
+    {
+      "id": "org.apache.commons:commons-compress:1.24.0",
+      "start-order": "19"
+    }
+  ],
+  "configurations":{
+    "be.orbinson.aem.groovy.console.reports.impl.DefaultReportsConfigurationService":{
+      "maxResultRows:Integer":5
+    }
+  }
+}

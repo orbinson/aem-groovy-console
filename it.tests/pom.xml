@@ -1,9 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project
-        xmlns="http://maven.apache.org/POM/4.0.0"
-        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
@@ -17,24 +14,74 @@
 
     <properties>
         <maven.deploy.skip>true</maven.deploy.skip>
+        <http.port>8080</http.port>
     </properties>
 
     <build>
         <pluginManagement>
             <plugins>
                 <!--
-                    Shared configuration for the Sling feature aggregation and launch, reused by both the
-                    `it` profile (automated integration tests) and the `run` profile (manual instance).
-                    Each profile only declares the executions it needs; the verbose config lives here once.
+                    Shared configuration for the Sling feature build, reused by both the `it` profile
+                    (automated tests) and the `run` profile (manual instance). The converter + aggregator turn
+                    our all-packages into feature-model bundles at BUILD time, so every bundle (incl. Groovy
+                    5.0.6) is in the initial launch — no runtime content-package install, no refresh-cascade
+                    race that otherwise wedges startup. Each profile only binds the executions it needs.
                 -->
                 <plugin>
+                    <!--
+                        Convert the all content packages into feature-model artifacts (bundles +
+                        configurations + repoinit + residual JCR content) BEFORE Sling Starter boots. Without
+                        this, the Sling JCR Installer extracts the all-packages after the framework is up,
+                        triggering a bundle-refresh cascade (and Groovy 4->5 resolution churn) that races with
+                        felix.http.jetty12 and fails to settle within the start timeout.
+                    -->
+                    <groupId>org.apache.sling</groupId>
+                    <artifactId>sling-feature-converter-maven-plugin</artifactId>
+                    <version>1.0.14</version>
+                    <configuration>
+                        <contentPackages>
+                            <contentPackage>
+                                <groupId>${project.groupId}</groupId>
+                                <artifactId>aem-groovy-console-all</artifactId>
+                            </contentPackage>
+                            <contentPackage>
+                                <groupId>${project.groupId}</groupId>
+                                <artifactId>aem-groovy-console-reports-all</artifactId>
+                            </contentPackage>
+                        </contentPackages>
+                        <fmOutput>${project.build.directory}/cp-conversion/fm.out</fmOutput>
+                        <bundleStartOrder>20</bundleStartOrder>
+                        <installConvertedCP>true</installConvertedCP>
+                        <mergeConfigurations>true</mergeConfigurations>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <id>convert-cp-to-fm</id>
+                            <phase>initialize</phase>
+                            <goals>
+                                <goal>convert-cp</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <!--
+                        Aggregate Sling Starter + the cp-converter output into one launchable feature.
+                        additionalFeatureFiles reads the cp-conversion JSON at goal time (it is produced
+                        earlier in the same build); osgiBsnCollisionDetection + *:*:HIGHEST resolves duplicate
+                        bundles (e.g. the Starter's Groovy 4.0.10 vs our 5.0.6) by keeping the highest version.
+                        Requires slingfeature-maven-plugin >= 1.9.6 (additionalFeatureFiles / SLING-13233).
+                    -->
                     <groupId>org.apache.sling</groupId>
                     <artifactId>slingfeature-maven-plugin</artifactId>
-                    <version>1.9.4</version>
+                    <version>1.9.6</version>
                     <extensions>true</extensions>
                     <configuration>
+                        <replacePropertyVariables>project.version</replacePropertyVariables>
                         <aggregates>
                             <aggregate>
+                                <classifier>it</classifier>
+                                <attach>false</attach>
                                 <includeArtifact>
                                     <groupId>org.apache.sling</groupId>
                                     <artifactId>org.apache.sling.starter</artifactId>
@@ -43,40 +90,43 @@
                                     <version>14</version>
                                 </includeArtifact>
                                 <filesInclude>*.json</filesInclude>
-                                <!-- WORKAROUND: Starter 14 ships jetty12 1.1.8; jetty12.json pins 1.2.0,
-                                     take the highest. Remove once we move to Sling Starter 15. -->
+                                <additionalFeatureFiles>
+                                    <additionalFeatureFile>${project.build.directory}/cp-conversion/fm.out/aem-groovy-console-all.json</additionalFeatureFile>
+                                    <additionalFeatureFile>${project.build.directory}/cp-conversion/fm.out/aem-groovy-console-reports-all.json</additionalFeatureFile>
+                                </additionalFeatureFiles>
                                 <artifactsOverrides>
-                                    <artifactsOverride>org.apache.felix:org.apache.felix.http.jetty12:HIGHEST</artifactsOverride>
+                                    <artifactsOverride>*:*:HIGHEST</artifactsOverride>
                                 </artifactsOverrides>
+                                <osgiBsnCollisionDetection>true</osgiBsnCollisionDetection>
                             </aggregate>
                         </aggregates>
-                        <replacePropertyVariables>project.version</replacePropertyVariables>
                     </configuration>
+                    <executions>
+                        <execution>
+                            <id>aggregate-it-feature</id>
+                            <phase>generate-resources</phase>
+                            <goals>
+                                <goal>aggregate-features</goal>
+                            </goals>
+                        </execution>
+                    </executions>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.sling</groupId>
                     <artifactId>feature-launcher-maven-plugin</artifactId>
                     <version>1.0.4</version>
                     <configuration>
+                        <featureLauncherVersion>1.3.6</featureLauncherVersion>
                         <launches>
                             <launch>
                                 <id>model</id>
                                 <skip>${skipTests}</skip>
-                                <feature>
-                                    <groupId>${project.groupId}</groupId>
-                                    <artifactId>${project.artifactId}</artifactId>
-                                    <version>${project.version}</version>
-                                    <type>slingosgifeature</type>
-                                </feature>
+                                <!-- Single aggregated feature produced by slingfeature-maven-plugin above. -->
+                                <featureFile>${project.build.directory}/slingfeature-tmp/feature-it.json</featureFile>
                                 <launcherArguments>
                                     <frameworkProperties>
                                         <org.osgi.service.http.port>${http.port}</org.osgi.service.http.port>
                                     </frameworkProperties>
-                                    <!-- Uncomment to enable debugging
-                                    <vmOptions>
-                                        <value>-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5000</value>
-                                    </vmOptions>
-                                    -->
                                 </launcherArguments>
                                 <startTimeoutSeconds>180</startTimeoutSeconds>
                             </launch>
@@ -132,22 +182,12 @@
                     </plugin>
                     <plugin>
                         <groupId>org.apache.sling</groupId>
+                        <artifactId>sling-feature-converter-maven-plugin</artifactId>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.sling</groupId>
                         <artifactId>slingfeature-maven-plugin</artifactId>
                         <extensions>true</extensions>
-                        <executions>
-                            <execution>
-                                <id>aggregate-features</id>
-                                <goals>
-                                    <goal>aggregate-features</goal>
-                                </goals>
-                            </execution>
-                            <execution>
-                                <id>attach-features</id>
-                                <goals>
-                                    <goal>attach-features</goal>
-                                </goals>
-                            </execution>
-                        </executions>
                     </plugin>
                     <plugin>
                         <groupId>org.apache.sling</groupId>
@@ -196,29 +236,16 @@
         -->
         <profile>
             <id>run</id>
-            <properties>
-                <http.port>8080</http.port>
-            </properties>
             <build>
                 <plugins>
                     <plugin>
                         <groupId>org.apache.sling</groupId>
+                        <artifactId>sling-feature-converter-maven-plugin</artifactId>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.sling</groupId>
                         <artifactId>slingfeature-maven-plugin</artifactId>
                         <extensions>true</extensions>
-                        <executions>
-                            <execution>
-                                <id>aggregate-features</id>
-                                <goals>
-                                    <goal>aggregate-features</goal>
-                                </goals>
-                            </execution>
-                            <execution>
-                                <id>attach-features</id>
-                                <goals>
-                                    <goal>attach-features</goal>
-                                </goals>
-                            </execution>
-                        </executions>
                     </plugin>
                     <plugin>
                         <groupId>org.apache.sling</groupId>
@@ -262,6 +289,23 @@
     </profiles>
 
     <dependencies>
+        <!-- Resolved by sling-feature-converter-maven-plugin (convert-cp) at build time; the dependencies
+             also enforce reactor ordering so the all-packages are built before this module. -->
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>aem-groovy-console-all</artifactId>
+            <version>${project.version}</version>
+            <type>zip</type>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>aem-groovy-console-reports-all</artifactId>
+            <version>${project.version}</version>
+            <type>zip</type>
+            <scope>provided</scope>
+        </dependency>
+
         <!-- Testing -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
