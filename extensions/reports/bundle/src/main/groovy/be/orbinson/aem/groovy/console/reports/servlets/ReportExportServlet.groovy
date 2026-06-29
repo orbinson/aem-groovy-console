@@ -1,5 +1,6 @@
 package be.orbinson.aem.groovy.console.reports.servlets
 
+import be.orbinson.aem.groovy.console.reports.LocaleAwareReportExporter
 import be.orbinson.aem.groovy.console.reports.ReportExecutionService
 import be.orbinson.aem.groovy.console.reports.ReportExporterRegistry
 import be.orbinson.aem.groovy.console.reports.ReportResultStore
@@ -99,7 +100,11 @@ class ReportExportServlet extends AbstractReportsServlet {
         response.setHeader("Content-Disposition", "attachment; filename=\"$fileName\"")
 
         try {
-            exporter.export(reportData, response.outputStream)
+            if (exporter instanceof LocaleAwareReportExporter) {
+                exporter.export(reportData, response.outputStream, request.locale)
+            } else {
+                exporter.export(reportData, response.outputStream)
+            }
             response.outputStream.flush()
         } catch (Exception e) {
             LOG.error("error exporting execution {} as format {}", executionId, format, e)

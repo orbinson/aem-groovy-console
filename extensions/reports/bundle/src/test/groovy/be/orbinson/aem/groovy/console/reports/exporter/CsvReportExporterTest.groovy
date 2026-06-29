@@ -11,9 +11,9 @@ class CsvReportExporterTest {
 
     private static final String BOM = "\uFEFF"
 
-    private static String export(ReportData data) {
+    private static String export(ReportData data, Locale locale = Locale.ENGLISH) {
         def out = new ByteArrayOutputStream()
-        new CsvReportExporter().export(data, out)
+        new CsvReportExporter().export(data, out, locale)
         new String(out.toByteArray(), "UTF-8")
     }
 
@@ -42,6 +42,28 @@ class CsvReportExporterTest {
 
         assertTrue(csv.contains("'=1+1"), "a leading = must be prefixed with an apostrophe")
         assertFalse(((csv =~ /(^|\n)=1\+1/) as boolean), "a raw formula must never start a cell")
+    }
+
+    @Test
+    void "uses a semicolon delimiter for comma-decimal locales and a comma otherwise"() {
+        def data = new ReportData()
+        data.column("A")
+        data.column("B")
+        data.row("1", "2")
+
+        assertTrue(export(data, Locale.ENGLISH).contains("A,B"), "English locale uses a comma delimiter")
+        assertTrue(export(data, new Locale("nl")).contains("A;B"), "comma-decimal locale uses a semicolon delimiter")
+    }
+
+    @Test
+    void "quotes only on the active delimiter"() {
+        def data = new ReportData()
+        data.column("A")
+        data.row("a;b")
+
+        // ';' is a plain value under a comma delimiter, but must be quoted under a semicolon delimiter
+        assertFalse(export(data, Locale.ENGLISH).contains('"a;b"'), "semicolon need not be quoted with comma delimiter")
+        assertTrue(export(data, new Locale("nl")).contains('"a;b"'), "semicolon must be quoted with semicolon delimiter")
     }
 
     @Test
