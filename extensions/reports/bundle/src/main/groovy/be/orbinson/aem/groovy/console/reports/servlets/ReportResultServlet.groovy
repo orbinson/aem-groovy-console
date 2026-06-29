@@ -53,10 +53,9 @@ class ReportResultServlet extends AbstractReportsServlet {
 
         // access follows the report's read ACL; orphaned executions need the report-create capability
         def resolver = request.resourceResolver
-        def allowed = execution.reportName && reportService.getReport(resolver, execution.reportName) ?
-                true : reportService.canCreate(resolver)
+        def definition = execution.reportName ? reportService.getReport(resolver, execution.reportName) : null
 
-        if (!allowed) {
+        if (!definition && !reportService.canCreate(resolver)) {
             writeError(response, SC_FORBIDDEN, "Not allowed to view execution: $executionId")
 
             return
