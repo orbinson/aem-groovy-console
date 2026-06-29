@@ -38,8 +38,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   tabular results, API-driven CSV/XLSX export (XLSX via AEM's `com.adobe.granite.poi` or the ServiceMix POI bundles on
   Sling), scheduled execution purging, a business UI at `/apps/groovyconsole/reports.html`, and a Reports drawer in the
   modern console. Access control is governed entirely by **JCR permissions** on `/conf/groovyconsole/reports` (read =
-  view/run, write = create/edit/delete) — there are no application-level access groups. See the README and
-  `docs/reports-frontend-requirements.md`. `GroovyConsoleReportsIT` covers the API and export wiring on Sling.
+  view/run, write = create/edit/delete) — there are no application-level access groups. See
+  `extensions/reports/README.md`. `GroovyConsoleReportsIT` covers the API and export wiring on Sling.
 
 ### Changed
 

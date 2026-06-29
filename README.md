@@ -334,43 +334,15 @@ Available extensions:
 ### Reports
 
 The `extensions/reports/` modules provide a business-facing reporting extension, deployed as the
-`aem-groovy-console-reports-all` content package (the console itself must be installed first). It adds:
+`aem-groovy-console-reports-all` content package (the console itself must be installed first). Authors write a
+Groovy script that returns tabular data (`report.data()` with typed `STRING`/`NUMBER`/`DATE`/`BOOLEAN`/`LINK`
+columns); business users run it from a parameter form, page through and export the persisted result, and browse
+past runs. Access is governed entirely by JCR permissions on `/conf/groovyconsole/reports` (read = view/run,
+write = create/edit/delete). It contributes a business UI at `/apps/groovyconsole/reports.html` and a Reports
+drawer in the modern console.
 
-* **Report definitions** stored under `/conf/groovyconsole/reports`: a title, description, category, a Groovy script
-  (inline or referencing a saved console script) and typed parameters (`STRING`, `NUMBER`, `BOOLEAN`, `DATE`,
-  `SELECT`, `PATH`) that are rendered as a form and passed to the script as the `params` binding.
-* **Run-once executions**: a report runs synchronously through the console (all bindings, star imports and audit
-  apply) and the full tabular result is persisted under `/var/groovyconsole/reports/executions`. The UI paginates
-  and exports from the persisted result without re-running the script. Old executions are purged on a configurable
-  schedule.
-* **Typed results**: scripts return `report.data()` (a `ReportData` with `STRING`/`NUMBER`/`DATE`/`BOOLEAN`/`LINK`
-  columns) or a classic console `Table` (all strings).
-* **API-driven exports**: export formats are discovered from registered
-  `be.orbinson.aem.groovy.console.reports.ReportExporter` services. CSV ships built in; XLSX is provided by the
-  `exporter-xlsx` bundle, which wires to AEM's built-in `com.adobe.granite.poi` bundle. On plain Sling, install the
-  Apache ServiceMix POI bundles (`org.apache.servicemix.bundles:org.apache.servicemix.bundles.poi:5.2.3_1`,
-  `org.apache.logging.log4j:log4j-api`, `org.apache.commons:commons-compress`) to enable XLSX — see
-  `it.tests/src/main/features/groovyconsole-reports.json`. Without a POI provider, CSV keeps working and xlsx is
-  simply not offered.
-* **Access control via repository permissions**: a report is a single inline Groovy script stored at
-  `/conf/groovyconsole/reports/<name>`. All report operations run with the requesting user's session, so JCR
-  access control alone governs them — **read** access to a report node grants view/run/export, **write** access
-  grants create/edit/delete. To stop a group from creating reports, deny write on `/conf/groovyconsole/reports`.
-  (Since an inline script is arbitrary Groovy, write access to a report is equivalent to script execution rights.)
-
-Two UIs ship with the modern frontend (`ui.frontend`):
-
-* **Business UI** at `/apps/groovyconsole/reports.html`: a report catalogue with search and categories, a run
-  view with a parameter form, paginated result table, downloadable exports and execution history, and an editor
-  view (Monaco Groovy editor and parameters) for users with write access to the report. The page is served by
-  a servlet in the reports bundle, so it only exists when the reports extension is installed.
-* **Developer panel**: a Reports drawer in the modern console's left rail to browse reports and open them in the
-  business UI. The panel hooks in through the
-  `ConsoleUiExtensionProvider` mechanism described above — without the reports extension the console carries
-  no reports code paths at all.
-
-The HTTP API under `/bin/groovyconsole/reports` and the UI architecture are documented in
-[docs/reports-frontend-requirements.md](docs/reports-frontend-requirements.md).
+See **[`extensions/reports/README.md`](extensions/reports/README.md)** for the full documentation — parameters,
+column types, the execution model, exports (CSV/XLSX) and configuration.
 
 ## Registering Additional Metaclasses
 
