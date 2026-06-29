@@ -1,6 +1,6 @@
 import { html, LitElement, nothing } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
-import { ApiError } from '../../api/client';
+import { ApiError } from '@console/api/client';
 import { listReports } from '../../api/reports-api';
 import type { ReportSummary } from '../../api/reports-types';
 

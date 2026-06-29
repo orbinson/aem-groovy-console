@@ -11,7 +11,7 @@ import org.osgi.service.component.annotations.Component
 @Component(service = ConsoleUiExtensionProvider, immediate = true)
 class ReportsConsoleUiExtensionProvider implements ConsoleUiExtensionProvider {
 
-    private static final List<String> MODULE_URLS = ["/apps/groovyconsole/spa/assets/reports-panel.js"].asImmutable()
+    private static final List<String> MODULE_URLS = ["/apps/groovyconsole-reports/spa/assets/reports-panel.js"].asImmutable()
 
     @Override
     List<String> getModuleUrls() {

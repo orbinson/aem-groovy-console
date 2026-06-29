@@ -1,6 +1,6 @@
 import { html, LitElement, nothing } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
-import { ApiError } from '../../api/client';
+import { ApiError } from '@console/api/client';
 import {
   deleteExecution,
   executeReport,
@@ -13,7 +13,7 @@ import {
 } from '../../api/reports-api';
 import type { ReportDefinition, ReportExecution, ReportParameter, ResultPage } from '../../api/reports-types';
 import { toast } from './gcr-app';
-import { mutePlaceholders } from '../../util/mute-placeholders';
+import { mutePlaceholders } from '@console/util/mute-placeholders';
 import type { GcrPathBrowser } from './gcr-path-browser';
 import type { PathType } from '../../api/reports-types';
 import { formatDate, renderResultTable } from './result-cell';
@@ -459,7 +459,6 @@ export class GcrReportRun extends LitElement {
         <div class="gcr-result-header">
           <div class="gcr-result-summary" role="status" aria-live="polite">
             ${execution.rowCount ?? 0} rows · ${execution.runningTime ?? ''}
-            ${execution.truncated ? html`<sp-badge size="s" variant="yellow">Truncated</sp-badge>` : nothing}
           </div>
           <div class="gcr-result-actions">
             ${definition.exportFormats.map(

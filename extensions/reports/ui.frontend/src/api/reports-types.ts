@@ -96,7 +96,6 @@ export interface ReportExecution {
   runningTime?: string | null;
   rowCount?: number | null;
   columnCount?: number | null;
-  truncated: boolean;
   parameterValues: Record<string, unknown>;
   output?: string | null;
   exceptionStackTrace?: string | null;
@@ -119,7 +118,6 @@ export interface ReportPreviewResponse {
   columns: ResultColumn[];
   rows: ResultCell[][];
   rowCount: number;
-  truncated?: boolean;
   output?: string | null;
   exceptionStackTrace?: string | null;
   runningTime?: string | null;

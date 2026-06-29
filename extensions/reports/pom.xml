@@ -26,6 +26,7 @@
         <module>bundle</module>
         <module>exporter-xlsx</module>
         <module>ui.config</module>
+        <module>ui.frontend</module>
         <module>ui.apps</module>
         <module>ui.content</module>
         <module>all</module>

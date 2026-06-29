@@ -1,9 +1,9 @@
 import { html, LitElement } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import type * as Monaco from 'monaco-editor';
-import { attachGroovyDiagnostics } from '../../editor/groovy-diagnostics';
-import { GROOVY_LANGUAGE_ID } from '../../editor/groovy-language';
-import { monaco, setupMonaco } from '../../editor/monaco-setup';
+import { attachGroovyDiagnostics } from '@console/editor/groovy-diagnostics';
+import { GROOVY_LANGUAGE_ID } from '@console/editor/groovy-language';
+import { monaco, setupMonaco } from '@console/editor/monaco-setup';
 
 /**
  * Standalone Monaco Groovy editor for the reports editor view.  Unlike gc-script-editor it has no

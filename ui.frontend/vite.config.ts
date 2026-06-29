@@ -22,21 +22,16 @@ export default defineConfig({
     chunkSizeWarningLimit: 4000,
     rollupOptions: {
       input: {
-        // console SPA (modern.html) and the business-facing reports UI (reports.html)
+        // console SPA (modern.html)
         index: resolve(__dirname, 'index.html'),
-        reports: resolve(__dirname, 'reports.html'),
-        // console UI extension module, dynamically imported when the reports bundle is installed
-        'reports-panel': resolve(__dirname, 'src/reports-console-panel.ts'),
       },
       output: {
-        // Stable file names so modern.html/reports.html can reference them without a manifest.
+        // Stable file names so modern.html can link them without a manifest.
         entryFileNames: 'assets/[name].js',
         chunkFileNames: 'assets/[name].js',
         assetFileNames: 'assets/[name][extname]',
-        // Monaco is shared by several entries; give the chunk (and its CSS) a stable name the
-        // HTL entry pages can link to.  Vite's preload helper must NOT end up inside the monaco
-        // chunk, or every dynamic import would statically drag Monaco in (the reports page
-        // lazy-loads Monaco only for the editor view).
+        // Give the Monaco chunk a stable name the HTL entry page can link to.  Vite's preload helper must
+        // NOT end up inside the monaco chunk, or every dynamic import would statically drag Monaco in.
         manualChunks: (id) => {
           if (id.includes('monaco-editor')) {
             return 'monaco';

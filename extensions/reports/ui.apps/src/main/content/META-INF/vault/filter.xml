@@ -2,4 +2,6 @@
 <workspaceFilter version="1.0">
     <!-- AEM Tools console entry so business users can reach the reports UI (overlay; AEM-only) -->
     <filter root="/apps/cq/core/content/nav/tools/groovyconsole" mode="merge"/>
+    <!-- the reports SPA assets (built by extensions/reports/ui.frontend), on a reports-owned path -->
+    <filter root="/apps/groovyconsole-reports"/>
 </workspaceFilter>

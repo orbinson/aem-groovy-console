@@ -1,5 +1,5 @@
-import { config } from '../config';
-import { delJson, getJson, getJsonWithError, postJson } from './client';
+import { config } from '@console/config';
+import { delJson, getJson, getJsonWithError, postJson } from '@console/api/client';
 import type {
   BrowseResponse,
   ExportFormatsResponse,

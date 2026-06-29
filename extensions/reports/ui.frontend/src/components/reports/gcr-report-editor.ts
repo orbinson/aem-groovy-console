@@ -1,6 +1,6 @@
 import { html, LitElement, nothing } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
-import { ApiError } from '../../api/client';
+import { ApiError } from '@console/api/client';
 import { deleteReport, getReport, previewReport, saveReport } from '../../api/reports-api';
 import type {
   PathType,
@@ -11,7 +11,7 @@ import type {
 } from '../../api/reports-types';
 import { toast } from './gcr-app';
 import type { GcrCodeEditor } from './gcr-code-editor';
-import { mutePlaceholders } from '../../util/mute-placeholders';
+import { mutePlaceholders } from '@console/util/mute-placeholders';
 import { renderResultTable } from './result-cell';
 import { validateRequired } from './validate-parameters';
 
@@ -383,22 +383,37 @@ export class GcrReportEditor extends LitElement {
   private renderTestValue(parameter: ParameterRow) {
     const label = parameter.label || parameter.name || '(unnamed)';
     const error = this.testErrors[parameter.name];
+    const current = this.testValues[parameter.name] ?? parameter.defaultValue ?? '';
+    const onInput = (event: Event) => {
+      this.testValues = { ...this.testValues, [parameter.name]: (event.target as HTMLInputElement).value };
+      if (this.testErrors[parameter.name]) {
+        const { [parameter.name]: _cleared, ...rest } = this.testErrors;
+        this.testErrors = rest;
+      }
+    };
+    // mirror the run form's typed inputs so the try-out behaves like a real run (e.g. a date picker for DATE)
+    const field =
+      parameter.type === 'DATE'
+        ? html`<input
+            id="test-${parameter.name}"
+            class="gcr-date-input"
+            type="date"
+            aria-label="Test value for ${label}"
+            .value=${current}
+            @input=${onInput}
+          />`
+        : html`<sp-textfield
+            id="test-${parameter.name}"
+            aria-label="Test value for ${label}"
+            type=${parameter.type === 'NUMBER' ? 'number' : 'text'}
+            ?invalid=${!!error}
+            value=${current}
+            @input=${onInput}
+          ></sp-textfield>`;
     return html`
       <div class="gcr-field">
         <sp-field-label for="test-${parameter.name}" ?required=${parameter.required}>${label}</sp-field-label>
-        <sp-textfield
-          id="test-${parameter.name}"
-          aria-label="Test value for ${label}"
-          ?invalid=${!!error}
-          value=${this.testValues[parameter.name] ?? parameter.defaultValue ?? ''}
-          @input=${(event: Event) => {
-            this.testValues = { ...this.testValues, [parameter.name]: (event.target as HTMLInputElement).value };
-            if (this.testErrors[parameter.name]) {
-              const { [parameter.name]: _cleared, ...rest } = this.testErrors;
-              this.testErrors = rest;
-            }
-          }}
-        ></sp-textfield>
+        ${field}
         ${error ? html`<sp-help-text variant="negative" role="alert">${error}</sp-help-text>` : nothing}
       </div>
     `;
@@ -417,7 +432,6 @@ export class GcrReportEditor extends LitElement {
     return html`
       <div class="gcr-result-summary" role="status" aria-live="polite">
         ${preview.rowCount} rows · ${preview.runningTime ?? ''}
-        ${preview.truncated ? html`<sp-badge size="s" variant="yellow">Truncated</sp-badge>` : nothing}
       </div>
       ${preview.output
         ? html`<details class="gcr-output-details">

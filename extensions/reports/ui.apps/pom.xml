@@ -29,14 +29,13 @@
                         <cloudManagerTarget>none</cloudManagerTarget>
                     </properties>
                     <validatorsSettings>
-                        <!-- disable nodetype validation as workaround until JCRVLT-463 got fixed -->
-                        <jackrabbit-nodetypes>
-                            <isDisabled>true</isDisabled>
-                        </jackrabbit-nodetypes>
-                        <!-- overlaying the cq tools navigation, whose ancestor lives under /libs -->
+                        <!-- application-package filter check wants each filter root's parent to be a valid root;
+                             setting validRoots replaces the defaults, so list both: /apps (parent of the reports
+                             SPA assets) and /apps/cq/core/content/nav/tools (the cq tools nav entry merges there,
+                             and that parent is not part of this package). -->
                         <jackrabbit-filter>
                             <options>
-                                <validRoots>/apps/cq/core/content/nav/tools</validRoots>
+                                <validRoots>/apps,/apps/cq/core/content/nav/tools</validRoots>
                             </options>
                         </jackrabbit-filter>
                     </validatorsSettings>

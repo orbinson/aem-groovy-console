@@ -6,12 +6,9 @@
 // (see src/extensions/registry.ts for the contract).  Without the reports bundle installed, this
 // module is never loaded and the console stays untouched.
 
-// Spectrum Web Components used by the panel (deduplicated with the console bundle at build time)
-import '@spectrum-web-components/action-button/sp-action-button.js';
-import '@spectrum-web-components/badge/sp-badge.js';
-import '@spectrum-web-components/button/sp-button.js';
-import '@spectrum-web-components/progress-circle/sp-progress-circle.js';
-import '@spectrum-web-components/search/sp-search.js';
+// The panel uses sp-action-button, sp-badge, sp-button, sp-progress-circle and sp-search but does NOT import
+// them: this module is loaded into the running console page, which already registers those custom elements.
+// Re-importing them from this separate bundle would call customElements.define() a second time and throw.
 
 import './extensions/reports/gc-reports';
 

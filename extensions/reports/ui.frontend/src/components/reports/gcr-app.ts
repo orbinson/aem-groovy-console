@@ -1,6 +1,6 @@
 import { html, LitElement, nothing } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
-import { persistence } from '../../state/local-storage';
+import { persistence } from '@console/state/local-storage';
 
 type View = { view: 'list' } | { view: 'run'; name: string } | { view: 'edit'; name: string | null };
 

@@ -24,7 +24,7 @@ import static be.orbinson.aem.groovy.console.reports.constants.ReportsConstants.
 @Slf4j("LOG")
 class ReportsPageServlet extends SlingSafeMethodsServlet {
 
-    private static final String ASSETS_PATH = "/apps/groovyconsole/spa/assets"
+    private static final String ASSETS_PATH = "/apps/groovyconsole-reports/spa/assets"
 
     @Override
     protected void doGet(SlingHttpServletRequest request, SlingHttpServletResponse response)
