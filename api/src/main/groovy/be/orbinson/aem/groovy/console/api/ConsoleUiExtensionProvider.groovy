@@ -15,7 +15,7 @@ interface ConsoleUiExtensionProvider {
 
     /**
      * Get the URLs of the ES modules to load, relative to the servlet context path
-     * (e.g. <code>/apps/groovyconsole/spa/assets/reports-panel.js</code>).
+     * (e.g. <code>/apps/groovyconsole-reports/spa/assets/reports-panel.js</code>).
      *
      * @return list of module URLs
      */

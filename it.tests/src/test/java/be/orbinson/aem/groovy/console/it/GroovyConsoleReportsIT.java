@@ -387,7 +387,7 @@ class GroovyConsoleReportsIT {
 
             String body = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
             assertTrue(body.contains("<gcr-app>"), "Expected the reports app element");
-            assertTrue(body.contains("/apps/groovyconsole/spa/assets/reports.js"), "Expected the reports bundle script");
+            assertTrue(body.contains("/apps/groovyconsole-reports/spa/assets/reports.js"), "Expected the reports bundle script");
         }
     }
 
@@ -402,7 +402,7 @@ class GroovyConsoleReportsIT {
             assertEquals(200, response.getStatusLine().getStatusCode());
 
             String body = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
-            assertTrue(body.contains("/apps/groovyconsole/spa/assets/reports-panel.js"),
+            assertTrue(body.contains("/apps/groovyconsole-reports/spa/assets/reports-panel.js"),
                     "Expected the reports panel module in the console UI extensions");
         }
     }
