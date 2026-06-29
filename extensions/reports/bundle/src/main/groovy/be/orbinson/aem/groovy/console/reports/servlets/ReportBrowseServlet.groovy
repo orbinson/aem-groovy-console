@@ -38,6 +38,16 @@ class ReportBrowseServlet extends AbstractReportsServlet {
             "sling:Folder", "sling:OrderedFolder", "nt:folder", "nt:unstructured"
     ]
 
+    // path-browser filter types
+    private static final String TYPE_PAGE = "PAGE"
+
+    private static final String TYPE_ASSET = "ASSET"
+
+    // AEM primary node types matched per filter
+    private static final String PRIMARY_TYPE_PAGE = "cq:Page"
+
+    private static final String PRIMARY_TYPE_ASSET = "dam:Asset"
+
     @Override
     protected void doGet(SlingHttpServletRequest request, SlingHttpServletResponse response)
             throws ServletException, IOException {
@@ -117,10 +127,10 @@ class ReportBrowseServlet extends AbstractReportsServlet {
         def primaryType = primaryType(resource)
 
         switch (type) {
-            case "PAGE":
-                return primaryType == "cq:Page" || isFolder(primaryType)
-            case "ASSET":
-                return primaryType == "dam:Asset" || isFolder(primaryType)
+            case TYPE_PAGE:
+                return primaryType == PRIMARY_TYPE_PAGE || isFolder(primaryType)
+            case TYPE_ASSET:
+                return primaryType == PRIMARY_TYPE_ASSET || isFolder(primaryType)
             default:
                 return true
         }
@@ -130,10 +140,10 @@ class ReportBrowseServlet extends AbstractReportsServlet {
         def primaryType = primaryType(resource)
 
         switch (type) {
-            case "PAGE":
-                return primaryType == "cq:Page"
-            case "ASSET":
-                return primaryType == "dam:Asset"
+            case TYPE_PAGE:
+                return primaryType == PRIMARY_TYPE_PAGE
+            case TYPE_ASSET:
+                return primaryType == PRIMARY_TYPE_ASSET
             default:
                 return true
         }
@@ -148,7 +158,7 @@ class ReportBrowseServlet extends AbstractReportsServlet {
      */
     private static boolean hasChildNodes(Resource resource, String type) {
         // assets are leaves in the asset picker — never expandable
-        if (type == "ASSET" && primaryType(resource) == "dam:Asset") {
+        if (type == TYPE_ASSET && primaryType(resource) == PRIMARY_TYPE_ASSET) {
             return false
         }
 

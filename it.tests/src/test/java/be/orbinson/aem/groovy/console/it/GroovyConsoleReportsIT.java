@@ -61,17 +61,14 @@ class GroovyConsoleReportsIT {
     private static String executionId;
 
     @BeforeAll
-    static void setUp() throws InterruptedException, IOException {
+    static void setUp() throws IOException {
         httpClient = HttpClients.createDefault();
 
-        // Wait for the Sling Starter, the Groovy Console and the reports content packages to be fully installed
+        // Wait until the Groovy Console and reports servlets are registered and responding (all bundles are in
+        // the launch feature, so there is no post-startup content-package install cascade to wait out).
         await().atMost(180, TimeUnit.SECONDS)
                 .pollInterval(5, TimeUnit.SECONDS)
                 .untilAsserted(() -> assertTrue(isReportsApiReady(), "Reports API not ready"));
-
-        // Stability window: bundle installs can still trigger refresh cascades right after the servlets
-        // first respond; give the installer time to settle before firing tests.
-        TimeUnit.SECONDS.sleep(15);
 
         // Force the maxResultRows=5 override promptly: the OSGi Configurator can apply the feature
         // configuration very late in the launcher, and the truncation test depends on it being effective.

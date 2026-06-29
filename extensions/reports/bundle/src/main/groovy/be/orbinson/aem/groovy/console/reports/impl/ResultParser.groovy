@@ -51,7 +51,8 @@ class ResultParser {
             reportData.columns.add(new ReportColumn(
                     name: column["name"] as String,
                     type: toColumnType(column["type"] as String),
-                    exported: column["exported"] != false
+                    // exported defaults to true; only an explicit JSON false marks a UI-only column
+                    exported: column["exported"] == null || column["exported"]
             ))
         }
 

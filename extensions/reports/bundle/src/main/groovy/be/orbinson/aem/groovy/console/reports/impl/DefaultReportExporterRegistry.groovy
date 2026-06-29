@@ -19,7 +19,7 @@ class DefaultReportExporterRegistry implements ReportExporterRegistry {
 
     @Override
     List<ReportExporter> getExporters() {
-        exporters.sort(false) { exporter -> exporter.format }
+        exporters.toSorted { exporter -> exporter.format }
     }
 
     @Override
