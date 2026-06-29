@@ -4,6 +4,7 @@ import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.SC
 import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.USER_ID
 
 import be.orbinson.aem.groovy.console.GroovyConsoleService
+import be.orbinson.aem.groovy.console.api.ConsoleUiExtensionProvider
 import be.orbinson.aem.groovy.console.audit.AuditService
 import be.orbinson.aem.groovy.console.configuration.ConfigurationService
 import be.orbinson.aem.groovy.console.impl.AEMDetector
@@ -33,6 +34,9 @@ class ModernConsoleConfig {
     @OSGiService(injectionStrategy = InjectionStrategy.OPTIONAL)
     private AEMDetector aemDetector
 
+    @OSGiService(injectionStrategy = InjectionStrategy.OPTIONAL)
+    private List<ConsoleUiExtensionProvider> uiExtensionProviders
+
     @Self
     private SlingHttpServletRequest request
 
@@ -61,7 +65,10 @@ class ModernConsoleConfig {
                 activeJobs                 : activeJobs,
                 classicUrl                 : "${request.contextPath}/apps/groovyconsole.classic.html" as String,
                 groovyVersion              : GroovySystem.version,
-                auditRecord                : auditRecord
+                auditRecord                : auditRecord,
+                uiExtensions               : (uiExtensionProviders ?: []).collectMany { provider ->
+                    provider.moduleUrls ?: []
+                }
         ]).toString()
     }
 }

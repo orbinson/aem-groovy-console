@@ -1,5 +1,6 @@
 import { html, LitElement, nothing } from 'lit';
 import { customElement, query, state } from 'lit/decorators.js';
+import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 import { ApiError } from '../api/client';
 import { distributeScript, loadScript, pollExecution, runScriptAsync, saveScript } from '../api/console-api';
 import { scheduleJob } from '../api/jobs-api';
@@ -14,17 +15,22 @@ import type { GcSaveDialog } from './gc-save-dialog';
 import type { GcScheduler } from './gc-scheduler';
 import type { GcScriptBrowserDialog } from './gc-script-browser-dialog';
 import type { GcScriptEditor } from './gc-script-editor';
+import { getPanels, initConsoleExtensions, onPanelsChanged } from '../extensions/registry';
+import type { ConsolePanelExtension } from '../extensions/registry';
 
-type DrawerId = 'history' | 'jobs' | 'help';
+/** Built-in drawers use 'history' | 'jobs' | 'help'; extension panels use their registered panel id. */
+type DrawerId = string;
 type EditorTab = 'script' | 'data';
 
 @customElement('gc-app')
 export class GcApp extends LitElement {
   private store = new StoreController(this);
+  private unsubscribePanels?: () => void;
 
   @state() private activeDrawer: DrawerId | null = null;
   @state() private editorTab: EditorTab = 'script';
   @state() private dataHasContent = persistence.getDataEditorContent().trim().length > 0;
+  @state() private extensionPanels: readonly ConsolePanelExtension[] = [];
 
   @query('gc-script-editor') private scriptEditor!: GcScriptEditor;
   @query('gc-data-editor') private dataEditor!: GcDataEditor;
@@ -66,6 +72,14 @@ export class GcApp extends LitElement {
     this.addEventListener('gc-load-record', ((event: CustomEvent<{ record: AuditRecord }>) => {
       this.loadAuditRecord(event.detail.record);
     }) as EventListener);
+    // Generic extension events (see extensions/registry.ts for the contract)
+    this.addEventListener('gc-set-script', ((event: CustomEvent<{ script: string; message?: string }>) => {
+      this.setScriptFromExtension(event.detail.script, event.detail.message);
+    }) as EventListener);
+    this.addEventListener('gc-toast', ((event: CustomEvent<{ message: string; variant?: 'positive' | 'negative' }>) => {
+      store.showToast(event.detail.message, event.detail.variant ?? 'positive');
+    }) as EventListener);
+    this.unsubscribePanels = onPanelsChanged(() => (this.extensionPanels = [...getPanels()]));
     this.addEventListener('gc-edit-job', ((event: CustomEvent<{ job: ScheduledJob }>) => {
       this.editScheduledJob(event.detail.job);
     }) as EventListener);
@@ -75,26 +89,35 @@ export class GcApp extends LitElement {
 
     // Global shortcuts: work everywhere in the app, not only with editor focus.
     // Monaco handles them itself when the editor is focused (and prevents default).
-    window.addEventListener(
-      'keydown',
-      (event: KeyboardEvent) => {
-        if (!(event.metaKey || event.ctrlKey) || event.defaultPrevented) {
-          return;
-        }
-        if (event.key === 's') {
-          event.preventDefault();
-          this.openSaveDialog();
-        } else if (event.key === 'Enter') {
-          event.preventDefault();
-          void this.execute('run');
-        }
-      },
-      { capture: false },
-    );
+    window.addEventListener('keydown', this.onGlobalKeydown, { capture: false });
+  }
+
+  // bound field so the same reference can be removed on disconnect (avoids a leaked global listener)
+  private readonly onGlobalKeydown = (event: KeyboardEvent): void => {
+    if (!(event.metaKey || event.ctrlKey) || event.defaultPrevented) {
+      return;
+    }
+    if (event.key === 's') {
+      event.preventDefault();
+      this.openSaveDialog();
+    } else if (event.key === 'Enter') {
+      event.preventDefault();
+      void this.execute('run');
+    }
+  };
+
+  disconnectedCallback(): void {
+    window.removeEventListener('keydown', this.onGlobalKeydown);
+    this.unsubscribePanels?.();
+    super.disconnectedCallback();
   }
 
   protected firstUpdated(): void {
     prefetchAssistData();
+
+    // Load UI extension modules announced by the backend (ConsoleUiExtensionProvider services).
+    initConsoleExtensions();
+    this.extensionPanels = [...getPanels()];
 
     // Deep link from the history panel / classic UI (?userId=...&script=...)
     const auditRecord = config.auditRecord;
@@ -257,6 +280,14 @@ export class GcApp extends LitElement {
     }
   }
 
+  private setScriptFromExtension(script: string, message?: string): void {
+    this.scriptEditor.value = script;
+    this.editorTab = 'script';
+    this.activeDrawer = null;
+    store.setState({ result: null, dirty: true });
+    store.showToast(message ?? 'Script loaded.');
+  }
+
   private loadAuditRecord(record: AuditRecord): void {
     this.scriptEditor.value = record.script ?? '';
     this.dataEditor.value = record.data ?? '';
@@ -412,6 +443,20 @@ export class GcApp extends LitElement {
                     </button>
                   `
                 : nothing}
+              ${this.extensionPanels.map(
+                (panel) => html`
+                  <button
+                    class="gc-rail-button ${this.activeDrawer === panel.id ? 'is-active' : ''}"
+                    title=${panel.title}
+                    aria-label=${panel.title}
+                    @click=${() => this.toggleDrawer(panel.id)}
+                  >
+                    ${panel.iconHtml
+                      ? unsafeHTML(panel.iconHtml)
+                      : html`<span class="gc-rail-letter">${panel.title.charAt(0)}</span>`}
+                  </button>
+                `,
+              )}
               <button
                 class="gc-rail-button ${this.activeDrawer === 'help' ? 'is-active' : ''}"
                 title="Help &amp; Reference"
@@ -482,6 +527,16 @@ export class GcApp extends LitElement {
                 `
               : nothing}
           </gc-drawer>
+
+          ${this.extensionPanels.map(
+            (panel) => html`
+              <gc-drawer heading=${panel.title} ?open=${this.activeDrawer === panel.id}>
+                ${this.activeDrawer === panel.id
+                  ? unsafeHTML(`<${panel.element}></${panel.element}>`)
+                  : nothing}
+              </gc-drawer>
+            `,
+          )}
 
           <gc-drawer heading="Help &amp; Reference" ?open=${this.activeDrawer === 'help'}>
             ${this.activeDrawer === 'help' ? html`<gc-reference></gc-reference>` : nothing}

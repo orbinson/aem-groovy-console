@@ -19,6 +19,8 @@ export interface GcConfig {
   classicUrl: string;
   groovyVersion: string;
   auditRecord: AuditRecord | null;
+  /** ES module URLs announced by ConsoleUiExtensionProvider services (UI extensions). */
+  uiExtensions: string[];
 }
 
 declare global {
@@ -40,6 +42,7 @@ const devDefaults: GcConfig = {
   classicUrl: '/apps/groovyconsole.classic.html',
   groovyVersion: '',
   auditRecord: null,
+  uiExtensions: [],
 };
 
 export const config: GcConfig = { ...devDefaults, ...(window.__GC_CONFIG__ ?? {}) };

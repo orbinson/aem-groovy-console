@@ -4,6 +4,7 @@
     <meta http-equiv="content-type" content="text/html; charset=UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
     <title>${properties['jcr:title'] || 'Groovy Console'}</title>
+    <link rel="stylesheet" href="${request.contextPath @ context='unsafe'}/apps/groovyconsole/spa/assets/monaco.css"/>
     <link rel="stylesheet" href="${request.contextPath @ context='unsafe'}/apps/groovyconsole/spa/assets/index.css"/>
 </head>
 <body data-sly-use.config="be.orbinson.aem.groovy.console.components.ModernConsoleConfig">
