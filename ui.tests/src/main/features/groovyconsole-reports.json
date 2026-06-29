@@ -12,10 +12,5 @@
       "id": "org.apache.commons:commons-compress:1.24.0",
       "start-order": "19"
     }
-  ],
-  "content-packages:ARTIFACTS|required":[
-    {
-      "id": "be.orbinson.aem:aem-groovy-console-reports-all:zip:${project.version}"
-    }
   ]
 }
