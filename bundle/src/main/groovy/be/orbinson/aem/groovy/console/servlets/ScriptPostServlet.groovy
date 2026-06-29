@@ -2,8 +2,8 @@ package be.orbinson.aem.groovy.console.servlets
 
 import be.orbinson.aem.groovy.console.GroovyConsoleService
 import be.orbinson.aem.groovy.console.api.context.ScriptContext
-import be.orbinson.aem.groovy.console.api.context.impl.AsyncScriptContext
 import be.orbinson.aem.groovy.console.api.context.impl.RequestScriptContext
+import be.orbinson.aem.groovy.console.streaming.impl.AsyncScriptContext
 import be.orbinson.aem.groovy.console.configuration.ConfigurationService
 import be.orbinson.aem.groovy.console.streaming.ExecutionRegistry
 import groovy.util.logging.Slf4j

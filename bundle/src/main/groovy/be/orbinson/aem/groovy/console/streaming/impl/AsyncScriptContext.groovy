@@ -1,4 +1,4 @@
-package be.orbinson.aem.groovy.console.api.context.impl
+package be.orbinson.aem.groovy.console.streaming.impl
 
 import be.orbinson.aem.groovy.console.api.context.ScriptContext
 import groovy.transform.TupleConstructor
