@@ -20,21 +20,10 @@
     <build>
         <pluginManagement>
             <plugins>
-                <!--
-                    Shared configuration for the Sling feature build, reused by both the `it` profile
-                    (automated tests) and the `run` profile (manual instance). The converter + aggregator turn
-                    our all-packages into feature-model bundles at BUILD time, so every bundle (incl. Groovy
-                    5.0.6) is in the initial launch — no runtime content-package install, no refresh-cascade
-                    race that otherwise wedges startup. Each profile only binds the executions it needs.
-                -->
+                <!-- Shared Sling feature build for the `it` and `run` profiles. -->
                 <plugin>
-                    <!--
-                        Convert the all content packages into feature-model artifacts (bundles +
-                        configurations + repoinit + residual JCR content) BEFORE Sling Starter boots. Without
-                        this, the Sling JCR Installer extracts the all-packages after the framework is up,
-                        triggering a bundle-refresh cascade (and Groovy 4->5 resolution churn) that races with
-                        felix.http.jetty12 and fails to settle within the start timeout.
-                    -->
+                    <!-- Convert the all-packages to feature-model bundles at build time so everything is in the
+                         initial launch (no runtime content-package install race). -->
                     <groupId>org.apache.sling</groupId>
                     <artifactId>sling-feature-converter-maven-plugin</artifactId>
                     <version>1.0.14</version>
@@ -65,13 +54,9 @@
                     </executions>
                 </plugin>
                 <plugin>
-                    <!--
-                        Aggregate Sling Starter + the cp-converter output into one launchable feature.
-                        additionalFeatureFiles reads the cp-conversion JSON at goal time (it is produced
-                        earlier in the same build); osgiBsnCollisionDetection + *:*:HIGHEST resolves duplicate
-                        bundles (e.g. the Starter's Groovy 4.0.10 vs our 5.0.6) by keeping the highest version.
-                        Requires slingfeature-maven-plugin >= 1.9.6 (additionalFeatureFiles / SLING-13233).
-                    -->
+                    <!-- Aggregate Sling Starter + the converted features into one launchable feature.
+                         osgiBsnCollisionDetection + *:*:HIGHEST de-dupes overlapping bundles (Starter Groovy
+                         4.0.10 vs our 5.0.6). additionalFeatureFiles needs slingfeature-maven-plugin >= 1.9.6. -->
                     <groupId>org.apache.sling</groupId>
                     <artifactId>slingfeature-maven-plugin</artifactId>
                     <version>1.9.6</version>
@@ -224,16 +209,8 @@
             </build>
         </profile>
 
-        <!--
-            Launch the same aggregated Sling feature the integration tests use, on a fixed port, and
-            keep it running for manual verification:
-
-                mvn clean install                        # build the current SNAPSHOT artifacts first
-                mvn verify -Prun -pl it.tests            # boot Sling on http://localhost:8080 (admin/admin)
-
-            The instance runs in the foreground and tails its error log; press Ctrl+C to stop it.
-            Override the port with -Dhttp.port=xxxx.
-        -->
+        <!-- Manual instance on a fixed port (foreground, tails the log; Ctrl+C to stop):
+             mvn clean install && mvn verify -Prun -pl it.tests   (override -Dhttp.port). -->
         <profile>
             <id>run</id>
             <build>
