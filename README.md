@@ -301,6 +301,77 @@ metaclasses, and star imports.
 | `be.orbinson.aem.groovy.console.api.ScriptMetaClassExtensionProvider`       | Add runtime metaclasses (i.e. new methods) to the underlying script class.                                                   |
 | `be.orbinson.aem.groovy.console.api.StarImportExtensionProvider`            | Supply additional star imports that are added to the compiler configuration for each script execution.                       |
 
+## Extension Packages
+
+Beyond the per-script extension hooks above, larger opt-in features live in the `extensions/` directory as
+**separate Maven modules that ship as their own content packages** — they are *not* embedded in the console's
+`all` package.
+
+The philosophy is to keep the core console small and focused: a tool for running Groovy scripts. Not every
+installation wants every feature, so anything that is a self-contained capability rather than part of the core
+is factored out into its own extension package. This keeps the base install lean, lets teams deploy (and audit,
+and reason about) exactly the surface area they need, and means an extension can evolve — or eventually move to
+its own repository — without touching the console itself.
+
+Two rules make this work:
+
+* **The console has no dependency on any extension.** It is fully functional with zero extensions installed;
+  removing an extension's package removes its code paths entirely.
+* **Extensions integrate only through the console's public APIs** — the script-execution SPIs listed above, plus
+  the `be.orbinson.aem.groovy.console.api.ConsoleUiExtensionProvider` SPI, which lets an extension contribute
+  panels to the modern UI's activity rail. The console announces the registered module URLs to its SPA, which
+  loads them dynamically and exposes a small registration API (`window.GroovyConsole.registerPanel(...)`).
+  Extensions interact with the shell only through this API and DOM events, never through compile-time coupling.
+
+To use an extension, install the console first, then deploy the extension's content package.
+
+Available extensions:
+
+| Extension            | Package                            | Description                                          |
+|----------------------|------------------------------------|------------------------------------------------------|
+| [Reports](#reports)  | `aem-groovy-console-reports-all`   | Business-facing reports backed by Groovy scripts     |
+
+### Reports
+
+The `extensions/reports/` modules provide a business-facing reporting extension, deployed as the
+`aem-groovy-console-reports-all` content package (the console itself must be installed first). It adds:
+
+* **Report definitions** stored under `/conf/groovyconsole/reports`: a title, description, category, a Groovy script
+  (inline or referencing a saved console script) and typed parameters (`STRING`, `NUMBER`, `BOOLEAN`, `DATE`,
+  `SELECT`, `PATH`) that are rendered as a form and passed to the script as the `params` binding.
+* **Run-once executions**: a report runs synchronously through the console (all bindings, star imports and audit
+  apply) and the full tabular result is persisted under `/var/groovyconsole/reports/executions`. The UI paginates
+  and exports from the persisted result without re-running the script. Old executions are purged on a configurable
+  schedule.
+* **Typed results**: scripts return `report.data()` (a `ReportData` with `STRING`/`NUMBER`/`DATE`/`BOOLEAN`/`LINK`
+  columns) or a classic console `Table` (all strings).
+* **API-driven exports**: export formats are discovered from registered
+  `be.orbinson.aem.groovy.console.reports.ReportExporter` services. CSV ships built in; XLSX is provided by the
+  `exporter-xlsx` bundle, which wires to AEM's built-in `com.adobe.granite.poi` bundle. On plain Sling, install the
+  Apache ServiceMix POI bundles (`org.apache.servicemix.bundles:org.apache.servicemix.bundles.poi:5.2.3_1`,
+  `org.apache.logging.log4j:log4j-api`, `org.apache.commons:commons-compress`) to enable XLSX — see
+  `it.tests/src/main/features/groovyconsole-reports.json`. Without a POI provider, CSV keeps working and xlsx is
+  simply not offered.
+* **Access control via repository permissions**: a report is a single inline Groovy script stored at
+  `/conf/groovyconsole/reports/<name>`. All report operations run with the requesting user's session, so JCR
+  access control alone governs them — **read** access to a report node grants view/run/export, **write** access
+  grants create/edit/delete. To stop a group from creating reports, deny write on `/conf/groovyconsole/reports`.
+  (Since an inline script is arbitrary Groovy, write access to a report is equivalent to script execution rights.)
+
+Two UIs ship with the modern frontend (`ui.frontend`):
+
+* **Business UI** at `/apps/groovyconsole/reports.html`: a report catalogue with search and categories, a run
+  view with a parameter form, paginated result table, downloadable exports and execution history, and an editor
+  view (Monaco Groovy editor and parameters) for users with write access to the report. The page is served by
+  a servlet in the reports bundle, so it only exists when the reports extension is installed.
+* **Developer panel**: a Reports drawer in the modern console's left rail to browse reports and open them in the
+  business UI. The panel hooks in through the
+  `ConsoleUiExtensionProvider` mechanism described above — without the reports extension the console carries
+  no reports code paths at all.
+
+The HTTP API under `/bin/groovyconsole/reports` and the UI architecture are documented in
+[docs/reports-frontend-requirements.md](docs/reports-frontend-requirements.md).
+
 ## Registering Additional Metaclasses
 
 Services implementing the `be.orbinson.aem.groovy.console.extension.MetaClassExtensionProvider` will be automatically
