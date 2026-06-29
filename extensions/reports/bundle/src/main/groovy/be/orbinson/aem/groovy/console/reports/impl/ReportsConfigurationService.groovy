@@ -7,7 +7,5 @@ interface ReportsConfigurationService {
 
     int getDefaultPageSize()
 
-    int getMaxResultRows()
-
     int getMaxOutputLength()
 }

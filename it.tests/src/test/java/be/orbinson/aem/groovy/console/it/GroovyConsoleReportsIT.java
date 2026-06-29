@@ -69,34 +69,6 @@ class GroovyConsoleReportsIT {
         await().atMost(180, TimeUnit.SECONDS)
                 .pollInterval(5, TimeUnit.SECONDS)
                 .untilAsserted(() -> assertTrue(isReportsApiReady(), "Reports API not ready"));
-
-        // Force the maxResultRows=5 override promptly: the OSGi Configurator can apply the feature
-        // configuration very late in the launcher, and the truncation test depends on it being effective.
-        forceMaxResultRows(5);
-    }
-
-    /** Set the reports maxResultRows config directly via ConfigurationAdmin (deterministic for the IT). */
-    private static void forceMaxResultRows(int max) throws IOException {
-        String script = String.join("\n",
-                "import org.osgi.framework.FrameworkUtil",
-                "import org.osgi.service.cm.ConfigurationAdmin",
-                "def ctx = FrameworkUtil.getBundle(ConfigurationAdmin).bundleContext",
-                "def ca = ctx.getService(ctx.getServiceReference(ConfigurationAdmin))",
-                "def cfg = ca.getConfiguration("
-                        + "'be.orbinson.aem.groovy.console.reports.impl.DefaultReportsConfigurationService', null)",
-                "def props = cfg.properties ?: new java.util.Hashtable()",
-                "props.put('maxResultRows', " + max + " as Integer)",
-                "cfg.update(props)",
-                "'ok'");
-
-        HttpPost post = new HttpPost(BASE_URL + "/bin/groovyconsole/post");
-        post.setEntity(new StringEntity("script=" + java.net.URLEncoder.encode(script, "UTF-8"),
-                ContentType.APPLICATION_FORM_URLENCODED));
-        post.addHeader("Authorization", AUTH_HEADER);
-
-        try (CloseableHttpResponse response = httpClient.execute(post)) {
-            assertEquals(200, response.getStatusLine().getStatusCode(), "Could not set maxResultRows config");
-        }
     }
 
     @AfterAll
@@ -522,23 +494,17 @@ class GroovyConsoleReportsIT {
     }
 
     @Test
-    void testResultTruncatedWhenExceedingMaxRows() throws Exception {
-        // the it.tests feature lowers maxResultRows to 5; this report emits 8 rows
-        createReport("it-truncation", String.join("\n",
+    void testAllResultRowsPersisted() throws Exception {
+        createReport("it-allrows", String.join("\n",
                 "def data = report.data()",
                 "data.column('N')",
                 "(1..8).each { data.row(it as String) }",
                 "data"));
 
-        // maxResultRows=5 is forced in setUp; retry briefly to absorb the config-modified propagation delay
-        await().atMost(30, TimeUnit.SECONDS).pollInterval(2, TimeUnit.SECONDS).untilAsserted(() -> {
-            JsonObject execution = execute("it-truncation", new JsonObject());
+        JsonObject execution = execute("it-allrows", new JsonObject());
 
-            assertEquals("SUCCESS", execution.get("status").getAsString());
-            assertTrue(execution.get("truncated").getAsBoolean(),
-                    "result exceeding the cap must be flagged truncated");
-            assertEquals(5, execution.get("rowCount").getAsLong(), "rows must be capped to maxResultRows");
-        });
+        assertEquals("SUCCESS", execution.get("status").getAsString());
+        assertEquals(8, execution.get("rowCount").getAsLong(), "every result row must be persisted");
     }
 
     @Test

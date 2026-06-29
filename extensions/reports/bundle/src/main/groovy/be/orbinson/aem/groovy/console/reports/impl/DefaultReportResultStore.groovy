@@ -3,16 +3,20 @@ package be.orbinson.aem.groovy.console.reports.impl
 import be.orbinson.aem.groovy.console.reports.ReportResultStore
 import be.orbinson.aem.groovy.console.reports.data.ReportData
 import be.orbinson.aem.groovy.console.reports.model.ReportResultPage
+import groovy.json.JsonOutput
 import groovy.json.JsonSlurper
 import groovy.util.logging.Slf4j
 import org.apache.jackrabbit.JcrConstants
+import org.apache.sling.api.resource.Resource
 import org.apache.sling.api.resource.ResourceResolver
 import org.apache.sling.api.resource.ResourceResolverFactory
 import org.osgi.service.component.annotations.Component
 import org.osgi.service.component.annotations.Reference
 
 import java.util.zip.GZIPInputStream
+import java.util.zip.GZIPOutputStream
 
+import static be.orbinson.aem.groovy.console.reports.constants.ReportsConstants.CHARSET
 import static be.orbinson.aem.groovy.console.reports.constants.ReportsConstants.RESULT_NODE_NAME
 
 @Component(service = ReportResultStore, immediate = true)
@@ -24,6 +28,25 @@ class DefaultReportResultStore implements ReportResultStore {
 
     @Reference
     private ReportsConfigurationService configurationService
+
+    @Override
+    void save(ResourceResolver resourceResolver, Resource executionResource, ReportData reportData) {
+        def byteStream = new ByteArrayOutputStream()
+
+        new GZIPOutputStream(byteStream).withCloseable { gzipStream ->
+            gzipStream.write(JsonOutput.toJson(reportData.toMap()).getBytes(CHARSET))
+        }
+
+        def fileResource = resourceResolver.create(executionResource, RESULT_NODE_NAME,
+                [(JcrConstants.JCR_PRIMARYTYPE): JcrConstants.NT_FILE] as Map<String, Object>)
+
+        resourceResolver.create(fileResource, JcrConstants.JCR_CONTENT, [
+                (JcrConstants.JCR_PRIMARYTYPE): JcrConstants.NT_RESOURCE,
+                (JcrConstants.JCR_MIMETYPE)   : "application/json",
+                (JcrConstants.JCR_ENCODING)   : CHARSET,
+                (JcrConstants.JCR_DATA)       : new ByteArrayInputStream(byteStream.toByteArray())
+        ] as Map<String, Object>)
+    }
 
     @Override
     ReportResultPage getPage(String executionId, int page, int pageSize) {

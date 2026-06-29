@@ -2,13 +2,26 @@ package be.orbinson.aem.groovy.console.reports
 
 import be.orbinson.aem.groovy.console.reports.data.ReportData
 import be.orbinson.aem.groovy.console.reports.model.ReportResultPage
+import org.apache.sling.api.resource.Resource
+import org.apache.sling.api.resource.ResourceResolver
 import org.osgi.annotation.versioning.ProviderType
 
 /**
- * Paged access to persisted report results.
+ * Persists and reads report results.  A result is always stored as a single gzipped-JSON binary
+ * ({@code jcr:data}) under the execution node, so it scales to any size without hitting JCR property limits.
  */
 @ProviderType
 interface ReportResultStore {
+
+    /**
+     * Persist a result as a gzipped-JSON binary child of the execution node, using the caller's resolver and
+     * open transaction (the caller commits).
+     *
+     * @param resourceResolver resolver owning the open transaction
+     * @param executionResource execution node to attach the result to
+     * @param reportData result to persist
+     */
+    void save(ResourceResolver resourceResolver, Resource executionResource, ReportData reportData)
 
     /**
      * Get one page of a persisted result.

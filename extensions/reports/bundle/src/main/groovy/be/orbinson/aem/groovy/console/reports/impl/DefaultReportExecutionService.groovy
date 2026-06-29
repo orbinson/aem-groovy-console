@@ -3,6 +3,7 @@ package be.orbinson.aem.groovy.console.reports.impl
 import be.orbinson.aem.groovy.console.GroovyConsoleService
 import be.orbinson.aem.groovy.console.reports.ReportException
 import be.orbinson.aem.groovy.console.reports.ReportExecutionService
+import be.orbinson.aem.groovy.console.reports.ReportResultStore
 import be.orbinson.aem.groovy.console.reports.data.ReportData
 import be.orbinson.aem.groovy.console.reports.model.ReportDefinition
 import be.orbinson.aem.groovy.console.reports.model.ReportExecution
@@ -12,7 +13,6 @@ import be.orbinson.aem.groovy.console.response.RunScriptResponse
 import be.orbinson.aem.groovy.console.streaming.ExecutionCallback
 import be.orbinson.aem.groovy.console.streaming.ExecutionRegistry
 import groovy.json.JsonBuilder
-import groovy.json.JsonOutput
 import groovy.json.JsonSlurper
 import groovy.transform.Synchronized
 import groovy.util.logging.Slf4j
@@ -27,7 +27,6 @@ import org.osgi.service.component.annotations.Component
 import org.osgi.service.component.annotations.Reference
 
 import java.util.regex.Pattern
-import java.util.zip.GZIPOutputStream
 
 import static be.orbinson.aem.groovy.console.reports.constants.ReportsConstants.*
 
@@ -61,7 +60,6 @@ class DefaultReportExecutionService implements ReportExecutionService {
 
     private static final String PROPERTY_COLUMN_COUNT = "columnCount"
 
-    private static final String PROPERTY_TRUNCATED = "truncated"
 
     private static final String PROPERTY_PARAMETER_VALUES = "parameterValues"
 
@@ -76,6 +74,9 @@ class DefaultReportExecutionService implements ReportExecutionService {
 
     @Reference
     private ExecutionRegistry executionRegistry
+
+    @Reference
+    private ReportResultStore resultStore
 
     @Reference
     private ResourceResolverFactory resourceResolverFactory
@@ -134,12 +135,10 @@ class DefaultReportExecutionService implements ReportExecutionService {
         }
 
         def reportData = ResultParser.parse(response.result)
-        def truncated = capRows(reportData)
 
         new ReportPreview(
                 status: ReportExecutionStatus.SUCCESS,
                 data: reportData,
-                truncated: truncated,
                 output: output,
                 runningTime: response.runningTime)
     }
@@ -169,19 +168,6 @@ class DefaultReportExecutionService implements ReportExecutionService {
                 script: script,
                 userId: userId
         )
-    }
-
-    // cap rows to the configured maximum; returns true when the result was truncated
-    private boolean capRows(ReportData reportData) {
-        def maxResultRows = configurationService.maxResultRows
-
-        if (maxResultRows > 0 && reportData.rows.size() > maxResultRows) {
-            reportData.rows = reportData.rows.subList(0, maxResultRows)
-
-            return true
-        }
-
-        false
     }
 
     @Override
@@ -259,7 +245,6 @@ class DefaultReportExecutionService implements ReportExecutionService {
                 runningTime: properties.get(PROPERTY_RUNNING_TIME, String),
                 rowCount: properties.get(PROPERTY_ROW_COUNT, Long),
                 columnCount: properties.get(PROPERTY_COLUMN_COUNT, Long),
-                truncated: properties.get(PROPERTY_TRUNCATED, false),
                 parameterValues: toParameterValues(properties.get(PROPERTY_PARAMETER_VALUES, String)),
                 output: properties.get(PROPERTY_OUTPUT, String),
                 exceptionStackTrace: properties.get(PROPERTY_EXCEPTION_STACK_TRACE, String)
@@ -309,11 +294,6 @@ class DefaultReportExecutionService implements ReportExecutionService {
 
     private void finishSuccess(String executionId, RunScriptResponse response, long durationMillis) {
         def reportData = ResultParser.parse(response.result)
-        def truncated = capRows(reportData)
-
-        if (truncated) {
-            LOG.warn("result truncated to {} rows for execution : {}", configurationService.maxResultRows, executionId)
-        }
 
         withResourceResolver { ResourceResolver resourceResolver ->
             def resource = getExecutionResource(resourceResolver, executionId)
@@ -325,13 +305,12 @@ class DefaultReportExecutionService implements ReportExecutionService {
             valueMap.put(PROPERTY_RUNNING_TIME, response.runningTime ?: "")
             valueMap.put(PROPERTY_ROW_COUNT, reportData.rows.size() as long)
             valueMap.put(PROPERTY_COLUMN_COUNT, reportData.columns.size() as long)
-            valueMap.put(PROPERTY_TRUNCATED, truncated)
 
             if (response.output) {
                 valueMap.put(PROPERTY_OUTPUT, truncate(response.output))
             }
 
-            saveResult(resourceResolver, resource, reportData)
+            resultStore.save(resourceResolver, resource, reportData)
 
             resourceResolver.commit()
         }
@@ -353,27 +332,6 @@ class DefaultReportExecutionService implements ReportExecutionService {
 
             resourceResolver.commit()
         }
-    }
-
-    private static void saveResult(ResourceResolver resourceResolver, Resource executionResource,
-                                   ReportData reportData) {
-        def json = JsonOutput.toJson(reportData.toMap())
-
-        def byteStream = new ByteArrayOutputStream()
-
-        new GZIPOutputStream(byteStream).withCloseable { gzipStream ->
-            gzipStream.write(json.getBytes(CHARSET))
-        }
-
-        def fileResource = resourceResolver.create(executionResource, RESULT_NODE_NAME,
-                [(JcrConstants.JCR_PRIMARYTYPE): JcrConstants.NT_FILE] as Map<String, Object>)
-
-        resourceResolver.create(fileResource, JcrConstants.JCR_CONTENT, [
-                (JcrConstants.JCR_PRIMARYTYPE): JcrConstants.NT_RESOURCE,
-                (JcrConstants.JCR_MIMETYPE)   : "application/json",
-                (JcrConstants.JCR_ENCODING)   : CHARSET,
-                (JcrConstants.JCR_DATA)       : new ByteArrayInputStream(byteStream.toByteArray())
-        ] as Map<String, Object>)
     }
 
     private String truncate(String output) {

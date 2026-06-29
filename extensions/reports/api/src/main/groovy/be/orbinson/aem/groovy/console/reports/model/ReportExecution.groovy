@@ -33,9 +33,6 @@ class ReportExecution {
 
     Long columnCount
 
-    /** Whether the result was truncated because it exceeded the configured maximum row count. */
-    boolean truncated
-
     /** Coerced parameter values used for this execution. */
     Map<String, Object> parameterValues = [:]
 

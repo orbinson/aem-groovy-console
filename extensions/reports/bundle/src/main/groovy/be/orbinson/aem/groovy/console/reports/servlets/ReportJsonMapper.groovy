@@ -7,7 +7,8 @@ import be.orbinson.aem.groovy.console.reports.model.ReportParameter
 import be.orbinson.aem.groovy.console.reports.model.ReportPreview
 import be.orbinson.aem.groovy.console.reports.model.ReportResultPage
 
-import java.text.SimpleDateFormat
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
 
 import static be.orbinson.aem.groovy.console.reports.constants.ReportsConstants.DATE_FORMAT_ISO_8601
 
@@ -70,7 +71,6 @@ class ReportJsonMapper {
                 runningTime        : execution.runningTime,
                 rowCount           : execution.rowCount,
                 columnCount        : execution.columnCount,
-                truncated          : execution.truncated,
                 parameterValues    : execution.parameterValues,
                 output             : execution.output,
                 exceptionStackTrace: execution.exceptionStackTrace
@@ -100,7 +100,6 @@ class ReportJsonMapper {
                 },
                 rows               : preview.data?.rows ?: [],
                 rowCount           : preview.data?.rows?.size() ?: 0,
-                truncated          : preview.truncated,
                 output             : preview.output,
                 exceptionStackTrace: preview.exceptionStackTrace,
                 runningTime        : preview.runningTime
@@ -115,16 +114,11 @@ class ReportJsonMapper {
         ]
     }
 
+    private static final DateTimeFormatter ISO_8601 =
+            DateTimeFormatter.ofPattern(DATE_FORMAT_ISO_8601).withZone(ZoneOffset.UTC)
+
     private static String formatDate(Calendar calendar) {
-        if (calendar == null) {
-            return null
-        }
-
-        def format = new SimpleDateFormat(DATE_FORMAT_ISO_8601)
-
-        format.timeZone = TimeZone.getTimeZone("UTC")
-
-        format.format(calendar.time)
+        calendar == null ? null : ISO_8601.format(calendar.toInstant())
     }
 
     private ReportJsonMapper() {
