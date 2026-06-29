@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workspaceFilter version="1.0">
+    <!-- AEM Tools console entry so business users can reach the reports UI (overlay; AEM-only) -->
+    <filter root="/apps/cq/core/content/nav/tools/groovyconsole" mode="merge"/>
+</workspaceFilter>
