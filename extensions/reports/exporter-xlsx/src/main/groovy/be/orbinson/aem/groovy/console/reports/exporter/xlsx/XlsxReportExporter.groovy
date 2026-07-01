@@ -11,8 +11,11 @@ import org.apache.poi.ss.usermodel.CreationHelper
 import org.apache.poi.xssf.streaming.SXSSFWorkbook
 import org.osgi.service.component.annotations.Component
 
-import java.text.ParseException
-import java.text.SimpleDateFormat
+import java.time.Instant
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.ZoneOffset
+import java.time.format.DateTimeParseException
 
 /**
  * XLSX exporter based on Apache POI's streaming workbook.  Column types map to typed cells: numbers and
@@ -27,13 +30,6 @@ class XlsxReportExporter implements ReportExporter {
     private static final String SHEET_NAME = "Report"
 
     private static final String DATE_CELL_FORMAT = "yyyy-mm-dd hh:mm:ss"
-
-    private static final List<String> DATE_FORMATS = [
-            "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
-            "yyyy-MM-dd'T'HH:mm:ss'Z'",
-            "yyyy-MM-dd'T'HH:mm:ss",
-            "yyyy-MM-dd"
-    ]
 
     @Override
     String getFormat() {
@@ -186,19 +182,30 @@ class XlsxReportExporter implements ReportExporter {
             return value.time
         }
 
-        for (String pattern : DATE_FORMATS) {
-            try {
-                def format = new SimpleDateFormat(pattern)
+        def text = value as String
 
-                format.timeZone = TimeZone.getTimeZone("UTC")
-                format.lenient = false
-
-                return format.parse(value as String)
-            } catch (ParseException ignored) {
-                // try next format
-            }
+        if (!text) {
+            return null
         }
 
-        null
+        // ISO-8601 instant with trailing Z (what ReportData writes), then bare local date-time, then date-only,
+        // both interpreted as UTC
+        try {
+            return Date.from(Instant.parse(text))
+        } catch (DateTimeParseException ignored) {
+            // try next
+        }
+
+        try {
+            return Date.from(LocalDateTime.parse(text).toInstant(ZoneOffset.UTC))
+        } catch (DateTimeParseException ignored) {
+            // try next
+        }
+
+        try {
+            return Date.from(LocalDate.parse(text).atStartOfDay(ZoneOffset.UTC).toInstant())
+        } catch (DateTimeParseException ignored) {
+            null
+        }
     }
 }

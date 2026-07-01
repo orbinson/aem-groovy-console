@@ -2,7 +2,8 @@ package be.orbinson.aem.groovy.console.reports.data
 
 import groovy.json.JsonBuilder
 
-import java.text.SimpleDateFormat
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
 
 /**
  * Typed tabular result for report scripts.  Report scripts should return an instance of this class (typically
@@ -29,6 +30,9 @@ class ReportData {
     public static final String JSON_ENVELOPE_KEY = "reportData"
 
     private static final String DATE_FORMAT_ISO_8601 = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
+
+    private static final DateTimeFormatter ISO_8601 =
+            DateTimeFormatter.ofPattern(DATE_FORMAT_ISO_8601).withZone(ZoneOffset.UTC)
 
     List<ReportColumn> columns = []
 
@@ -142,22 +146,14 @@ class ReportData {
     }
 
     private static String formatDate(Object value) {
-        def date = null
+        def instant = null
 
         if (value instanceof Calendar) {
-            date = value.time
+            instant = value.toInstant()
         } else if (value instanceof Date) {
-            date = value
+            instant = value.toInstant()
         }
 
-        if (date != null) {
-            def format = new SimpleDateFormat(DATE_FORMAT_ISO_8601)
-
-            format.timeZone = TimeZone.getTimeZone("UTC")
-
-            return format.format(date)
-        }
-
-        value as String
+        instant != null ? ISO_8601.format(instant) : value as String
     }
 }
