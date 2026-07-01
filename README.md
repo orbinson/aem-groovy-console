@@ -333,16 +333,19 @@ Available extensions:
 
 ### Reports
 
-The `extensions/reports/` modules provide a business-facing reporting extension, deployed as the
-`aem-groovy-console-reports-all` content package (the console itself must be installed first). Authors write a
-Groovy script that returns tabular data (`report.data()` with typed `STRING`/`NUMBER`/`DATE`/`BOOLEAN`/`LINK`
-columns); business users run it from a parameter form, page through and export the persisted result, and browse
-past runs. Access is governed entirely by JCR permissions on `/conf/groovyconsole/reports` (read = view/run,
-write = create/edit/delete). It contributes a business UI at `/apps/groovyconsole/reports.html` and a Reports
-drawer in the modern console.
+The `extensions/reports/` modules provide an **optional** business-facing reporting extension. It ships as its
+own content package, `aem-groovy-console-reports-all`, installed **separately on top of the console** (install the
+console first) — via [PackMgr](http://localhost:4502/crx/packmgr) or Maven, the same way as the console. The
+console works fine without it; installing it adds the reports feature.
 
-See **[`extensions/reports/README.md`](extensions/reports/README.md)** for the full documentation — parameters,
-column types, the execution model, exports (CSV/XLSX) and configuration.
+Authors write a Groovy script that returns tabular data (`report.data()` with typed
+`STRING`/`NUMBER`/`DATE`/`BOOLEAN`/`LINK` columns); business users run it from a parameter form, page through and
+export the persisted result, and browse past runs. Access is governed entirely by JCR permissions on
+`/conf/groovyconsole/reports` (read = view/run, write = create/edit/delete). It contributes a business UI at
+`/apps/groovyconsole/reports.html` and a Reports drawer in the modern console.
+
+See **[`extensions/reports/README.md`](extensions/reports/README.md)** for the full documentation — installation,
+parameters, column types, the execution model, exports (CSV/XLSX) and configuration.
 
 ## Registering Additional Metaclasses
 

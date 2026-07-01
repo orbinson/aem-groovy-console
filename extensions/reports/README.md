@@ -4,11 +4,36 @@ A business-facing reporting extension for the AEM Groovy Console. Authors write 
 returns tabular data; business users run it from a form, page through the result, export it and browse past
 runs — without touching the console itself.
 
-It ships as the `aem-groovy-console-reports-all` content package. **Install the Groovy Console first**, then this
-package on top.
+It is an optional add-on that ships as its own content package, `aem-groovy-console-reports-all`, installed
+separately from (and on top of) the console.
+
+## Installation
+
+The reports extension is independent of the console package, so install it separately — **the Groovy Console must
+be installed first**:
+
+- **Manual**: download `aem-groovy-console-reports-all` from the
+  [releases](https://github.com/orbinson/aem-groovy-console/releases) (or
+  [Maven Central](https://search.maven.org/search?q=a:aem-groovy-console-reports-all)) and install the content
+  package with [PackMgr](http://localhost:4502/crx/packmgr).
+- **Maven / embedded**: depend on the package and embed it like the console's `aem-groovy-console-all` (see the
+  root README's *Embedded package* section):
+
+  ```xml
+  <dependency>
+    <groupId>be.orbinson.aem</groupId>
+    <artifactId>aem-groovy-console-reports-all</artifactId>
+    <version>${aem-groovy-console.version}</version>
+    <type>zip</type>
+  </dependency>
+  ```
+
+On plain Sling (no AEM), XLSX export additionally needs the POI bundles — see [Exports](#exports). The console
+works without this package; installing it adds the reports feature.
 
 ## Contents
 
+- [Installation](#installation)
 - [Report definitions](#report-definitions)
 - [Parameters](#parameters)
 - [Writing the script](#writing-the-script)
