@@ -282,6 +282,49 @@ class GroovyConsoleReportsIT {
     }
 
     @Test
+    void testCsvExportLocalizesNumbersAndAbsolutizesLinks() throws Exception {
+        createReport("it-export-locale", String.join("\n",
+                "import be.orbinson.aem.groovy.console.reports.data.ReportColumnType",
+                "def data = report.data()",
+                "data.column('Amount', ReportColumnType.NUMBER)",
+                "data.column('Page', ReportColumnType.LINK)",
+                "data.column('External', ReportColumnType.LINK)",
+                "data.row(1234.5, [text: 'Edit', href: '/editor.html/content/e2e.html'], "
+                        + "[text: 'Ext', href: 'https://example.com/ext'])",
+                "data"));
+
+        String id = execute("it-export-locale", new JsonObject()).get("executionId").getAsString();
+
+        // Dutch locale: ';' delimiter, comma decimal
+        String nl = exportCsv(id, "nl-NL");
+        assertTrue(nl.contains("Amount;Page;External"), "comma-decimal locale uses a ';' delimiter: " + nl);
+        assertTrue(nl.contains("1234,5"), "NUMBER formatted with the locale decimal separator: " + nl);
+        // relative LINK href absolutized to the request host; already-absolute href preserved
+        assertTrue(nl.contains(BASE_URL + "/editor.html/content/e2e.html"),
+                "relative LINK href must be absolutized to the request host: " + nl);
+        assertTrue(nl.contains("https://example.com/ext"), "absolute LINK href must be preserved: " + nl);
+
+        // English locale: ',' delimiter, dot decimal
+        String en = exportCsv(id, "en-US");
+        assertTrue(en.contains("Amount,Page,External"), "dot-decimal locale uses a ',' delimiter: " + en);
+        assertTrue(en.contains("1234.5"), "NUMBER keeps a dot decimal for a dot-decimal locale: " + en);
+        assertTrue(en.contains(BASE_URL + "/editor.html/content/e2e.html"), "relative LINK absolutized: " + en);
+    }
+
+    private static String exportCsv(String executionId, String acceptLanguage) throws IOException {
+        HttpGet get = new HttpGet(BASE_URL + "/bin/groovyconsole/reports/export?executionId=" + executionId
+                + "&format=csv");
+        get.addHeader("Authorization", AUTH_HEADER);
+        get.addHeader("Accept-Language", acceptLanguage);
+
+        try (CloseableHttpResponse response = httpClient.execute(get)) {
+            assertEquals(200, response.getStatusLine().getStatusCode());
+
+            return EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
+        }
+    }
+
+    @Test
     void testMissingRequiredParameter() throws Exception {
         createReport();
 
