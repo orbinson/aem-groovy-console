@@ -41,8 +41,11 @@ export function renderCell(cell: ResultCell, type: string) {
       return cell === true || cell === 'true' ? '✓' : '—';
     case 'DATE':
       return formatDate(String(cell));
-    case 'NUMBER':
-      return String(cell);
+    case 'NUMBER': {
+      // format in the user's locale (grouping + decimal separator) for display
+      const value = typeof cell === 'number' ? cell : Number(cell);
+      return Number.isNaN(value) ? String(cell) : value.toLocaleString();
+    }
     default:
       return String(cell);
   }

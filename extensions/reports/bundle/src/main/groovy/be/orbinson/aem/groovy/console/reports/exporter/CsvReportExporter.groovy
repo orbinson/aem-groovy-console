@@ -2,9 +2,11 @@ package be.orbinson.aem.groovy.console.reports.exporter
 
 import be.orbinson.aem.groovy.console.reports.LocaleAwareReportExporter
 import be.orbinson.aem.groovy.console.reports.ReportExporter
+import be.orbinson.aem.groovy.console.reports.data.ReportColumnType
 import be.orbinson.aem.groovy.console.reports.data.ReportData
 import org.osgi.service.component.annotations.Component
 
+import java.text.DecimalFormat
 import java.text.DecimalFormatSymbols
 
 import static be.orbinson.aem.groovy.console.reports.constants.ReportsConstants.CHARSET
@@ -12,7 +14,8 @@ import static be.orbinson.aem.groovy.console.reports.constants.ReportsConstants.
 /**
  * RFC 4180 compliant CSV exporter.  Writes a UTF-8 BOM so Excel detects the encoding.  The field delimiter is
  * locale-aware: locales whose decimal separator is a comma (nl, de, fr, \u2026) get ';' so Excel still splits into
- * columns, others get ','.
+ * columns, others get ','.  NUMBER cells are formatted with the locale's decimal separator (grouping disabled,
+ * so the number never clashes with the delimiter) so Excel recognizes them as numeric in that locale.
  */
 @Component(service = ReportExporter, immediate = true)
 class CsvReportExporter implements LocaleAwareReportExporter {
@@ -43,16 +46,26 @@ class CsvReportExporter implements LocaleAwareReportExporter {
 
     @Override
     void export(ReportData reportData, OutputStream outputStream, Locale locale) {
-        def delimiter = delimiterFor(locale)
+        def effectiveLocale = locale ?: Locale.ENGLISH
+        def delimiter = delimiterFor(effectiveLocale)
+        def numberFormat = numberFormat(effectiveLocale)
         def writer = new OutputStreamWriter(outputStream, CHARSET)
 
         writer.write(BOM)
 
         // UI-only columns (exported == false) are omitted from the export
-        writeRow(writer, reportData.exportedColumns*.name, delimiter)
+        def columns = reportData.exportedColumns
+
+        writeRow(writer, columns*.name, delimiter)
 
         reportData.exportedRows.each { row ->
-            writeRow(writer, row.collect { cell -> cellToString(cell) }, delimiter)
+            def values = (0..<row.size()).collect { index ->
+                def type = index < columns.size() ? columns[index].type : ReportColumnType.STRING
+
+                cellToString(row[index], type, numberFormat)
+            }
+
+            writeRow(writer, values, delimiter)
         }
 
         writer.flush()
@@ -63,6 +76,17 @@ class CsvReportExporter implements LocaleAwareReportExporter {
     // Excel opens CSV using the active locale's list separator: comma-decimal locales need ';' for columns.
     private static String delimiterFor(Locale locale) {
         new DecimalFormatSymbols(locale ?: Locale.ENGLISH).decimalSeparator == ',' as char ? ";" : ","
+    }
+
+    // Locale decimal separator, no grouping (grouping separators would clash with the field delimiter and add
+    // spurious quoting), full precision (no rounding).
+    private static DecimalFormat numberFormat(Locale locale) {
+        def format = new DecimalFormat("0", DecimalFormatSymbols.getInstance(locale))
+
+        format.groupingUsed = false
+        format.maximumFractionDigits = 340
+
+        format
     }
 
     private static void writeRow(Writer writer, List<String> values, String delimiter) {
@@ -97,9 +121,13 @@ class CsvReportExporter implements LocaleAwareReportExporter {
         value
     }
 
-    private static String cellToString(Object cell) {
+    private static String cellToString(Object cell, ReportColumnType type, DecimalFormat numberFormat) {
         if (cell == null) {
             return null
+        }
+
+        if (type == ReportColumnType.NUMBER && cell instanceof Number) {
+            return numberFormat.format(cell)
         }
 
         if (cell instanceof Map) {

@@ -67,6 +67,17 @@ class CsvReportExporterTest {
     }
 
     @Test
+    void "formats NUMBER cells with the locale decimal separator and no grouping"() {
+        def data = new ReportData()
+        data.column("Amount", ReportColumnType.NUMBER)
+        data.row(1234.5)
+
+        assertTrue(export(data, Locale.ENGLISH).contains("1234.5"), "English locale keeps a dot decimal")
+        assertTrue(export(data, new Locale("nl")).contains("1234,5"), "comma-decimal locale uses a comma decimal")
+        assertFalse(export(data, Locale.ENGLISH).contains("1,234"), "no grouping separator that would clash with the delimiter")
+    }
+
+    @Test
     void "excludes UI-only columns from the export"() {
         def data = new ReportData()
         data.column("Name")
