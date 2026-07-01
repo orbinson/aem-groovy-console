@@ -29,7 +29,7 @@ class DefaultExecutionRegistry implements ExecutionRegistry {
 
     private final Map<String, Execution> executions = new ConcurrentHashMap<>()
 
-    private ExecutorService executor
+    private volatile ExecutorService executor
 
     @Activate
     void activate() {
@@ -40,6 +40,17 @@ class DefaultExecutionRegistry implements ExecutionRegistry {
     void deactivate() {
         executor?.shutdownNow()
         executions.clear()
+    }
+
+    // Return a live pool, re-creating it if it was shut down.  During startup OSGi can deactivate this instance
+    // in a bundle-refresh cascade (shutting the pool down) while a consumer still holds a reference to it;
+    // without this, that consumer's executions would fail with RejectedExecutionException on the dead pool.
+    private synchronized ExecutorService executor() {
+        if (executor == null || executor.shutdown) {
+            executor = Executors.newCachedThreadPool()
+        }
+
+        executor
     }
 
     @Override
@@ -56,7 +67,7 @@ class DefaultExecutionRegistry implements ExecutionRegistry {
 
         executions[executionId] = execution
 
-        executor.submit {
+        executor().submit {
             def start = System.currentTimeMillis()
 
             try {
