@@ -22,8 +22,6 @@
             <plugins>
                 <!-- Shared Sling feature build for the `it` and `run` profiles. -->
                 <plugin>
-                    <!-- Convert the all-packages to feature-model bundles at build time so everything is in the
-                         initial launch (no runtime content-package install race). -->
                     <groupId>org.apache.sling</groupId>
                     <artifactId>sling-feature-converter-maven-plugin</artifactId>
                     <version>1.0.14</version>
@@ -56,7 +54,7 @@
                 <plugin>
                     <!-- Aggregate Sling Starter + the converted features into one launchable feature.
                          osgiBsnCollisionDetection + *:*:HIGHEST de-dupes overlapping bundles (Starter Groovy
-                         4.0.10 vs our 5.0.6). additionalFeatureFiles needs slingfeature-maven-plugin >= 1.9.6. -->
+                         4.0.10 vs our 5.0.6).-->
                     <groupId>org.apache.sling</groupId>
                     <artifactId>slingfeature-maven-plugin</artifactId>
                     <version>1.9.6</version>

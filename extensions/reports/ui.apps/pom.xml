@@ -29,10 +29,6 @@
                         <cloudManagerTarget>none</cloudManagerTarget>
                     </properties>
                     <validatorsSettings>
-                        <!-- application-package filter check wants each filter root's parent to be a valid root;
-                             setting validRoots replaces the defaults, so list both: /apps (parent of the reports
-                             SPA assets) and /apps/cq/core/content/nav/tools (the cq tools nav entry merges there,
-                             and that parent is not part of this package). -->
                         <jackrabbit-filter>
                             <options>
                                 <validRoots>/apps,/apps/cq/core/content/nav/tools</validRoots>

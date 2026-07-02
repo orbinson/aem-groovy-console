@@ -182,6 +182,5 @@ build that shares console infrastructure (API client, the Monaco/Groovy editor s
 | Property           | Default | Meaning                                                          |
 |--------------------|---------|------------------------------------------------------------------|
 | `defaultPageSize`  | 50      | UI result page size when a report does not declare its own.      |
-| `maxOutputLength`  | 100000  | Max characters of captured script output persisted per execution. |
 
 Execution purging is configured separately on the purge service.

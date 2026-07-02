@@ -42,9 +42,6 @@ class DefaultExecutionRegistry implements ExecutionRegistry {
         executions.clear()
     }
 
-    // Return a live pool, re-creating it if it was shut down.  During startup OSGi can deactivate this instance
-    // in a bundle-refresh cascade (shutting the pool down) while a consumer still holds a reference to it;
-    // without this, that consumer's executions would fail with RejectedExecutionException on the dead pool.
     private synchronized ExecutorService executor() {
         if (executor == null || executor.shutdown) {
             executor = Executors.newCachedThreadPool()

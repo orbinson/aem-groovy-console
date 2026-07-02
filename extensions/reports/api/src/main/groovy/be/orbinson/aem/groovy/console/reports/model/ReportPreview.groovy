@@ -17,7 +17,7 @@ class ReportPreview {
     /** Typed result (columns + rows); null when the run failed. */
     ReportData data
 
-    /** Captured script output (println etc.), possibly truncated. */
+    /** Captured script output (println etc.). */
     String output
 
     /** Stack trace when {@link #status} is FAILED. */

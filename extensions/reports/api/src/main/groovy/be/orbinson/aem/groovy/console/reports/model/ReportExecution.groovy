@@ -36,7 +36,7 @@ class ReportExecution {
     /** Coerced parameter values used for this execution. */
     Map<String, Object> parameterValues = [:]
 
-    /** Captured script output (possibly truncated). */
+    /** Captured script output. */
     String output
 
     String exceptionStackTrace

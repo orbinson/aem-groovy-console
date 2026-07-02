@@ -45,9 +45,6 @@
                         </executions>
                     </plugin>
                     <plugin>
-                        <!-- Convert the all-packages to feature-model bundles at build time so everything is in
-                             the initial launch.  This avoids the post-startup content-package install cascade
-                             that corrupts the HTTP whiteboard on Starter 14 (the reason for the jetty12 pin). -->
                         <groupId>org.apache.sling</groupId>
                         <artifactId>sling-feature-converter-maven-plugin</artifactId>
                         <version>1.0.14</version>
@@ -80,8 +77,7 @@
                     <plugin>
                         <!-- Aggregate Sling Starter + the converted features into one launchable feature.
                              osgiBsnCollisionDetection + *:*:HIGHEST de-dupes overlapping bundles (Starter Groovy
-                             4.0.10 vs our 5.0.6) and lets jetty12.json's 1.2.0 pin win over Starter's 1.1.8.
-                             additionalFeatureFiles needs slingfeature-maven-plugin >= 1.9.6. -->
+                             4.0.10 vs our 5.0.6).  additionalFeatureFiles needs slingfeature-maven-plugin >= 1.9.6. -->
                         <groupId>org.apache.sling</groupId>
                         <artifactId>slingfeature-maven-plugin</artifactId>
                         <version>1.9.6</version>

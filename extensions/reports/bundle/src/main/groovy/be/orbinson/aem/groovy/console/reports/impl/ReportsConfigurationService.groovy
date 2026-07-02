@@ -6,6 +6,4 @@ package be.orbinson.aem.groovy.console.reports.impl
 interface ReportsConfigurationService {
 
     int getDefaultPageSize()
-
-    int getMaxOutputLength()
 }

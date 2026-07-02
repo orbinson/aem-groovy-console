@@ -63,7 +63,7 @@ class DefaultReportExecutionService implements ReportExecutionService {
 
     private static final String PROPERTY_PARAMETER_VALUES = "parameterValues"
 
-    private static final String PROPERTY_OUTPUT = "output"
+    private static final String OUTPUT_NODE_NAME = "output"
 
     private static final String PROPERTY_EXCEPTION_STACK_TRACE = "exceptionStackTrace"
 
@@ -81,9 +81,6 @@ class DefaultReportExecutionService implements ReportExecutionService {
     @Reference
     private ResourceResolverFactory resourceResolverFactory
 
-    @Reference
-    private ReportsConfigurationService configurationService
-
     @Override
     ReportExecution execute(ReportDefinition reportDefinition, Map<String, String> parameterValues,
                             ResourceResolver resourceResolver) {
@@ -96,10 +93,6 @@ class DefaultReportExecutionService implements ReportExecutionService {
         LOG.info("executing report : {} as user : {}, execution ID : {}", reportDefinition.name, userId,
                 executionId)
 
-        // run asynchronously so a long report doesn't block the request thread (and hit HTTP timeouts);
-        // the script is resolved up-front with the user's resolver, then executed with a detached clone
-        // that the registry closes when the run finishes. The execution is persisted as RUNNING and the
-        // callback flips it to SUCCESS/FAILED once complete; clients poll the execution for the outcome.
         def asyncResolver = resourceResolver.clone(null)
         def scriptContext = buildReportContext(reportDefinition.name, coercedValues, script, userId, asyncResolver)
 
@@ -124,7 +117,7 @@ class DefaultReportExecutionService implements ReportExecutionService {
         LOG.info("previewing report : {} as user : {}", reportDefinition.name, userId)
 
         def response = runReport(reportDefinition.name, coercedValues, script, userId, resourceResolver).response
-        def output = response.output ? truncate(response.output) : null
+        def output = response.output ?: null
 
         if (response.exceptionStackTrace) {
             return new ReportPreview(
@@ -246,7 +239,7 @@ class DefaultReportExecutionService implements ReportExecutionService {
                 rowCount: properties.get(PROPERTY_ROW_COUNT, Long),
                 columnCount: properties.get(PROPERTY_COLUMN_COUNT, Long),
                 parameterValues: toParameterValues(properties.get(PROPERTY_PARAMETER_VALUES, String)),
-                output: properties.get(PROPERTY_OUTPUT, String),
+                output: readOutput(resource),
                 exceptionStackTrace: properties.get(PROPERTY_EXCEPTION_STACK_TRACE, String)
         )
     }
@@ -307,7 +300,7 @@ class DefaultReportExecutionService implements ReportExecutionService {
             valueMap.put(PROPERTY_COLUMN_COUNT, reportData.columns.size() as long)
 
             if (response.output) {
-                valueMap.put(PROPERTY_OUTPUT, truncate(response.output))
+                saveOutput(resourceResolver, resource, response.output)
             }
 
             resultStore.save(resourceResolver, resource, reportData)
@@ -327,17 +320,32 @@ class DefaultReportExecutionService implements ReportExecutionService {
             valueMap.put(PROPERTY_EXCEPTION_STACK_TRACE, response.exceptionStackTrace)
 
             if (response.output) {
-                valueMap.put(PROPERTY_OUTPUT, truncate(response.output))
+                saveOutput(resourceResolver, resource, response.output)
             }
 
             resourceResolver.commit()
         }
     }
 
-    private String truncate(String output) {
-        def maxOutputLength = configurationService.maxOutputLength
+    private static void saveOutput(ResourceResolver resourceResolver, Resource executionResource, String output) {
+        def fileResource = resourceResolver.create(executionResource, OUTPUT_NODE_NAME,
+                [(JcrConstants.JCR_PRIMARYTYPE): JcrConstants.NT_FILE] as Map<String, Object>)
 
-        maxOutputLength > 0 && output.length() > maxOutputLength ? output.substring(0, maxOutputLength) : output
+        resourceResolver.create(fileResource, JcrConstants.JCR_CONTENT, [
+                (JcrConstants.JCR_PRIMARYTYPE): JcrConstants.NT_RESOURCE,
+                (JcrConstants.JCR_MIMETYPE)   : "text/plain",
+                (JcrConstants.JCR_ENCODING)   : CHARSET,
+                (JcrConstants.JCR_DATA)       : new ByteArrayInputStream(output.getBytes(CHARSET))
+        ] as Map<String, Object>)
+    }
+
+    private static String readOutput(Resource resource) {
+        def stream = resource.getChild(OUTPUT_NODE_NAME)
+                ?.getChild(JcrConstants.JCR_CONTENT)
+                ?.valueMap
+                ?.get(JcrConstants.JCR_DATA, InputStream)
+
+        stream?.withCloseable { it.getText(CHARSET) }
     }
 
     private static void collectExecutions(Resource resource, List<ReportExecution> executions) {

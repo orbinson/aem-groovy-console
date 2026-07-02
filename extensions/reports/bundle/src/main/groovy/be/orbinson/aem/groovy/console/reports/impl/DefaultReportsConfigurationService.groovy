@@ -12,23 +12,15 @@ class DefaultReportsConfigurationService implements ReportsConfigurationService 
 
     private int defaultPageSize
 
-    private int maxOutputLength
-
     @Activate
     @Modified
     @Synchronized
     void activate(ReportsConfigurationProperties properties) {
         defaultPageSize = properties.defaultPageSize()
-        maxOutputLength = properties.maxOutputLength()
     }
 
     @Override
     int getDefaultPageSize() {
         defaultPageSize
-    }
-
-    @Override
-    int getMaxOutputLength() {
-        maxOutputLength
     }
 }

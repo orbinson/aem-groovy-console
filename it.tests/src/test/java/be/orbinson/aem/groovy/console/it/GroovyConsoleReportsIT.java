@@ -44,6 +44,8 @@ class GroovyConsoleReportsIT {
             "",
             "def data = report.data()",
             "",
+            "println \"generating rows for ${params.greeting}\"",
+            "",
             "data.column('Name')",
             "data.column('Count', ReportColumnType.NUMBER)",
             "data.column('Active', ReportColumnType.BOOLEAN)",
@@ -179,6 +181,8 @@ class GroovyConsoleReportsIT {
         assertEquals(3, execution.get("rowCount").getAsLong());
         assertEquals(5, execution.get("columnCount").getAsLong());
         assertEquals("hi", execution.getAsJsonObject("parameterValues").get("greeting").getAsString());
+        assertTrue(execution.get("output").getAsString().contains("generating rows for hi"),
+                "Expected captured script output on the execution");
     }
 
     @Test
