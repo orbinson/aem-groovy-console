@@ -1,5 +1,6 @@
 package be.orbinson.aem.groovy.console.reports.servlets
 
+import be.orbinson.aem.groovy.console.configuration.ConfigurationService
 import be.orbinson.aem.groovy.console.reports.ReportExecutionService
 import be.orbinson.aem.groovy.console.reports.ReportResultStore
 import be.orbinson.aem.groovy.console.reports.ReportService
@@ -38,6 +39,9 @@ class ReportResultServlet extends AbstractReportsServlet {
     @Reference
     private ReportResultStore resultStore
 
+    @Reference
+    private ConfigurationService configurationService
+
     @Override
     protected void doGet(SlingHttpServletRequest request, SlingHttpServletResponse response)
             throws ServletException, IOException {
@@ -51,15 +55,14 @@ class ReportResultServlet extends AbstractReportsServlet {
             return
         }
 
-        // access follows the report's read ACL; orphaned executions need the report-create capability
-        def resolver = request.resourceResolver
-        def definition = execution.reportName ? reportService.getReport(resolver, execution.reportName) : null
-
-        if (!definition && !reportService.canCreate(resolver)) {
+        if (!canViewExecution(request, execution, reportService, configurationService)) {
             writeError(response, SC_FORBIDDEN, "Not allowed to view execution: $executionId")
 
             return
         }
+
+        def resolver = request.resourceResolver
+        def definition = execution.reportName ? reportService.getReport(resolver, execution.reportName) : null
 
         def page = toInt(request.getParameter(PARAMETER_PAGE), 1)
         def pageSize = toInt(request.getParameter(PARAMETER_PAGE_SIZE), definition?.pageSize ?: 0)

@@ -36,6 +36,9 @@ class ReportExecuteServlet extends AbstractReportsServlet {
     @Override
     protected void doPost(SlingHttpServletRequest request, SlingHttpServletResponse response)
             throws ServletException, IOException {
+        // running a report executes only dev/admin-authored, vetted scripts (authoring is gated separately),
+        // so read access to the report definition alone is the right to run it — business users with read-only
+        // permissions run reports with their own session
         def body = readJsonBody(request)
 
         if (!body || !body["name"]) {

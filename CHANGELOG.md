@@ -66,6 +66,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `ScheduledJobsServlet` threw a `NullPointerException` on plain Sling when a scheduled job had no next execution date.
 - The OSGi services listing servlet (`/bin/groovyconsole/services`) now enforces the console permission check.
 - CSRF token handling for the modern UI's POST/DELETE requests on AEM author instances.
+- Reports: **authoring** a report (create/edit/delete and the editor preview) now requires the console permission
+  (admin or a configured allowed group) in addition to JCR write access, so only developers/administrators can
+  introduce report scripts. **Running/viewing/exporting** reports still needs only JCR read access, so business
+  users can run developer-authored reports with their own session. This closes the escalation where JCR write
+  access to the reports folder alone granted server-side code execution.
+- Reports: an orphaned execution (its report was deleted) is now readable/deletable only by the user who ran it
+  or a console-authorized user, instead of anyone with report-create rights.
+- Reports: the async completion callback no longer throws a `NullPointerException` when the execution node was
+  removed mid-run; the result is discarded with a warning.
+- Reports: the editor preview runs on a cloned resolver so a failed try-out cannot leave uncommitted JCR changes
+  on the request session.
+- Reports: the XLSX exporter no longer writes hyperlinks for unsafe schemes (`file:`, `javascript:`, `data:`, …),
+  matching the UI's link handling.
+- Reports: added a configurable maximum result-row count per execution (unlimited by default) to guard against
+  runaway result blobs.
 
 ## [19.1.0] - 2026-05-04
 

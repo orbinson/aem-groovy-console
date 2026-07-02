@@ -1,5 +1,6 @@
 package be.orbinson.aem.groovy.console.reports.servlets
 
+import be.orbinson.aem.groovy.console.configuration.ConfigurationService
 import be.orbinson.aem.groovy.console.reports.LocaleAwareReportExporter
 import be.orbinson.aem.groovy.console.reports.ReportExecutionService
 import be.orbinson.aem.groovy.console.reports.ReportExporterRegistry
@@ -48,6 +49,9 @@ class ReportExportServlet extends AbstractReportsServlet {
     @Reference
     private ReportExporterRegistry exporterRegistry
 
+    @Reference
+    private ConfigurationService configurationService
+
     @Override
     protected void doGet(SlingHttpServletRequest request, SlingHttpServletResponse response)
             throws ServletException, IOException {
@@ -70,12 +74,7 @@ class ReportExportServlet extends AbstractReportsServlet {
             return
         }
 
-        // access follows the report's read ACL; orphaned executions need the report-create capability
-        def resolver = request.resourceResolver
-        def allowed = execution.reportName && reportService.getReport(resolver, execution.reportName) ?
-                true : reportService.canCreate(resolver)
-
-        if (!allowed) {
+        if (!canViewExecution(request, execution, reportService, configurationService)) {
             writeError(response, SC_FORBIDDEN, "Not allowed to export execution: $executionId")
 
             return

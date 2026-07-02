@@ -1,5 +1,6 @@
 package be.orbinson.aem.groovy.console.reports.servlets
 
+import be.orbinson.aem.groovy.console.configuration.ConfigurationService
 import be.orbinson.aem.groovy.console.reports.ReportException
 import be.orbinson.aem.groovy.console.reports.ReportExporterRegistry
 import be.orbinson.aem.groovy.console.reports.ReportService
@@ -40,11 +41,18 @@ class ReportsServlet extends AbstractReportsServlet {
     @Reference
     private ReportExporterRegistry exporterRegistry
 
+    @Reference
+    private ConfigurationService configurationService
+
     @Override
     protected void doGet(SlingHttpServletRequest request, SlingHttpServletResponse response)
             throws ServletException, IOException {
         def resolver = request.resourceResolver
         def name = request.getParameter(PARAMETER_NAME)
+
+        // authoring a report writes server-side executable Groovy, so it requires console permission in
+        // addition to JCR write access; reflect that in the capability flags the UI uses to show edit actions
+        def consolePermitted = configurationService.hasPermission(request)
 
         if (name) {
             // null = not found OR not readable; JCR read access alone governs visibility
@@ -54,20 +62,30 @@ class ReportsServlet extends AbstractReportsServlet {
                 writeError(response, SC_NOT_FOUND, "Report not found: $name")
             } else {
                 writeJsonResponse(response, ReportJsonMapper.definition(definition,
-                        reportService.canEdit(resolver, name), exporterRegistry.exporters))
+                        consolePermitted && reportService.canEdit(resolver, name), exporterRegistry.exporters))
             }
         } else {
             def reports = reportService.getReports(resolver).collect { definition ->
-                ReportJsonMapper.summary(definition, reportService.canEdit(resolver, definition.name))
+                ReportJsonMapper.summary(definition,
+                        consolePermitted && reportService.canEdit(resolver, definition.name))
             }
 
-            writeJsonResponse(response, [reports: reports, canManage: reportService.canCreate(resolver)])
+            writeJsonResponse(response,
+                    [reports: reports, canManage: consolePermitted && reportService.canCreate(resolver)])
         }
     }
 
     @Override
     protected void doPost(SlingHttpServletRequest request, SlingHttpServletResponse response)
             throws ServletException, IOException {
+        // saving a report writes server-side executable Groovy, so it requires console permission on top of
+        // the JCR write check inside saveReport
+        if (!configurationService.hasPermission(request)) {
+            writeError(response, SC_FORBIDDEN, "Not allowed to save reports.")
+
+            return
+        }
+
         def body = readJsonBody(request)
 
         if (!body || !body["name"]) {

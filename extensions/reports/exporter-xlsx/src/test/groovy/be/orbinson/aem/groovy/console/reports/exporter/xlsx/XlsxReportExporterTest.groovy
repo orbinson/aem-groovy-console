@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test
 
 import static org.junit.jupiter.api.Assertions.assertEquals
 import static org.junit.jupiter.api.Assertions.assertNotNull
+import static org.junit.jupiter.api.Assertions.assertNull
 import static org.junit.jupiter.api.Assertions.assertTrue
 
 class XlsxReportExporterTest {
@@ -45,6 +46,30 @@ class XlsxReportExporterTest {
             assertEquals("Home", row.getCell(3).stringCellValue)
             assertNotNull(row.getCell(3).hyperlink, "LINK cell should carry a hyperlink")
             assertEquals("https://example.com/p", row.getCell(3).hyperlink.address)
+        }
+    }
+
+    @Test
+    void "does not write hyperlinks for unsafe link schemes"() {
+        def data = new ReportData()
+        data.column("Name")
+        data.column("Link", ReportColumnType.LINK)
+        data.row("evil", [text: "passwd", href: "file:///etc/passwd"])
+        data.row("safe", [text: "Home", href: "/content/site.html"])
+
+        def out = new ByteArrayOutputStream()
+        new XlsxReportExporter().export(data, out)
+
+        WorkbookFactory.create(new ByteArrayInputStream(out.toByteArray())).withCloseable { workbook ->
+            def sheet = workbook.getSheetAt(0)
+
+            def unsafe = sheet.getRow(1).getCell(1)
+            assertEquals("passwd", unsafe.stringCellValue, "text is still written")
+            assertNull(unsafe.hyperlink, "file: hyperlink must be dropped")
+
+            def relative = sheet.getRow(2).getCell(1)
+            assertNotNull(relative.hyperlink, "site-relative hyperlink is allowed")
+            assertEquals("/content/site.html", relative.hyperlink.address)
         }
     }
 }

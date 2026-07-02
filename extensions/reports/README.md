@@ -151,14 +151,23 @@ A column can be excluded from exports (UI-only) by declaring it with `exported =
 ## Access control
 
 A report is a single inline Groovy script stored at `/conf/groovyconsole/reports/<name>`, and **all report
-operations run with the requesting user's session** — there are no application-level groups, JCR access control
-alone governs everything:
+operations run with the requesting user's session**. Reports are intended to be **authored by developers /
+administrators and run by business users**, so authoring and running are gated differently:
 
-- **read** access to a report node → view / run / export it
-- **write** access → create / edit / delete it
+- **Running / viewing / exporting** a report needs only **JCR read** access to the report node. It is *not*
+  gated by the console's allowed groups, so business users with read-only permissions can run reports; the
+  report executes with their own session, seeing only what they are allowed to see.
+- **Creating / editing / deleting** a report — and the editor's "try out" preview, which runs an arbitrary
+  posted script — additionally require the **console permission** (admin or a member of the console's
+  `allowedGroups`, via `ConfigurationService.hasPermission`) **and** JCR write access to
+  `/conf/groovyconsole/reports`.
 
-To stop a group from creating reports, deny write on `/conf/groovyconsole/reports`. Because an inline script is
-arbitrary Groovy, write access to a report is equivalent to script-execution rights — grant it accordingly.
+This closes the escalation where a user with only JCR write to the reports folder could plant arbitrary Groovy
+for a higher-privileged user to run: authoring now requires console-level trust, while running stays open to
+business users because they can only execute vetted, developer-authored reports with their own permissions.
+
+To let a group manage reports, add it to the console's `allowedGroups` and grant it write on
+`/conf/groovyconsole/reports`. To let a group only run reports, grant read on the report nodes.
 
 ## User interfaces
 
