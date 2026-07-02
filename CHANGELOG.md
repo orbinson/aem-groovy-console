@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Migration extension** (`aem-groovy-console-migration-all`) — run-once deployment migrations replacing the
+  deprecated AEM Easy Content Upgrade (AECU) project. Groovy scripts deployed below
+  `/conf/groovyconsole/scripts/migration` execute with checksum-based run-once semantics in deterministic path
+  order with fail-fast behavior (failed/skipped scripts stay pending and are retried on the next trigger).
+  Supports `.always.groovy` re-run scripts and `author`/`publish` run-mode file name tokens. Triggered via
+  `POST /bin/groovyconsole/migration` (sync, `async=true` with `runId` polling, or `dryRun=true`), an opt-in
+  debounced resource listener on script deployments, a history UI at `/apps/groovyconsole/migrations.html`
+  and a Migrations drawer in the modern console. Run history and the per-script registry are persisted below
+  `/var/groovyconsole/migration`.
 - **Modern UI** — an IDE-style console built with [Spectrum Web Components](https://opensource.adobe.com/spectrum-web-components/)
   and the [Monaco Editor](https://microsoft.github.io/monaco-editor/), in a new `ui.frontend` module (Lit + TypeScript +
   Vite). It has no AEM Granite/Coral dependency and runs on AEM and plain Sling. Features a resizable editor/output split,

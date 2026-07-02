@@ -1,0 +1,26 @@
+{
+  "name": "aem-groovy-console-migration-ui-frontend",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@spectrum-web-components/action-button": "^1.7.0",
+    "@spectrum-web-components/badge": "^1.12.1",
+    "@spectrum-web-components/button": "^1.7.0",
+    "@spectrum-web-components/progress-circle": "^1.7.0",
+    "@spectrum-web-components/switch": "^1.7.0",
+    "@spectrum-web-components/theme": "^1.7.0",
+    "@spectrum-web-components/toast": "^1.7.0",
+    "lit": "^3.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.1",
+    "typescript": "~5.6.3",
+    "vite": "^5.4.11"
+  }
+}
