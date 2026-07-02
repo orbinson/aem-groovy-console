@@ -301,6 +301,52 @@ metaclasses, and star imports.
 | `be.orbinson.aem.groovy.console.api.ScriptMetaClassExtensionProvider`       | Add runtime metaclasses (i.e. new methods) to the underlying script class.                                                   |
 | `be.orbinson.aem.groovy.console.api.StarImportExtensionProvider`            | Supply additional star imports that are added to the compiler configuration for each script execution.                       |
 
+## Extension Packages
+
+Beyond the per-script extension hooks above, larger opt-in features live in the `extensions/` directory as
+**separate Maven modules that ship as their own content packages** — they are *not* embedded in the console's
+`all` package.
+
+The philosophy is to keep the core console small and focused: a tool for running Groovy scripts. Not every
+installation wants every feature, so anything that is a self-contained capability rather than part of the core
+is factored out into its own extension package. This keeps the base install lean, lets teams deploy (and audit,
+and reason about) exactly the surface area they need, and means an extension can evolve — or eventually move to
+its own repository — without touching the console itself.
+
+Two rules make this work:
+
+* **The console has no dependency on any extension.** It is fully functional with zero extensions installed;
+  removing an extension's package removes its code paths entirely.
+* **Extensions integrate only through the console's public APIs** — the script-execution SPIs listed above, plus
+  the `be.orbinson.aem.groovy.console.api.ConsoleUiExtensionProvider` SPI, which lets an extension contribute
+  panels to the modern UI's activity rail. The console announces the registered module URLs to its SPA, which
+  loads them dynamically and exposes a small registration API (`window.GroovyConsole.registerPanel(...)`).
+  Extensions interact with the shell only through this API and DOM events, never through compile-time coupling.
+
+To use an extension, install the console first, then deploy the extension's content package.
+
+Available extensions:
+
+| Extension            | Package                            | Description                                          |
+|----------------------|------------------------------------|------------------------------------------------------|
+| [Reports](#reports)  | `aem-groovy-console-reports-all`   | Business-facing reports backed by Groovy scripts     |
+
+### Reports
+
+The `extensions/reports/` modules provide an **optional** business-facing reporting extension. It ships as its
+own content package, `aem-groovy-console-reports-all`, installed **separately on top of the console** (install the
+console first) — via [PackMgr](http://localhost:4502/crx/packmgr) or Maven, the same way as the console. The
+console works fine without it; installing it adds the reports feature.
+
+Authors write a Groovy script that returns tabular data (`report.data()` with typed
+`STRING`/`NUMBER`/`DATE`/`BOOLEAN`/`LINK` columns); business users run it from a parameter form, page through and
+export the persisted result, and browse past runs. Access is governed entirely by JCR permissions on
+`/conf/groovyconsole/reports` (read = view/run, write = create/edit/delete). It contributes a business UI at
+`/apps/groovyconsole/reports.html` and a Reports drawer in the modern console.
+
+See **[`extensions/reports/README.md`](extensions/reports/README.md)** for the full documentation — installation,
+parameters, column types, the execution model, exports (CSV/XLSX) and configuration.
+
 ## Registering Additional Metaclasses
 
 Services implementing the `be.orbinson.aem.groovy.console.extension.MetaClassExtensionProvider` will be automatically

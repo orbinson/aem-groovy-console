@@ -1,3 +1,4 @@
+import { resolve } from 'node:path';
 import { defineConfig } from 'vite';
 
 // Local Sling (8080) or AEM author (4502) instance the dev server proxies API calls to.
@@ -20,11 +21,26 @@ export default defineConfig({
     target: 'es2021',
     chunkSizeWarningLimit: 4000,
     rollupOptions: {
+      input: {
+        // console SPA (modern.html)
+        index: resolve(__dirname, 'index.html'),
+      },
       output: {
-        // Stable file names so modern.html can reference them without a manifest.
-        entryFileNames: 'assets/index.js',
+        // Stable file names so modern.html can link them without a manifest.
+        entryFileNames: 'assets/[name].js',
         chunkFileNames: 'assets/[name].js',
         assetFileNames: 'assets/[name][extname]',
+        // Give the Monaco chunk a stable name the HTL entry page can link to.  Vite's preload helper must
+        // NOT end up inside the monaco chunk, or every dynamic import would statically drag Monaco in.
+        manualChunks: (id) => {
+          if (id.includes('monaco-editor')) {
+            return 'monaco';
+          }
+          if (id.includes('vite/preload-helper') || id.includes('vite/modulepreload-polyfill')) {
+            return 'preload';
+          }
+          return undefined;
+        },
       },
     },
   },

@@ -1,11 +1,11 @@
 package be.orbinson.aem.groovy.console.streaming.impl
 
 import be.orbinson.aem.groovy.console.GroovyConsoleService
+import be.orbinson.aem.groovy.console.api.context.ScriptContext
 import be.orbinson.aem.groovy.console.response.RunScriptResponse
-import be.orbinson.aem.groovy.console.streaming.AsyncScriptContext
+import be.orbinson.aem.groovy.console.streaming.ExecutionCallback
 import be.orbinson.aem.groovy.console.streaming.ExecutionRegistry
 import groovy.util.logging.Slf4j
-import org.apache.sling.api.resource.ResourceResolver
 import org.osgi.service.component.annotations.Activate
 import org.osgi.service.component.annotations.Component
 import org.osgi.service.component.annotations.Deactivate
@@ -29,7 +29,7 @@ class DefaultExecutionRegistry implements ExecutionRegistry {
 
     private final Map<String, Execution> executions = new ConcurrentHashMap<>()
 
-    private ExecutorService executor
+    private volatile ExecutorService executor
 
     @Activate
     void activate() {
@@ -42,29 +42,39 @@ class DefaultExecutionRegistry implements ExecutionRegistry {
         executions.clear()
     }
 
+    private synchronized ExecutorService executor() {
+        if (executor == null || executor.shutdown) {
+            executor = Executors.newCachedThreadPool()
+        }
+
+        executor
+    }
+
     @Override
-    String start(ResourceResolver resourceResolver, String script, String data) {
+    String start(ScriptContext scriptContext) {
+        start(scriptContext, null)
+    }
+
+    @Override
+    String start(ScriptContext scriptContext, ExecutionCallback callback) {
         evictExpired()
 
         def executionId = UUID.randomUUID().toString()
-        def outputStream = new ByteArrayOutputStream()
-
-        def scriptContext = new AsyncScriptContext(
-                resourceResolver: resourceResolver,
-                outputStream: outputStream,
-                printStream: new PrintStream(outputStream, true, StandardCharsets.UTF_8.name()),
-                script: script,
-                data: data,
-                userId: resourceResolver.userID
-        )
-
         def execution = new Execution(scriptContext: scriptContext)
 
         executions[executionId] = execution
 
-        executor.submit {
+        executor().submit {
+            def start = System.currentTimeMillis()
+
             try {
-                execution.response = groovyConsoleService.runScript(scriptContext)
+                def response = groovyConsoleService.runScript(scriptContext)
+                execution.response = response
+
+                if (callback != null) {
+                    // run post-processing while the resolver is still open
+                    callback.onComplete(response, System.currentTimeMillis() - start)
+                }
             } catch (Throwable t) {
                 LOG.error("error running async script execution : {}", executionId, t)
             } finally {
@@ -72,7 +82,7 @@ class DefaultExecutionRegistry implements ExecutionRegistry {
                 execution.finishedAt = System.currentTimeMillis()
 
                 try {
-                    resourceResolver.close()
+                    scriptContext.resourceResolver.close()
                 } catch (Throwable ignored) {
                     // resolver already closed
                 }
@@ -118,7 +128,7 @@ class DefaultExecutionRegistry implements ExecutionRegistry {
 
     private static class Execution {
 
-        AsyncScriptContext scriptContext
+        ScriptContext scriptContext
 
         volatile RunScriptResponse response
 

@@ -7,9 +7,17 @@ placeholderSheet.replaceSync(
   '.input::placeholder{color:var(--spectrum-gray-500);font-style:italic;opacity:1;}',
 );
 
+// fields whose shadow root we've already styled — avoids re-scheduling updateComplete work every render
+const processed = new WeakSet<Element>();
+
 /** Mute the placeholder colour of every sp-textfield within the given light-DOM host. */
 export function mutePlaceholders(host: ParentNode): void {
   host.querySelectorAll('sp-textfield').forEach((field) => {
+    if (processed.has(field)) {
+      return;
+    }
+    processed.add(field);
+
     const element = field as HTMLElement & { updateComplete?: Promise<unknown> };
 
     const apply = (): void => {

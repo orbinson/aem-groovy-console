@@ -1,0 +1,14 @@
+package be.orbinson.aem.groovy.console.reports.impl;
+
+import org.osgi.service.metatype.annotations.AttributeDefinition;
+import org.osgi.service.metatype.annotations.ObjectClassDefinition;
+
+@ObjectClassDefinition(name = "Groovy Console Reports Configuration Service",
+    description = "Report result display defaults.  Who may view, run, create, edit and delete reports is "
+        + "governed entirely by JCR access control on /conf/groovyconsole/reports.")
+public @interface ReportsConfigurationProperties {
+
+    @AttributeDefinition(name = "Default Page Size",
+        description = "Default result page size in the reports UI when a report does not declare its own.")
+    int defaultPageSize() default 50;
+}

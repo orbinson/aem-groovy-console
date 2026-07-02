@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>be.orbinson.aem</groupId>
+        <artifactId>aem-groovy-console</artifactId>
+        <version>20.0.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>aem-groovy-console-extensions</artifactId>
+    <packaging>pom</packaging>
+    <name>AEM Groovy Console - Extensions</name>
+    <description>
+        Optional extensions for the AEM Groovy Console.  Each extension is deployed as its own content package
+        on top of the console, so installations can pick exactly the extensions they want; the console itself
+        has no dependency on any of them.  Extensions integrate through the console's public APIs: the
+        extension provider SPIs for script execution and the ConsoleUiExtensionProvider SPI for panels in the
+        modern UI.
+    </description>
+
+    <modules>
+        <module>reports</module>
+    </modules>
+
+</project>

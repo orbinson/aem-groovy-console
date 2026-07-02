@@ -46,36 +46,74 @@
                     </plugin>
                     <plugin>
                         <groupId>org.apache.sling</groupId>
-                        <artifactId>slingfeature-maven-plugin</artifactId>
-                        <version>1.9.4</version>
-                        <extensions>true</extensions>
+                        <artifactId>sling-feature-converter-maven-plugin</artifactId>
+                        <version>1.0.14</version>
+                        <configuration>
+                            <contentPackages>
+                                <contentPackage>
+                                    <groupId>${project.groupId}</groupId>
+                                    <artifactId>aem-groovy-console-all</artifactId>
+                                </contentPackage>
+                                <contentPackage>
+                                    <groupId>${project.groupId}</groupId>
+                                    <artifactId>aem-groovy-console-reports-all</artifactId>
+                                </contentPackage>
+                            </contentPackages>
+                            <fmOutput>${project.build.directory}/cp-conversion/fm.out</fmOutput>
+                            <bundleStartOrder>20</bundleStartOrder>
+                            <installConvertedCP>true</installConvertedCP>
+                            <mergeConfigurations>true</mergeConfigurations>
+                        </configuration>
                         <executions>
                             <execution>
-                                <id>aggregate-features</id>
+                                <id>convert-cp-to-fm</id>
+                                <phase>initialize</phase>
+                                <goals>
+                                    <goal>convert-cp</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <!-- Aggregate Sling Starter + the converted features into one launchable feature.
+                             osgiBsnCollisionDetection + *:*:HIGHEST de-dupes overlapping bundles (Starter Groovy
+                             4.0.10 vs our 5.0.6).  additionalFeatureFiles needs slingfeature-maven-plugin >= 1.9.6. -->
+                        <groupId>org.apache.sling</groupId>
+                        <artifactId>slingfeature-maven-plugin</artifactId>
+                        <version>1.9.6</version>
+                        <extensions>true</extensions>
+                        <configuration>
+                            <replacePropertyVariables>project.version</replacePropertyVariables>
+                            <aggregates>
+                                <aggregate>
+                                    <classifier>ui</classifier>
+                                    <attach>false</attach>
+                                    <includeArtifact>
+                                        <groupId>org.apache.sling</groupId>
+                                        <artifactId>org.apache.sling.starter</artifactId>
+                                        <classifier>oak_tar</classifier>
+                                        <type>slingosgifeature</type>
+                                        <version>14</version>
+                                    </includeArtifact>
+                                    <filesInclude>*.json</filesInclude>
+                                    <additionalFeatureFiles>
+                                        <additionalFeatureFile>${project.build.directory}/cp-conversion/fm.out/aem-groovy-console-all.json</additionalFeatureFile>
+                                        <additionalFeatureFile>${project.build.directory}/cp-conversion/fm.out/aem-groovy-console-reports-all.json</additionalFeatureFile>
+                                    </additionalFeatureFiles>
+                                    <artifactsOverrides>
+                                        <artifactsOverride>*:*:HIGHEST</artifactsOverride>
+                                    </artifactsOverrides>
+                                    <osgiBsnCollisionDetection>true</osgiBsnCollisionDetection>
+                                </aggregate>
+                            </aggregates>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>aggregate-ui-feature</id>
+                                <phase>generate-resources</phase>
                                 <goals>
                                     <goal>aggregate-features</goal>
                                 </goals>
-                                <configuration>
-                                    <aggregates>
-                                        <aggregate>
-                                            <includeArtifact>
-                                                <groupId>org.apache.sling</groupId>
-                                                <artifactId>org.apache.sling.starter</artifactId>
-                                                <classifier>oak_tar</classifier>
-                                                <type>slingosgifeature</type>
-                                                <version>14</version>
-                                            </includeArtifact>
-                                            <filesInclude>*.json</filesInclude>
-                                        </aggregate>
-                                    </aggregates>
-                                    <replacePropertyVariables>project.version</replacePropertyVariables>
-                                </configuration>
-                            </execution>
-                            <execution>
-                                <goals>
-                                    <goal>attach-features</goal>
-                                </goals>
-                                <id>attach-features</id>
                             </execution>
                         </executions>
                     </plugin>
@@ -88,12 +126,8 @@
                                 <launch>
                                     <id>model</id>
                                     <skip>${skipTests}</skip>
-                                    <feature>
-                                        <groupId>${project.groupId}</groupId>
-                                        <artifactId>${project.artifactId}</artifactId>
-                                        <version>${project.version}</version>
-                                        <type>slingosgifeature</type>
-                                    </feature>
+                                    <!-- Single aggregated feature produced by slingfeature-maven-plugin above. -->
+                                    <featureFile>${project.build.directory}/slingfeature-tmp/feature-ui.json</featureFile>
                                     <launcherArguments>
                                         <frameworkProperties>
                                             <org.osgi.service.http.port>${http.port}</org.osgi.service.http.port>
@@ -167,4 +201,23 @@
             </build>
         </profile>
     </profiles>
+
+    <dependencies>
+        <!-- Resolved by sling-feature-converter-maven-plugin (convert-cp) at build time; the dependencies
+             also enforce reactor ordering so the all-packages are built before this module. -->
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>aem-groovy-console-all</artifactId>
+            <version>${project.version}</version>
+            <type>zip</type>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>aem-groovy-console-reports-all</artifactId>
+            <version>${project.version}</version>
+            <type>zip</type>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
 </project>

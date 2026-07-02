@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>be.orbinson.aem</groupId>
+        <artifactId>aem-groovy-console-reports</artifactId>
+        <version>20.0.0-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>aem-groovy-console-reports-ui.content</artifactId>
+    <packaging>content-package</packaging>
+    <name>AEM Groovy Console - Reports UI content</name>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.jackrabbit</groupId>
+                <artifactId>filevault-package-maven-plugin</artifactId>
+                <extensions>true</extensions>
+                <configuration>
+                    <group>${project.artifactId}</group>
+                    <name>aem-groovy-console-reports-ui.content</name>
+                    <packageType>content</packageType>
+                    <properties>
+                        <cloudManagerTarget>none</cloudManagerTarget>
+                    </properties>
+                    <validatorsSettings>
+                        <jackrabbit-filter>
+                            <options>
+                                <validRoots>/conf</validRoots>
+                            </options>
+                        </jackrabbit-filter>
+                    </validatorsSettings>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>io.wcm.maven.plugins</groupId>
+                <artifactId>wcmio-content-package-maven-plugin</artifactId>
+                <extensions>true</extensions>
+            </plugin>
+        </plugins>
+    </build>
+
+    <dependencies>
+        <dependency>
+            <groupId>be.orbinson.aem</groupId>
+            <artifactId>aem-groovy-console-reports-bundle</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+    </dependencies>
+
+    <profiles>
+        <profile>
+            <id>auto-deploy</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>io.wcm.maven.plugins</groupId>
+                        <artifactId>wcmio-content-package-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>install-package</id>
+                                <goals>
+                                    <goal>install</goal>
+                                </goals>
+                                <configuration>
+                                    <serviceURL>http://${aem.host}:${aem.port}/${service.path}</serviceURL>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+</project>

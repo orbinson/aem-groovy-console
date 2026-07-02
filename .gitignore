@@ -14,6 +14,7 @@ dependency-reduced-pom.xml
 node_modules/
 ui.frontend/dist/
 ui.apps/src/main/content/jcr_root/apps/groovyconsole/spa/
+extensions/reports/ui.apps/src/main/content/jcr_root/apps/groovyconsole-reports/spa/
 
 # Playwright
 ui.tests/playwright-report/
