@@ -66,6 +66,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `ScheduledJobsServlet` threw a `NullPointerException` on plain Sling when a scheduled job had no next execution date.
 - The OSGi services listing servlet (`/bin/groovyconsole/services`) now enforces the console permission check.
 - CSRF token handling for the modern UI's POST/DELETE requests on AEM author instances.
+- Audit endpoints now enforce access control: the audit servlet (`/bin/groovyconsole/audit`), the script download
+  servlet (`/bin/groovyconsole/download`) and the console page audit deep-link require the console permission and
+  only return/delete a record the requesting user owns (or scheduled-job records with the scheduled-job permission,
+  or any record when "display all audit records" is enabled). Previously any authenticated user could read or delete
+  another user's audit records by supplying their user ID.
+- `ScheduledJobsServlet` now enforces the scheduled-job permission on its GET (job listing), matching its POST/DELETE.
+- The script save servlet (`/bin/groovyconsole/save`) now enforces the console permission.
+- Groovy compilation errors are now audited and notified, consistent with runtime errors.
+- Audit date-range filtering no longer mutates the record's timestamp (time-of-day is preserved for display).
+- The console permission check no longer throws a `NullPointerException` when the request principal cannot be
+  resolved to a user (e.g. a deleted user with a still-valid session); it now denies access instead.
 - Reports: **authoring** a report (create/edit/delete and the editor preview) now requires the console permission
   (admin or a configured allowed group) in addition to JCR write access, so only developers/administrators can
   introduce report scripts. **Running/viewing/exporting** reports still needs only JCR read access, so business

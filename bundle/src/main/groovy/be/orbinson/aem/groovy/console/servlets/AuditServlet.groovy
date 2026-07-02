@@ -3,6 +3,7 @@ package be.orbinson.aem.groovy.console.servlets
 
 import be.orbinson.aem.groovy.console.audit.AuditRecord
 import be.orbinson.aem.groovy.console.audit.AuditService
+import be.orbinson.aem.groovy.console.audit.impl.AuditAccessControl
 import be.orbinson.aem.groovy.console.configuration.ConfigurationService
 import be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants
 import be.orbinson.aem.groovy.console.utils.GroovyScriptUtils
@@ -12,6 +13,8 @@ import org.osgi.service.component.annotations.Component
 import org.osgi.service.component.annotations.Reference
 
 import javax.servlet.Servlet
+
+import static javax.servlet.http.HttpServletResponse.SC_FORBIDDEN
 
 @Component(service = Servlet, immediate = true, property = [
         "sling.servlet.paths=/bin/groovyconsole/audit"
@@ -28,10 +31,22 @@ class AuditServlet extends AbstractJsonResponseServlet {
 
     @Override
     protected void doGet(SlingHttpServletRequest request, SlingHttpServletResponse response) {
+        if (!configurationService.hasPermission(request)) {
+            response.status = SC_FORBIDDEN
+
+            return
+        }
+
         def script = request.getParameter(GroovyConsoleConstants.SCRIPT)
         def userId = request.getParameter(GroovyConsoleConstants.USER_ID)
 
         if (script) {
+            if (!AuditAccessControl.canAccessAuditRecord(request, userId, configurationService)) {
+                response.status = SC_FORBIDDEN
+
+                return
+            }
+
             writeJsonResponse(response, auditService.getAuditRecord(userId, script) ?: [:])
         } else {
             writeJsonResponse(response, getAuditRecordsData(request))
@@ -40,10 +55,22 @@ class AuditServlet extends AbstractJsonResponseServlet {
 
     @Override
     protected void doDelete(SlingHttpServletRequest request, SlingHttpServletResponse response) {
+        if (!configurationService.hasPermission(request)) {
+            response.status = SC_FORBIDDEN
+
+            return
+        }
+
         def script = request.getParameter(GroovyConsoleConstants.SCRIPT)
         def userId = request.getParameter(GroovyConsoleConstants.USER_ID)
 
         if (script) {
+            if (!AuditAccessControl.canAccessAuditRecord(request, userId, configurationService)) {
+                response.status = SC_FORBIDDEN
+
+                return
+            }
+
             auditService.deleteAuditRecord(userId, script)
         } else {
             auditService.deleteAllAuditRecords(request.resourceResolver.userID)

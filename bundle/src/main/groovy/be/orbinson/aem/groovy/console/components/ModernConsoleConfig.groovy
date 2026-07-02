@@ -6,6 +6,7 @@ import static be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants.US
 import be.orbinson.aem.groovy.console.GroovyConsoleService
 import be.orbinson.aem.groovy.console.api.ConsoleUiExtensionProvider
 import be.orbinson.aem.groovy.console.audit.AuditService
+import be.orbinson.aem.groovy.console.audit.impl.AuditAccessControl
 import be.orbinson.aem.groovy.console.configuration.ConfigurationService
 import be.orbinson.aem.groovy.console.impl.AEMDetector
 import groovy.json.JsonBuilder
@@ -43,7 +44,8 @@ class ModernConsoleConfig {
     String getJson() {
         def userId = request.getParameter(USER_ID)
         def script = request.getParameter(SCRIPT)
-        def auditRecord = script ? auditService.getAuditRecord(userId, script) : null
+        def auditRecord = script && AuditAccessControl.canAccessAuditRecord(request, userId, configurationService) ?
+                auditService.getAuditRecord(userId, script) : null
 
         def activeJobs = groovyConsoleService.activeJobs.collect { activeJob ->
             [

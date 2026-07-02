@@ -87,6 +87,8 @@ class DefaultGroovyConsoleService implements GroovyConsoleService {
 
             runScriptResponse = DefaultRunScriptResponse.fromException(scriptContext,
                     scriptContext.outputStream.toString(CHARSET), e)
+
+            auditAndNotify(runScriptResponse)
         } catch (Throwable t) {
             LOG.error("error running script", t)
 
