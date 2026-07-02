@@ -12,6 +12,12 @@ export class GcDataEditor extends LitElement {
     return this;
   }
 
+  disconnectedCallback(): void {
+    this.editor?.dispose();
+    this.editor = undefined;
+    super.disconnectedCallback();
+  }
+
   get value(): string {
     return this.editor?.getValue() ?? '';
   }

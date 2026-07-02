@@ -77,6 +77,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Audit date-range filtering no longer mutates the record's timestamp (time-of-day is preserved for display).
 - The console permission check no longer throws a `NullPointerException` when the request principal cannot be
   resolved to a user (e.g. a deleted user with a still-valid session); it now denies access instead.
+- Modern UI: the live script-output buffer is capped so a very chatty script no longer grows the output view
+  without bound (the full output is still shown in the final result).
+- Modern UI: the editor/output splitter no longer leaks a drag listener when a pointer gesture is cancelled.
+- Modern UI: the console extension registry rejects panels whose `element` is not a valid custom-element name,
+  preventing an invalid registration from being used as an HTML-injection primitive.
+- Modern UI: history date-range refreshes are serialised so a slow response can't overwrite a newer filter.
+- Modern UI: Monaco editors and their diagnostics listeners are disposed when the editor components are removed.
+- Reports UI: switching reports while one is running no longer lets the finishing run render its result under the
+  new report; in-flight loads/polls for a superseded report are cancelled. Malformed URL hashes and unusual
+  parameter names no longer break routing or the run action, and path-autocomplete responses apply in order.
 - Reports: **authoring** a report (create/edit/delete and the editor preview) now requires the console permission
   (admin or a configured allowed group) in addition to JCR write access, so only developers/administrators can
   introduce report scripts. **Running/viewing/exporting** reports still needs only JCR read access, so business

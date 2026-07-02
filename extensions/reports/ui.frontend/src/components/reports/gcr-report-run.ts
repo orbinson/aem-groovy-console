@@ -47,10 +47,27 @@ export class GcrReportRun extends LitElement {
   /** The PATH parameter currently being picked in the path browser. */
   private browsingParam: string | null = null;
 
+  /** Bumped whenever the viewed report changes or a new run starts, so in-flight loads/polls for a superseded
+   *  report bail out instead of writing their result over the current report's state. */
+  private token = 0;
+  private disposed = false;
+  /** Monotonic request counter per path parameter, so a slow shallow lookup can't clobber a deeper one. */
+  private pathSuggestionSeq: Record<string, number> = {};
+
   @query('gcr-path-browser') private pathBrowser?: GcrPathBrowser;
 
   createRenderRoot(): this {
     return this;
+  }
+
+  connectedCallback(): void {
+    super.connectedCallback();
+    this.disposed = false;
+  }
+
+  disconnectedCallback(): void {
+    this.disposed = true;
+    super.disconnectedCallback();
   }
 
   protected updated(): void {
@@ -64,27 +81,44 @@ export class GcrReportRun extends LitElement {
   }
 
   private async load(): Promise<void> {
+    const token = ++this.token;
+
     this.loaded = false;
     this.error = null;
     this.execution = null;
     this.resultPage = null;
 
     try {
-      this.definition = await getReport(this.name);
-      this.pageSize = this.definition.pageSize ?? 0;
+      const definition = await getReport(this.name);
+
+      if (this.stale(token)) {
+        return;
+      }
+
+      this.definition = definition;
+      this.pageSize = definition.pageSize ?? 0;
 
       const defaults: Record<string, string> = {};
-      for (const parameter of this.definition.parameters) {
+      for (const parameter of definition.parameters) {
         defaults[parameter.name] = parameter.defaultValue ?? '';
       }
       this.values = defaults;
 
       void this.refreshExecutions();
     } catch (error) {
-      this.error = error instanceof ApiError ? error.message : 'Could not load report.';
+      if (!this.stale(token)) {
+        this.error = error instanceof ApiError ? error.message : 'Could not load report.';
+      }
     } finally {
-      this.loaded = true;
+      if (!this.stale(token)) {
+        this.loaded = true;
+      }
     }
+  }
+
+  /** True once this element was disconnected or a newer load/run superseded the given token. */
+  private stale(token: number): boolean {
+    return this.disposed || token !== this.token;
   }
 
   private async refreshExecutions(): Promise<void> {
@@ -107,11 +141,12 @@ export class GcrReportRun extends LitElement {
     if (Object.keys(errors).length) {
       const first = this.definition.parameters.find((parameter) => errors[parameter.name]);
       if (first) {
-        (this.querySelector(`#param-${first.name}`) as HTMLElement | null)?.focus();
+        (this.querySelector(`#param-${CSS.escape(first.name)}`) as HTMLElement | null)?.focus();
       }
       return;
     }
 
+    const token = ++this.token;
     this.running = true;
     this.execution = null;
     this.resultPage = null;
@@ -119,9 +154,15 @@ export class GcrReportRun extends LitElement {
     try {
       // execution runs asynchronously on the server: it returns RUNNING immediately, then we poll
       let execution = await executeReport(this.name, this.values);
+      if (this.stale(token)) {
+        return;
+      }
       this.execution = execution;
 
-      execution = await this.awaitCompletion(execution);
+      execution = await this.awaitCompletion(execution, token);
+      if (this.stale(token)) {
+        return;
+      }
       this.execution = execution;
 
       if (execution.status === 'SUCCESS') {
@@ -130,22 +171,30 @@ export class GcrReportRun extends LitElement {
         toast(this, 'The report is still running — check the previous runs shortly.', 'positive');
       }
     } catch (error) {
-      toast(this, error instanceof ApiError ? error.message : 'Report execution failed.', 'negative');
+      if (!this.stale(token)) {
+        toast(this, error instanceof ApiError ? error.message : 'Report execution failed.', 'negative');
+      }
     } finally {
-      this.running = false;
-      void this.refreshExecutions();
+      if (!this.stale(token)) {
+        this.running = false;
+        void this.refreshExecutions();
+      }
     }
   }
 
-  /** Poll a RUNNING execution until it finishes (or the poll ceiling is reached). */
-  private async awaitCompletion(execution: ReportExecution): Promise<ReportExecution> {
+  /** Poll a RUNNING execution until it finishes (or the poll ceiling is reached); stops if superseded. */
+  private async awaitCompletion(execution: ReportExecution, token: number): Promise<ReportExecution> {
     let current = execution;
     const deadline = Date.now() + POLL_MAX_MS;
 
-    while (current.status === 'RUNNING' && Date.now() < deadline) {
+    while (current.status === 'RUNNING' && Date.now() < deadline && !this.stale(token)) {
       await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
       try {
-        current = await getExecution(current.executionId);
+        const next = await getExecution(current.executionId);
+        if (this.stale(token)) {
+          return current;
+        }
+        current = next;
         this.execution = current;
       } catch {
         // transient polling error — keep waiting
@@ -431,9 +480,19 @@ export class GcrReportRun extends LitElement {
     // suggest siblings/children relative to the last complete "/" in the input
     const cut = value.lastIndexOf('/');
     const parent = cut > 0 ? value.slice(0, cut) : '/';
+
+    const seq = (this.pathSuggestionSeq[name] ?? 0) + 1;
+    this.pathSuggestionSeq[name] = seq;
+
     const children = await listChildPaths(parent);
 
-    // assign unconditionally so an empty level clears stale suggestions from a shallower path
+    // ignore a response that a newer keystroke has already superseded, so a slow shallow lookup can't
+    // clobber suggestions for the deeper path the user has since typed
+    if (this.disposed || this.pathSuggestionSeq[name] !== seq) {
+      return;
+    }
+
+    // assign so an empty level clears stale suggestions from a shallower path
     this.pathSuggestions = { ...this.pathSuggestions, [name]: children };
   }
 

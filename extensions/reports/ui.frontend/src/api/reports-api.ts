@@ -2,7 +2,6 @@ import { config } from '@console/config';
 import { delJson, getJson, getJsonWithError, postJson } from '@console/api/client';
 import type {
   BrowseResponse,
-  ExportFormatsResponse,
   PathType,
   ReportDefinition,
   ReportExecution,
@@ -61,10 +60,6 @@ export function getResultPage(executionId: string, page: number, pageSize?: numb
     params.pageSize = String(pageSize);
   }
   return getJsonWithError<ResultPage>(`${BASE}/result.json`, params);
-}
-
-export function getExportFormats(): Promise<ExportFormatsResponse> {
-  return getJsonWithError<ExportFormatsResponse>(`${BASE}/formats.json`);
 }
 
 /** Download URL for an execution export; use as a plain link/window.location. */

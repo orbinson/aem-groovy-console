@@ -22,6 +22,11 @@ import type { ConsolePanelExtension } from '../extensions/registry';
 type DrawerId = string;
 type EditorTab = 'script' | 'data';
 
+/** Cap the live-output buffer so a very chatty script cannot grow the DOM string without bound; the full
+ *  output is still delivered in the final result. Keeps the most recent characters. */
+const MAX_LIVE_OUTPUT_CHARS = 512 * 1024;
+const LIVE_OUTPUT_TRUNCATION_NOTICE = '… (earlier output truncated; see the full result when the script finishes)\n';
+
 @customElement('gc-app')
 export class GcApp extends LitElement {
   private store = new StoreController(this);
@@ -165,6 +170,7 @@ export class GcApp extends LitElement {
         }
 
         const executionId = start.executionId;
+        let liveOutput = '';
         store.setState({ liveOutput: '' });
 
         try {
@@ -173,7 +179,11 @@ export class GcApp extends LitElement {
             const poll = await pollExecution(executionId, offset);
 
             if (poll.chunk) {
-              store.setState({ liveOutput: (store.getState().liveOutput ?? '') + poll.chunk });
+              liveOutput += poll.chunk;
+              if (liveOutput.length > MAX_LIVE_OUTPUT_CHARS) {
+                liveOutput = LIVE_OUTPUT_TRUNCATION_NOTICE + liveOutput.slice(-MAX_LIVE_OUTPUT_CHARS);
+              }
+              store.setState({ liveOutput });
             }
             offset = poll.offset;
 
@@ -394,12 +404,16 @@ export class GcApp extends LitElement {
     const onUp = (): void => {
       handle.removeEventListener('pointermove', onMove);
       handle.removeEventListener('pointerup', onUp);
+      handle.removeEventListener('pointercancel', onUp);
       persistence.saveSplitterPosition(pane.offsetHeight);
     };
 
     handle.setPointerCapture(event.pointerId);
     handle.addEventListener('pointermove', onMove);
     handle.addEventListener('pointerup', onUp);
+    // also clean up if the gesture is cancelled (touch interruption, capture loss), otherwise the stale
+    // pointermove listener survives and the next drag jumps between two positions
+    handle.addEventListener('pointercancel', onUp);
   }
 
   protected render() {

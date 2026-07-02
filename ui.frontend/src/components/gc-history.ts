@@ -16,6 +16,8 @@ export class GcHistory extends LitElement {
   @state() private loaded = false;
 
   private refreshListener = (): void => void this.refresh();
+  /** Monotonic counter so a slow response from an earlier date-filter change can't overwrite a newer one. */
+  private refreshSeq = 0;
 
   createRenderRoot(): this {
     return this;
@@ -33,15 +35,23 @@ export class GcHistory extends LitElement {
   }
 
   private async refresh(): Promise<void> {
+    const seq = ++this.refreshSeq;
     try {
-      this.records =
+      const records =
         this.startDate && this.endDate
           ? await getAuditRecords(this.startDate, this.endDate)
           : await getAuditRecords();
+
+      // ignore a response superseded by a newer refresh (e.g. rapid From/To edits)
+      if (seq === this.refreshSeq) {
+        this.records = records;
+      }
     } catch {
       // history is non-critical; ignore load failures (e.g. on permission loss)
     } finally {
-      this.loaded = true;
+      if (seq === this.refreshSeq) {
+        this.loaded = true;
+      }
     }
   }
 

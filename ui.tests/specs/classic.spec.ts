@@ -1,8 +1,21 @@
 import { expect, test, type Page } from '@playwright/test';
 import { CLASSIC_URL } from './helpers';
 
+/** Wait until the classic UI's Ace editor global is initialised; the container becomes visible before
+ *  `window.scriptEditor` is assigned, so gate editor access on the global to avoid a startup race. */
+async function waitForClassicEditor(page: Page): Promise<void> {
+  await page.waitForFunction(
+    () =>
+      typeof (window as unknown as { scriptEditor?: { getSession?: unknown } }).scriptEditor?.getSession ===
+      'function',
+    undefined,
+    { timeout: 30_000 },
+  );
+}
+
 /** Set the Ace editor content in the classic UI. */
 async function setClassicScript(page: Page, content: string): Promise<void> {
+  await waitForClassicEditor(page);
   await page.evaluate((script) => {
     (window as unknown as { scriptEditor: { getSession(): { setValue(v: string): void } } })
       .scriptEditor.getSession().setValue(script);
@@ -10,6 +23,7 @@ async function setClassicScript(page: Page, content: string): Promise<void> {
 }
 
 async function getClassicScript(page: Page): Promise<string> {
+  await waitForClassicEditor(page);
   return page.evaluate(() =>
     (window as unknown as { scriptEditor: { getSession(): { getValue(): string } } })
       .scriptEditor.getSession().getValue(),

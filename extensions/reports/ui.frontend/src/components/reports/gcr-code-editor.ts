@@ -13,6 +13,7 @@ import { monaco, setupMonaco } from '@console/editor/monaco-setup';
 @customElement('gcr-code-editor')
 export class GcrCodeEditor extends LitElement {
   private editor?: Monaco.editor.IStandaloneCodeEditor;
+  private disposeDiagnostics?: () => void;
 
   @property() initialValue = '';
 
@@ -50,11 +51,14 @@ export class GcrCodeEditor extends LitElement {
       this.dispatchEvent(new CustomEvent('gcr-code-changed', { bubbles: true, composed: true }));
     });
 
-    attachGroovyDiagnostics(monaco, this.editor);
+    this.disposeDiagnostics = attachGroovyDiagnostics(monaco, this.editor);
   }
 
   disconnectedCallback(): void {
+    this.disposeDiagnostics?.();
+    this.disposeDiagnostics = undefined;
     this.editor?.dispose();
+    this.editor = undefined;
     super.disconnectedCallback();
   }
 

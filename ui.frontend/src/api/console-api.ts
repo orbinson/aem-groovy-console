@@ -1,10 +1,6 @@
 import { getJson, getText, postForm } from './client';
 import type { RunScriptResponse } from './types';
 
-export function runScript(script: string, data: string): Promise<RunScriptResponse> {
-  return postForm<RunScriptResponse>('/bin/groovyconsole/post.json', { script, data });
-}
-
 export interface StreamPoll {
   chunk: string;
   offset: number;

@@ -110,7 +110,13 @@ function parseHash(hash: string): View {
     return { view: 'edit', name: null };
   }
   if (segments[0] === 'report' && segments[1]) {
-    const name = decodeURIComponent(segments[1]);
+    // a malformed escape (e.g. "#/report/%") would throw URIError and dead-end routing; fall back to raw
+    let name: string;
+    try {
+      name = decodeURIComponent(segments[1]);
+    } catch {
+      name = segments[1];
+    }
     return segments[2] === 'edit' ? { view: 'edit', name } : { view: 'run', name };
   }
   return { view: 'list' };
