@@ -21,8 +21,12 @@ import { validateRequired } from './validate-parameters';
 
 const PAGE_SIZES = [10, 25, 50, 100];
 
-/** Poll cadence and ceiling while waiting for an asynchronous report execution to finish. */
-const POLL_INTERVAL_MS = 1500;
+/** Poll cadence while waiting for an asynchronous report execution to finish. Starts short so a report that
+ *  completes almost immediately shows without a fixed delay, then backs off toward the max for long runs. */
+const POLL_INITIAL_MS = 150;
+const POLL_MAX_INTERVAL_MS = 1500;
+const POLL_BACKOFF_FACTOR = 2;
+/** Overall ceiling before the UI stops polling (the run keeps going server-side). */
 const POLL_MAX_MS = 30 * 60 * 1000;
 
 /** Run view: parameter form, synchronous execution, paginated result table, exports and history. */
@@ -185,10 +189,12 @@ export class GcrReportRun extends LitElement {
   /** Poll a RUNNING execution until it finishes (or the poll ceiling is reached); stops if superseded. */
   private async awaitCompletion(execution: ReportExecution, token: number): Promise<ReportExecution> {
     let current = execution;
+    let interval = POLL_INITIAL_MS;
     const deadline = Date.now() + POLL_MAX_MS;
 
     while (current.status === 'RUNNING' && Date.now() < deadline && !this.stale(token)) {
-      await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
+      await new Promise((resolve) => setTimeout(resolve, interval));
+      interval = Math.min(interval * POLL_BACKOFF_FACTOR, POLL_MAX_INTERVAL_MS);
       try {
         const next = await getExecution(current.executionId);
         if (this.stale(token)) {
