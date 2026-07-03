@@ -115,6 +115,8 @@ class ReportsServlet extends AbstractReportsServlet {
     @Override
     protected void doDelete(SlingHttpServletRequest request, SlingHttpServletResponse response)
             throws ServletException, IOException {
+        // deleting a report does not introduce or change executable Groovy, so it is not gated by the console
+        // permission — JCR delete access on the report node governs it
         def resolver = request.resourceResolver
         def name = request.getParameter(PARAMETER_NAME)
 

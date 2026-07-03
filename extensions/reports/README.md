@@ -154,19 +154,21 @@ A report is a single inline Groovy script stored at `/conf/groovyconsole/reports
 operations run with the requesting user's session**. Reports are intended to be **authored by developers /
 administrators and run by business users**, so authoring and running are gated differently:
 
-- **Running / viewing / exporting** a report needs only **JCR read** access to the report node. It is *not*
-  gated by the console's allowed groups, so business users with read-only permissions can run reports; the
-  report executes with their own session, seeing only what they are allowed to see.
-- **Creating / editing / deleting** a report — and the editor's "try out" preview, which runs an arbitrary
-  posted script — additionally require the **console permission** (admin or a member of the console's
-  `allowedGroups`, via `ConfigurationService.hasPermission`) **and** JCR write access to
-  `/conf/groovyconsole/reports`.
+- **Running / viewing / exporting / deleting** a report needs only **JCR access** to the report node (read to
+  run/view/export, delete access to remove). None of these are gated by the console's allowed groups, so business
+  users with read-only permissions can run reports; the report executes with their own session, seeing only what
+  they are allowed to see.
+- **Creating / editing** a report — and the editor's "try out" preview, which runs an arbitrary posted script —
+  additionally require the **console permission** (admin or a member of the console's `allowedGroups`, via
+  `ConfigurationService.hasPermission`) **and** JCR write access to `/conf/groovyconsole/reports`. These are the
+  only operations that introduce or execute unsaved report Groovy.
 
 This closes the escalation where a user with only JCR write to the reports folder could plant arbitrary Groovy
-for a higher-privileged user to run: authoring now requires console-level trust, while running stays open to
-business users because they can only execute vetted, developer-authored reports with their own permissions.
+for a higher-privileged user to run: introducing or changing report code now requires console-level trust, while
+running stays open to business users because they can only execute vetted, developer-authored reports with their
+own permissions. (Deleting a report removes code rather than introducing it, so it is governed by JCR alone.)
 
-To let a group manage reports, add it to the console's `allowedGroups` and grant it write on
+To let a group author reports, add it to the console's `allowedGroups` and grant it write on
 `/conf/groovyconsole/reports`. To let a group only run reports, grant read on the report nodes.
 
 ## User interfaces

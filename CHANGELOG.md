@@ -87,9 +87,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Reports UI: switching reports while one is running no longer lets the finishing run render its result under the
   new report; in-flight loads/polls for a superseded report are cancelled. Malformed URL hashes and unusual
   parameter names no longer break routing or the run action, and path-autocomplete responses apply in order.
-- Reports: **authoring** a report (create/edit/delete and the editor preview) now requires the console permission
-  (admin or a configured allowed group) in addition to JCR write access, so only developers/administrators can
-  introduce report scripts. **Running/viewing/exporting** reports still needs only JCR read access, so business
+- Reports: **creating/editing** a report and the editor's "try out" preview — the operations that introduce or
+  run report Groovy — now require the console permission (admin or a configured allowed group) in addition to JCR
+  write access, so only developers/administrators can author report scripts. **Running, viewing, exporting and
+  deleting** reports still need only JCR access (read to run/view/export, delete access to remove), so business
   users can run developer-authored reports with their own session. This closes the escalation where JCR write
   access to the reports folder alone granted server-side code execution.
 - Reports: an orphaned execution (its report was deleted) is now readable/deletable only by the user who ran it

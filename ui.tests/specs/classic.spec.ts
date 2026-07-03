@@ -33,7 +33,9 @@ async function getClassicScript(page: Page): Promise<string> {
 test.describe('classic UI script dialogs', () => {
   test('saves and opens a script through the bootstrap modals', async ({ page }) => {
     await page.goto(CLASSIC_URL);
-    await expect(page.locator('#script-editor')).toBeVisible({ timeout: 30_000 });
+    // gate on the Ace editor being initialised rather than the wrapper div's visibility: under load the
+    // wrapper is in the DOM but not yet laid out/visible, which made the visibility assertion flaky
+    await waitForClassicEditor(page);
 
     const name = `pw-classic-${Date.now()}`;
     await setClassicScript(page, `// classic save test ${name}`);
@@ -58,7 +60,7 @@ test.describe('classic UI script dialogs', () => {
 
   test('rejects invalid file names', async ({ page }) => {
     await page.goto(CLASSIC_URL);
-    await expect(page.locator('#script-editor')).toBeVisible({ timeout: 30_000 });
+    await waitForClassicEditor(page);
 
     await setClassicScript(page, 'println "invalid name test"');
 
