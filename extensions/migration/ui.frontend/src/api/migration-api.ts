@@ -36,11 +36,6 @@ export function queueMigrations(): Promise<MigrationQueuedResponse> {
   return postForm<MigrationQueuedResponse>(BASE, { async: 'true' });
 }
 
-/** Report the scripts that would run, without executing them. */
-export function dryRunMigrations(): Promise<MigrationRun> {
-  return postForm<MigrationRun>(BASE, { dryRun: 'true' });
-}
-
 /** Deep link into the migration history UI (served by the migration bundle's page servlet). */
 export function migrationsPageUrl(hash = ''): string {
   return `${config.contextPath}/apps/groovyconsole/migrations.html${hash}`;

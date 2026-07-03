@@ -16,11 +16,13 @@ import type {} from '@console/extensions/registry';
 
 import './extensions/migration/gc-migration';
 
+// Rocket (nose up) with an upward arrow cut out of the body, evoking a deployment upgrade/migration.
 const ICON = `
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 18 18" width="18" height="18" fill="currentColor" aria-hidden="true">
-  <path d="M9 1.5 4.5 6h3v5h3V6h3L9 1.5z"/>
-  <rect x="3" y="12.5" width="12" height="1.8" rx="0.5"/>
-  <rect x="3" y="15.2" width="12" height="1.8" rx="0.5"/>
+  <path fill-rule="evenodd" d="M9 1c2.4 2.4 3.6 5.4 3.6 8.6V12H5.4V9.6C5.4 6.4 6.6 3.4 9 1Zm0 3.1L7 6.8h1.1v3h1.8v-3H11L9 4.1Z"/>
+  <path d="M5.4 12L3 15.2l2.9-1.1V12H5.4Z"/>
+  <path d="M12.6 12v2.1l2.9 1.1L12.6 12H12.6Z"/>
+  <path d="M7.7 13.5L9 16.8l1.3-3.3a4 4 0 0 1-2.6 0Z"/>
 </svg>`;
 
 window.GroovyConsole?.registerPanel({

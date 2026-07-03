@@ -1,7 +1,7 @@
 import { html, LitElement, nothing } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { ApiError } from '@console/api/client';
-import { dryRunMigrations, getRegistry, getRun, getRuns, queueMigrations } from '../../api/migration-api';
+import { getRegistry, getRun, getRuns, queueMigrations } from '../../api/migration-api';
 import type { MigrationRunSummary, MigrationScriptState } from '../../api/migration-types';
 import { statusVariant } from './migration-status';
 import { toast } from './gcm-app';
@@ -82,20 +82,6 @@ export class GcmRunList extends LitElement {
     }
   }
 
-  private async dryRun(): Promise<void> {
-    try {
-      const run = await dryRunMigrations();
-      toast(this, `Dry run: ${run.pending} script(s) pending.`);
-      void this.refresh();
-    } catch (error) {
-      if (error instanceof ApiError && error.status === 409) {
-        toast(this, 'A migration run is already in progress.', 'negative');
-      } else {
-        toast(this, 'Could not perform the dry run.', 'negative');
-      }
-    }
-  }
-
   protected render() {
     if (!this.loaded) {
       return html`<div class="gcm-page"><sp-progress-circle indeterminate size="l"></sp-progress-circle></div>`;
@@ -111,7 +97,6 @@ export class GcmRunList extends LitElement {
           <h2>Run history</h2>
           <div class="gcm-page-actions">
             <sp-action-button size="s" quiet @click=${() => void this.refresh()} title="Refresh">↻</sp-action-button>
-            <sp-button size="s" variant="secondary" @click=${() => void this.dryRun()}>Dry run</sp-button>
             <sp-button
               size="s"
               variant="primary"
