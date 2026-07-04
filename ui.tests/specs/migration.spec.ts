@@ -10,7 +10,7 @@ test.describe('migration', () => {
     // run history and script registry sections render (no scripts deployed by default)
     await expect(page.getByRole('heading', { name: 'Run history' })).toBeVisible({ timeout: 30_000 });
     await expect(page.getByRole('heading', { name: 'Scripts' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Dry run' })).toBeVisible();
+    await expect(page.getByRole('button', { name: /Run migrations/ })).toBeVisible();
   });
 
   test('registers a Migrations panel in the modern console', async ({ page }) => {
