@@ -84,7 +84,8 @@ class MigrationServlet extends SlingAllMethodsServlet {
                     trigger: TRIGGER_API,
                     dryRun: Boolean.parseBoolean(request.getParameter(DRY_RUN)),
                     path: request.getParameter(PATH),
-                    data: request.getParameter(DATA)
+                    data: request.getParameter(DATA),
+                    measureIndexUsage: Boolean.parseBoolean(request.getParameter("measureIndexUsage"))
             )
 
             try {
@@ -142,7 +143,7 @@ class MigrationServlet extends SlingAllMethodsServlet {
     }
 
     private static Map resultToMap(MigrationScriptResult result) {
-        [
+        def map = [
                 scriptPath    : result.scriptPath,
                 checksum      : result.checksum,
                 status        : result.status.name(),
@@ -151,5 +152,11 @@ class MigrationServlet extends SlingAllMethodsServlet {
                 output        : result.output,
                 error         : result.error
         ]
+
+        if (result.queryAudit) {
+            map.queryAudit = result.queryAudit
+        }
+
+        map
     }
 }

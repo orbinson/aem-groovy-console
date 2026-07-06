@@ -50,6 +50,14 @@
     </build>
 
     <dependencies>
+        <!-- MUST be first: sling-mock-oak bundles its own Oak; declaring it before uber-jar makes that Oak win on
+             the classpath (uber-jar bundles an older, conflicting Oak). Required for JCR_OAK index-detection tests. -->
+        <dependency>
+            <groupId>org.apache.sling</groupId>
+            <artifactId>org.apache.sling.testing.sling-mock-oak</artifactId>
+            <scope>test</scope>
+        </dependency>
+
         <dependency>
             <groupId>be.orbinson.aem</groupId>
             <artifactId>aem-groovy-console-bundle</artifactId>
@@ -76,6 +84,20 @@
         <dependency>
             <groupId>be.orbinson.aem</groupId>
             <artifactId>aem-groovy-console-test-support</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <!-- Logback backend: the query-audit service captures Oak's query log through it to detect traversals. -->
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>1.2.13</version>
+            <scope>test</scope>
+        </dependency>
+        <!-- The real query-audit service, used by the index-audit test instead of a test-local reimplementation. -->
+        <dependency>
+            <groupId>be.orbinson.aem</groupId>
+            <artifactId>aem-groovy-console-query-audit</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
         </dependency>

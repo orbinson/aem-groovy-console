@@ -231,5 +231,13 @@
             <type>zip</type>
             <scope>provided</scope>
         </dependency>
+        <!-- Query-audit extension bundle (no content package): installed via a feature file; the dependency
+             enforces reactor ordering so the bundle is built and available to the feature launcher. -->
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>aem-groovy-console-query-audit</artifactId>
+            <version>${project.version}</version>
+            <scope>provided</scope>
+        </dependency>
     </dependencies>
 </project>

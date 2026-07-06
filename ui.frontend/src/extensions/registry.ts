@@ -12,6 +12,7 @@ import { config } from '../config';
  * with the console exclusively through:
  *
  * - `window.GroovyConsole.registerPanel({ id, title, element, iconHtml })`
+ * - `window.GroovyConsole.getScript()` — the script currently in the editor (empty string if none)
  * - DOM events (bubbling, composed) handled by the console shell:
  *   - `gc-set-script`  detail: `{ script: string; message?: string }` — load a script into the editor
  *   - `gc-toast`       detail: `{ message: string; variant?: 'positive' | 'negative' }` — show a toast
@@ -32,6 +33,8 @@ export interface ConsolePanelExtension {
 
 export interface GroovyConsoleGlobal {
   registerPanel(panel: ConsolePanelExtension): void;
+  /** The script currently in the editor, or an empty string. */
+  getScript(): string;
 }
 
 declare global {
@@ -47,6 +50,13 @@ const CUSTOM_ELEMENT_NAME = /^[a-z][a-z0-9]*-[a-z0-9-]*$/;
 
 const panels: ConsolePanelExtension[] = [];
 const listeners = new Set<() => void>();
+
+/** Set by the console shell so extensions can read the editor's current script via `window.GroovyConsole.getScript()`. */
+let activeScriptProvider: (() => string) | null = null;
+
+export function setActiveScriptProvider(provider: () => string): void {
+  activeScriptProvider = provider;
+}
 
 export function getPanels(): readonly ConsolePanelExtension[] {
   return panels;
@@ -78,7 +88,7 @@ export function initConsoleExtensions(): void {
   }
   initialized = true;
 
-  window.GroovyConsole = { registerPanel };
+  window.GroovyConsole = { registerPanel, getScript: () => (activeScriptProvider ? activeScriptProvider() : '') };
 
   for (const url of config.uiExtensions) {
     import(/* @vite-ignore */ `${config.contextPath}${url}`).catch((error: unknown) => {

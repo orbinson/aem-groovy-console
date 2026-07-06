@@ -15,7 +15,7 @@ import type { GcSaveDialog } from './gc-save-dialog';
 import type { GcScheduler } from './gc-scheduler';
 import type { GcScriptBrowserDialog } from './gc-script-browser-dialog';
 import type { GcScriptEditor } from './gc-script-editor';
-import { getPanels, initConsoleExtensions, onPanelsChanged } from '../extensions/registry';
+import { getPanels, initConsoleExtensions, onPanelsChanged, setActiveScriptProvider } from '../extensions/registry';
 import type { ConsolePanelExtension } from '../extensions/registry';
 
 /** Built-in drawers use 'history' | 'jobs' | 'help'; extension panels use their registered panel id. */
@@ -119,6 +119,9 @@ export class GcApp extends LitElement {
 
   protected firstUpdated(): void {
     prefetchAssistData();
+
+    // Let extensions read the editor's current script (e.g. the query-audit panel).
+    setActiveScriptProvider(() => this.scriptEditor?.value ?? '');
 
     // Load UI extension modules announced by the backend (ConsoleUiExtensionProvider services).
     initConsoleExtensions();
