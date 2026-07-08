@@ -15,9 +15,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Tests the shipped {@code sample-content-listing} report script: it lists the child resources of a content path.
- * <p>
- * Because reports now store their script as a real {@code .groovy} file node, the test loads the exact deployed
- * script and runs it through the console with the report bindings ({@code report}, {@code params}).
  */
 @ExtendWith(SlingContextExtension.class)
 class SampleContentListingTest {

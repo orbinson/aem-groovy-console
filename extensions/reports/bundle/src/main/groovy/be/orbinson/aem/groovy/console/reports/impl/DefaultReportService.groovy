@@ -39,8 +39,6 @@ class DefaultReportService implements ReportService {
 
     private static final String PROPERTY_CATEGORY = "category"
 
-    // the script is stored as a "<report name>.groovy" nt:file child so it ships as a real file in the content
-    // package and can be unit-tested with the console test-support harness, rather than an opaque string property
     private static final String SCRIPT_FILE_SUFFIX = ".groovy"
 
     private static final String SCRIPT_MIME_TYPE = "application/x-groovy"
