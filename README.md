@@ -22,7 +22,11 @@ in the package for reference.
 
 ## Compatibility
 
-AEM Groovy Console 19.0.8+ runs on Java 8, 11, 17 & 21 with an embedded Groovy version of 4.0.22
+AEM Groovy Console 19.0.8+ runs on Java 8, 11, 17 & 21 with an embedded Groovy version of 4.0.31.
+
+19.x is the maintenance line for Java 8 environments and embeds Groovy 4.x. Projects on Java 11+ that want the
+modern UI, streaming execution, code assistance and the reports extension should use the 20.x line instead
+(requires Java 11+, embeds Groovy 5.x).
 
 Supported versions:
 
@@ -183,6 +187,50 @@ metaclasses, and star imports.
 | `be.orbinson.aem.groovy.console.api.CompilationCustomizerExtensionProvider` | Restrict language features (via blacklist or whitelist) or provide AST transformations within the Groovy script compilation. |
 | `be.orbinson.aem.groovy.console.api.ScriptMetaClassExtensionProvider`       | Add runtime metaclasses (i.e. new methods) to the underlying script class.                                                   |
 | `be.orbinson.aem.groovy.console.api.StarImportExtensionProvider`            | Supply additional star imports that are added to the compiler configuration for each script execution.                       |
+
+## Extension Packages
+
+Beyond the per-script extension hooks above, larger opt-in features live in the `extensions/` directory as
+**separate Maven modules that ship as their own content packages** — they are *not* embedded in the console's
+`all` package.
+
+The philosophy is to keep the core console small and focused: a tool for running Groovy scripts. Not every
+installation wants every feature, so anything that is a self-contained capability rather than part of the core
+is factored out into its own extension package. This keeps the base install lean, lets teams deploy (and audit,
+and reason about) exactly the surface area they need, and means an extension can evolve — or eventually move to
+its own repository — without touching the console itself.
+
+Two rules make this work:
+
+* **The console has no dependency on any extension.** It is fully functional with zero extensions installed;
+  removing an extension's package removes its code paths entirely.
+* **Extensions integrate only through the console's public APIs** — the script-execution SPIs listed above and
+  their own path-bound servlets for their UI/JSON API.
+
+To use an extension, install the console first, then deploy the extension's content package.
+
+Available extensions:
+
+| Extension               | Package                             | Description                                              |
+|-------------------------|--------------------------------------|-----------------------------------------------------------|
+| [Migration](#migration) | `aem-groovy-console-migration-all`  | Run-once deployment migration scripts (AECU replacement) |
+
+### Migration
+
+The `extensions/migration/` modules provide an **optional** deployment migration extension replacing the deprecated
+[AEM Easy Content Upgrade (AECU)](https://github.com/valtech/aem-easy-content-upgrade) project. It ships as its own
+content package, `aem-groovy-console-migration-all`, installed **separately on top of the console** (install the
+console first). The console works fine without it; installing it adds the migration feature.
+
+Groovy migration scripts are deployed via content package below `/conf/groovyconsole/scripts/migration` and
+executed with **checksum-based run-once semantics**: a script runs when it is new, its content changed or its last
+execution was not successful. Scripts execute in deterministic alphanumeric path order with fail-fast behavior.
+Runs are triggered over HTTP (`POST /bin/groovyconsole/migration`, sync or async — ideal for CI/CD pipelines), by
+an opt-in resource listener reacting to script deployments, or from a migration history page at
+`/apps/groovyconsole/migrations.html` (also linked from the AEM Tools console).
+
+See **[`extensions/migration/README.md`](extensions/migration/README.md)** for the full documentation — script
+conventions (`.always.groovy`, `author`/`publish` run-mode tokens), the HTTP API and configuration.
 
 ## Registering Additional Metaclasses
 

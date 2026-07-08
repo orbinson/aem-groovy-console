@@ -7,6 +7,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Migration extension** (`aem-groovy-console-migration-all`) — run-once deployment migrations replacing the
+  deprecated AEM Easy Content Upgrade (AECU) project. Groovy scripts deployed below
+  `/conf/groovyconsole/scripts/migration` execute with checksum-based run-once semantics in deterministic path
+  order with fail-fast behavior (failed/skipped scripts stay pending and are retried on the next trigger).
+  Supports `.always.groovy` re-run scripts and `author`/`publish` run-mode file name tokens. Triggered via
+  `POST /bin/groovyconsole/migration` (sync, `async=true` with `runId` polling, or `dryRun=true`), an opt-in
+  debounced resource listener on script deployments, and a history UI at `/apps/groovyconsole/migrations.html`
+  (also linked from the AEM Tools console). Run history and the per-script registry are persisted below
+  `/var/groovyconsole/migration`. Installed as its own content package on top of the console; see
+  `extensions/migration/README.md`. `MigrationIT` covers the API on Sling.
+- **Extension packages** — an `extensions/` area for opt-in features that ship as their own content packages,
+  kept out of the console's `all` package so the core install stays lean. The console has no dependency on any
+  extension and is fully functional without them.
+
+### Security
+
+- Audit endpoints now enforce access control: the audit servlet (`/bin/groovyconsole/audit`) and the script
+  download servlet (`/bin/groovyconsole/download`) require the console permission and only return/delete a
+  record the requesting user owns (or scheduled-job records with the scheduled-job permission, or any record
+  when "display all audit records" is enabled). Previously any authenticated user could read or delete another
+  user's audit records by supplying their user ID.
+- `ScheduledJobsServlet` now enforces the scheduled-job permission on its GET (job listing), matching its
+  POST/DELETE (it previously leaked every scheduled job's script and download link).
+- The script save servlet (`/bin/groovyconsole/save`) now enforces the console permission.
+- Groovy compilation errors are now audited and notified, consistent with runtime errors.
+- Audit date-range filtering no longer mutates the record's timestamp (time-of-day is preserved for display).
+- The console permission check no longer throws a `NullPointerException` when the request principal cannot be
+  resolved to a user (e.g. a deleted user with a still-valid session); it now denies access instead.
+
+### Fixed
+
+- `ScheduledJobsServlet` threw a `NullPointerException` when a scheduled job had no next execution date.
+
 ## [19.1.0] - 2026-05-04
 
 ### Changed
