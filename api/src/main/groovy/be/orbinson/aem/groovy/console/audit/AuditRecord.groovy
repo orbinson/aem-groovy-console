@@ -21,9 +21,6 @@ class AuditRecord implements RunScriptResponse {
         response = DefaultRunScriptResponse.fromAuditRecordResource(resource)
     }
 
-    // explicit (non-final) getters: a `final` field here would otherwise make Groovy generate a `final`
-    // accessor, which bnd-baseline treats as a MAJOR breaking change to this exported package if the
-    // build toolchain ever flips it relative to a previously released jar (see git history for details)
     String getPath() {
         path
     }
