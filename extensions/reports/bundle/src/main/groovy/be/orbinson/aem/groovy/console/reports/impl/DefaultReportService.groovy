@@ -17,6 +17,7 @@ import org.osgi.service.component.annotations.Component
 
 import javax.jcr.Session
 
+import static be.orbinson.aem.groovy.console.reports.constants.ReportsConstants.CHARSET
 import static be.orbinson.aem.groovy.console.reports.constants.ReportsConstants.PARAMETERS_NODE_NAME
 import static be.orbinson.aem.groovy.console.reports.constants.ReportsConstants.PATH_REPORTS_FOLDER
 import static be.orbinson.aem.groovy.console.reports.constants.ReportsConstants.RESOURCE_TYPE_DEFINITION
@@ -38,7 +39,9 @@ class DefaultReportService implements ReportService {
 
     private static final String PROPERTY_CATEGORY = "category"
 
-    private static final String PROPERTY_SCRIPT = "script"
+    private static final String SCRIPT_FILE_SUFFIX = ".groovy"
+
+    private static final String SCRIPT_MIME_TYPE = "application/x-groovy"
 
     private static final String PROPERTY_PAGE_SIZE = "pageSize"
 
@@ -93,11 +96,11 @@ class DefaultReportService implements ReportService {
             valueMap.put(PROPERTY_TITLE, reportDefinition.title ?: reportDefinition.name)
             putOrRemove(valueMap, PROPERTY_DESCRIPTION, reportDefinition.description)
             putOrRemove(valueMap, PROPERTY_CATEGORY, reportDefinition.category)
-            putOrRemove(valueMap, PROPERTY_SCRIPT, reportDefinition.script)
             putOrRemove(valueMap, PROPERTY_PAGE_SIZE, reportDefinition.pageSize)
             valueMap.put(PROPERTY_LAST_MODIFIED, Calendar.instance)
             valueMap.put(PROPERTY_LAST_MODIFIED_BY, userId)
 
+            saveScript(resourceResolver, resource, reportDefinition.script)
             saveParameters(resourceResolver, resource, reportDefinition.parameters)
 
             resourceResolver.commit()
@@ -202,6 +205,24 @@ class DefaultReportService implements ReportService {
         }
     }
 
+    private static void saveScript(ResourceResolver resourceResolver, Resource reportResource, String script) {
+        // replace any existing script file (defensive; the file name tracks the report node name)
+        reportResource.listChildren().findAll { child -> isScriptFile(child) }.each { child ->
+            resourceResolver.delete(child)
+        }
+
+        def fileResource = resourceResolver.create(reportResource, "${reportResource.name}$SCRIPT_FILE_SUFFIX",
+                [(JcrConstants.JCR_PRIMARYTYPE): JcrConstants.NT_FILE] as Map<String, Object>)
+
+        resourceResolver.create(fileResource, JcrConstants.JCR_CONTENT, [
+                (JcrConstants.JCR_PRIMARYTYPE) : JcrConstants.NT_RESOURCE,
+                (JcrConstants.JCR_MIMETYPE)    : SCRIPT_MIME_TYPE,
+                (JcrConstants.JCR_ENCODING)    : CHARSET,
+                (JcrConstants.JCR_LASTMODIFIED): Calendar.instance,
+                (JcrConstants.JCR_DATA)        : new ByteArrayInputStream(script.getBytes(CHARSET))
+        ] as Map<String, Object>)
+    }
+
     private static void saveParameters(ResourceResolver resourceResolver, Resource reportResource,
                                        List<ReportParameter> parameters) {
         def parametersResource = reportResource.getChild(PARAMETERS_NODE_NAME)
@@ -246,8 +267,21 @@ class DefaultReportService implements ReportService {
     }
 
     private static boolean isReportDefinition(Resource resource) {
-        resource.name != "rep:policy" && (resource.isResourceType(RESOURCE_TYPE_DEFINITION)
-                || resource.valueMap.containsKey(PROPERTY_SCRIPT))
+        resource.isResourceType(RESOURCE_TYPE_DEFINITION)
+    }
+
+    private static boolean isScriptFile(Resource resource) {
+        resource.name.endsWith(SCRIPT_FILE_SUFFIX)
+    }
+
+    private static String readScript(Resource reportResource) {
+        def scriptFile = reportResource.listChildren().find { child -> isScriptFile(child) }
+
+        def stream = scriptFile?.getChild(JcrConstants.JCR_CONTENT)
+                ?.valueMap
+                ?.get(JcrConstants.JCR_DATA, InputStream)
+
+        stream?.withCloseable { it.getText(CHARSET) }
     }
 
     private static Resource getReportResource(ResourceResolver resourceResolver, String name) {
@@ -268,7 +302,7 @@ class DefaultReportService implements ReportService {
                 title: properties.get(PROPERTY_TITLE, resource.name),
                 description: properties.get(PROPERTY_DESCRIPTION, String),
                 category: properties.get(PROPERTY_CATEGORY, String),
-                script: properties.get(PROPERTY_SCRIPT, String),
+                script: readScript(resource),
                 pageSize: properties.get(PROPERTY_PAGE_SIZE, Integer),
                 parameters: toParameters(resource),
                 created: properties.get(JcrConstants.JCR_CREATED, Calendar),
