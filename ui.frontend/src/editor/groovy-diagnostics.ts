@@ -7,11 +7,13 @@ const MARKER_OWNER = 'groovy-compile';
 /**
  * Server-side compile diagnostics: on (debounced) content change the script is compiled —
  * never run — with the same shell configuration as execution, and errors surface as markers.
+ *
+ * @return a disposer that cancels the pending debounce and detaches the change listener.
  */
 export function attachGroovyDiagnostics(
   monaco: typeof Monaco,
   editor: Monaco.editor.IStandaloneCodeEditor,
-): void {
+): () => void {
   let timer: ReturnType<typeof setTimeout> | undefined;
   let generation = 0;
 
@@ -58,11 +60,18 @@ export function attachGroovyDiagnostics(
     }
   };
 
-  editor.onDidChangeModelContent(() => {
+  const changeSubscription = editor.onDidChangeModelContent(() => {
     clearTimeout(timer);
     timer = setTimeout(() => void validate(), DEBOUNCE_MS);
   });
 
   // validate any restored content on load
   void validate();
+
+  return () => {
+    clearTimeout(timer);
+    // supersede any in-flight validate() so its response is dropped
+    generation++;
+    changeSubscription.dispose();
+  };
 }

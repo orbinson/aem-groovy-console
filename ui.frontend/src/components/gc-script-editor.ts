@@ -10,10 +10,19 @@ import { store } from '../state/store';
 @customElement('gc-script-editor')
 export class GcScriptEditor extends LitElement {
   private editor?: Monaco.editor.IStandaloneCodeEditor;
+  private disposeDiagnostics?: () => void;
 
   // Render in light DOM so Monaco's document-level styles apply.
   createRenderRoot(): this {
     return this;
+  }
+
+  disconnectedCallback(): void {
+    this.disposeDiagnostics?.();
+    this.disposeDiagnostics = undefined;
+    this.editor?.dispose();
+    this.editor = undefined;
+    super.disconnectedCallback();
   }
 
   get value(): string {
@@ -108,7 +117,7 @@ export class GcScriptEditor extends LitElement {
       },
     });
 
-    attachGroovyDiagnostics(monaco, this.editor);
+    this.disposeDiagnostics = attachGroovyDiagnostics(monaco, this.editor);
   }
 
   protected render() {

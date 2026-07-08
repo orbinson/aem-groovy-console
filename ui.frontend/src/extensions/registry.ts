@@ -40,6 +40,11 @@ declare global {
   }
 }
 
+/** A valid custom-element tag name: starts with a lowercase letter and contains a hyphen. Panels declare
+ *  their element as a string that the shell renders as a tag, so reject anything else to keep it from being
+ *  used as an HTML-injection primitive. */
+const CUSTOM_ELEMENT_NAME = /^[a-z][a-z0-9]*-[a-z0-9-]*$/;
+
 const panels: ConsolePanelExtension[] = [];
 const listeners = new Set<() => void>();
 
@@ -54,6 +59,10 @@ export function onPanelsChanged(listener: () => void): () => void {
 
 function registerPanel(panel: ConsolePanelExtension): void {
   if (!panel?.id || !panel.element || panels.some((existing) => existing.id === panel.id)) {
+    return;
+  }
+  if (!CUSTOM_ELEMENT_NAME.test(panel.element)) {
+    console.error(`[groovyconsole] ignoring panel "${panel.id}": invalid element name "${panel.element}"`);
     return;
   }
   panels.push(panel);

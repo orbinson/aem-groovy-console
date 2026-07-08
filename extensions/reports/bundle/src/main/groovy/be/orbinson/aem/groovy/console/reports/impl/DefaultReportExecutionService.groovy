@@ -81,6 +81,9 @@ class DefaultReportExecutionService implements ReportExecutionService {
     @Reference
     private ResourceResolverFactory resourceResolverFactory
 
+    @Reference
+    private ReportsConfigurationService reportsConfigurationService
+
     @Override
     ReportExecution execute(ReportDefinition reportDefinition, Map<String, String> parameterValues,
                             ResourceResolver resourceResolver) {
@@ -116,7 +119,11 @@ class DefaultReportExecutionService implements ReportExecutionService {
 
         LOG.info("previewing report : {} as user : {}", reportDefinition.name, userId)
 
-        def response = runReport(reportDefinition.name, coercedValues, script, userId, resourceResolver).response
+        // run on a clone so a preview script that makes (then fails to commit) transient JCR changes cannot
+        // leave them pending on the request-scoped resolver — runScript does not revert on failure
+        def response = resourceResolver.clone(null).withCloseable { previewResolver ->
+            runReport(reportDefinition.name, coercedValues, script, userId, previewResolver).response
+        }
         def output = response.output ?: null
 
         if (response.exceptionStackTrace) {
@@ -290,6 +297,37 @@ class DefaultReportExecutionService implements ReportExecutionService {
 
         withResourceResolver { ResourceResolver resourceResolver ->
             def resource = getExecutionResource(resourceResolver, executionId)
+
+            if (!resource) {
+                LOG.warn("execution {} was removed before it completed; discarding result", executionId)
+
+                return
+            }
+
+            def maxRows = reportsConfigurationService.maxResultRows
+
+            if (maxRows > 0 && reportData.rows.size() > maxRows) {
+                LOG.warn("execution {} produced {} rows, exceeding the configured maximum of {}; failing the run",
+                        executionId, reportData.rows.size(), maxRows)
+
+                def valueMap = resource.adaptTo(ModifiableValueMap)
+
+                valueMap.put(PROPERTY_STATUS, ReportExecutionStatus.FAILED.name())
+                valueMap.put(PROPERTY_FINISHED_AT, Calendar.instance)
+                valueMap.put(PROPERTY_DURATION_MILLIS, durationMillis)
+                valueMap.put(PROPERTY_EXCEPTION_STACK_TRACE,
+                        "Report produced ${reportData.rows.size()} rows, exceeding the configured maximum of " +
+                                "${maxRows}. Narrow the report or raise the limit." as String)
+
+                if (response.output) {
+                    saveOutput(resourceResolver, resource, response.output)
+                }
+
+                resourceResolver.commit()
+
+                return
+            }
+
             def valueMap = resource.adaptTo(ModifiableValueMap)
 
             valueMap.put(PROPERTY_STATUS, ReportExecutionStatus.SUCCESS.name())
@@ -312,6 +350,13 @@ class DefaultReportExecutionService implements ReportExecutionService {
     private void finishFailed(String executionId, RunScriptResponse response, long durationMillis) {
         withResourceResolver { ResourceResolver resourceResolver ->
             def resource = getExecutionResource(resourceResolver, executionId)
+
+            if (!resource) {
+                LOG.warn("execution {} was removed before it completed; discarding failure", executionId)
+
+                return
+            }
+
             def valueMap = resource.adaptTo(ModifiableValueMap)
 
             valueMap.put(PROPERTY_STATUS, ReportExecutionStatus.FAILED.name())

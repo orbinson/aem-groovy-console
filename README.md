@@ -327,9 +327,10 @@ To use an extension, install the console first, then deploy the extension's cont
 
 Available extensions:
 
-| Extension            | Package                            | Description                                          |
-|----------------------|------------------------------------|------------------------------------------------------|
-| [Reports](#reports)  | `aem-groovy-console-reports-all`   | Business-facing reports backed by Groovy scripts     |
+| Extension                | Package                            | Description                                          |
+|--------------------------|------------------------------------|------------------------------------------------------|
+| [Reports](#reports)      | `aem-groovy-console-reports-all`   | Business-facing reports backed by Groovy scripts     |
+| [Migration](#migration)  | `aem-groovy-console-migration-all` | Run-once deployment migration scripts (AECU replacement) |
 
 ### Reports
 
@@ -346,6 +347,23 @@ export the persisted result, and browse past runs. Access is governed entirely b
 
 See **[`extensions/reports/README.md`](extensions/reports/README.md)** for the full documentation — installation,
 parameters, column types, the execution model, exports (CSV/XLSX) and configuration.
+
+### Migration
+
+The `extensions/migration/` modules provide an **optional** deployment migration extension replacing the deprecated
+[AEM Easy Content Upgrade (AECU)](https://github.com/valtech/aem-easy-content-upgrade) project. It ships as its own
+content package, `aem-groovy-console-migration-all`, installed **separately on top of the console** (install the
+console first). The console works fine without it; installing it adds the migration feature.
+
+Groovy migration scripts are deployed via content package below `/conf/groovyconsole/scripts/migration` and
+executed with **checksum-based run-once semantics**: a script runs when it is new, its content changed or its last
+execution was not successful. Scripts execute in deterministic alphanumeric path order with fail-fast behavior.
+Runs are triggered over HTTP (`POST /bin/groovyconsole/migration`, sync or async — ideal for CI/CD pipelines), by
+an opt-in resource listener reacting to script deployments, or from the UI: a migration history page at
+`/apps/groovyconsole/migrations.html` and a Migrations drawer in the modern console.
+
+See **[`extensions/migration/README.md`](extensions/migration/README.md)** for the full documentation — script
+conventions (`.always.groovy`, `author`/`publish` run-mode tokens), the HTTP API and configuration.
 
 ## Registering Additional Metaclasses
 

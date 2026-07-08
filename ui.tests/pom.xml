@@ -58,6 +58,10 @@
                                     <groupId>${project.groupId}</groupId>
                                     <artifactId>aem-groovy-console-reports-all</artifactId>
                                 </contentPackage>
+                                <contentPackage>
+                                    <groupId>${project.groupId}</groupId>
+                                    <artifactId>aem-groovy-console-migration-all</artifactId>
+                                </contentPackage>
                             </contentPackages>
                             <fmOutput>${project.build.directory}/cp-conversion/fm.out</fmOutput>
                             <bundleStartOrder>20</bundleStartOrder>
@@ -99,6 +103,7 @@
                                     <additionalFeatureFiles>
                                         <additionalFeatureFile>${project.build.directory}/cp-conversion/fm.out/aem-groovy-console-all.json</additionalFeatureFile>
                                         <additionalFeatureFile>${project.build.directory}/cp-conversion/fm.out/aem-groovy-console-reports-all.json</additionalFeatureFile>
+                                        <additionalFeatureFile>${project.build.directory}/cp-conversion/fm.out/aem-groovy-console-migration-all.json</additionalFeatureFile>
                                     </additionalFeatureFiles>
                                     <artifactsOverrides>
                                         <artifactsOverride>*:*:HIGHEST</artifactsOverride>
@@ -215,6 +220,13 @@
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>aem-groovy-console-reports-all</artifactId>
+            <version>${project.version}</version>
+            <type>zip</type>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>aem-groovy-console-migration-all</artifactId>
             <version>${project.version}</version>
             <type>zip</type>
             <scope>provided</scope>

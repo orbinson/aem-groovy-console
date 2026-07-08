@@ -12,15 +12,23 @@ class DefaultReportsConfigurationService implements ReportsConfigurationService 
 
     private int defaultPageSize
 
+    private int maxResultRows
+
     @Activate
     @Modified
     @Synchronized
     void activate(ReportsConfigurationProperties properties) {
         defaultPageSize = properties.defaultPageSize()
+        maxResultRows = properties.maxResultRows()
     }
 
     @Override
     int getDefaultPageSize() {
         defaultPageSize
+    }
+
+    @Override
+    int getMaxResultRows() {
+        maxResultRows
     }
 }

@@ -1,5 +1,6 @@
 package be.orbinson.aem.groovy.console.reports.servlets
 
+import be.orbinson.aem.groovy.console.configuration.ConfigurationService
 import be.orbinson.aem.groovy.console.reports.ReportExecutionService
 import be.orbinson.aem.groovy.console.reports.ReportService
 import groovy.util.logging.Slf4j
@@ -32,6 +33,9 @@ class ReportExecutionServlet extends AbstractReportsServlet {
     @Reference
     private ReportExecutionService executionService
 
+    @Reference
+    private ConfigurationService configurationService
+
     @Override
     protected void doGet(SlingHttpServletRequest request, SlingHttpServletResponse response)
             throws ServletException, IOException {
@@ -45,12 +49,7 @@ class ReportExecutionServlet extends AbstractReportsServlet {
             return
         }
 
-        // access follows the report's read ACL; orphaned executions need the report-create capability
-        def resolver = request.resourceResolver
-        def allowed = execution.reportName && reportService.getReport(resolver, execution.reportName) ?
-                true : reportService.canCreate(resolver)
-
-        if (!allowed) {
+        if (!canViewExecution(request, execution, reportService, configurationService)) {
             writeError(response, SC_FORBIDDEN, "Not allowed to view execution: $executionId")
 
             return

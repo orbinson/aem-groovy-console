@@ -5,6 +5,7 @@ import be.orbinson.aem.groovy.console.audit.AuditService
 import be.orbinson.aem.groovy.console.configuration.ConfigurationService
 import be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants
 import be.orbinson.aem.groovy.console.response.RunScriptResponse
+import org.apache.sling.api.SlingHttpServletRequest
 import groovy.transform.Synchronized
 import groovy.util.logging.Slf4j
 import org.apache.jackrabbit.JcrConstants
@@ -128,7 +129,7 @@ class DefaultAuditService implements AuditService {
         def auditRecord = null
 
         withResourceResolver { ResourceResolver resourceResolver ->
-            def auditRecordResource = resourceResolver.getResource("$AUDIT_PATH/$userId").getChild(relativePath)
+            def auditRecordResource = resourceResolver.getResource("$AUDIT_PATH/$userId/$relativePath")
 
             if (auditRecordResource) {
                 auditRecord = new AuditRecord(auditRecordResource)
@@ -138,6 +139,45 @@ class DefaultAuditService implements AuditService {
         }
 
         auditRecord
+    }
+
+    @Override
+    AuditRecord getAuditRecord(SlingHttpServletRequest request, String userId, String relativePath) {
+        canAccessAuditRecord(request, userId) ? getAuditRecord(userId, relativePath) : null
+    }
+
+    @Override
+    boolean deleteAuditRecord(SlingHttpServletRequest request, String userId, String relativePath) {
+        if (!canAccessAuditRecord(request, userId)) {
+            return false
+        }
+
+        deleteAuditRecord(userId, relativePath)
+
+        true
+    }
+
+    /**
+     * Ownership rule for a single audit record. Audit records are stored under and read via the console's
+     * {@code jcr:all} service user, so access must be enforced here — otherwise any console user could read or delete
+     * another user's records by supplying their user ID. Allowed for: the requesting user's own records,
+     * scheduled-job records when the scheduled-job permission is held, or any record when "display all audit records"
+     * is enabled. Always requires the console permission.
+     */
+    private boolean canAccessAuditRecord(SlingHttpServletRequest request, String recordUserId) {
+        if (!configurationService.hasPermission(request)) {
+            return false
+        }
+
+        if (recordUserId && recordUserId == request.resourceResolver.userID) {
+            return true
+        }
+
+        if (recordUserId == GroovyConsoleConstants.SYSTEM_USER_NAME) {
+            return configurationService.hasScheduledJobPermission(request)
+        }
+
+        configurationService.displayAllAuditRecords
     }
 
     @Override
@@ -241,7 +281,8 @@ class DefaultAuditService implements AuditService {
 
     private static List<AuditRecord> getAuditRecordsForDateRange(List<AuditRecord> auditRecords, Calendar startDate, Calendar endDate) {
         auditRecords.findAll { auditRecord ->
-            def auditRecordDate = auditRecord.date
+            // compare on a copy so the record's own timestamp keeps its time-of-day for later display
+            def auditRecordDate = auditRecord.date.clone() as Calendar
 
             auditRecordDate.set(Calendar.HOUR_OF_DAY, 0)
             auditRecordDate.set(Calendar.MINUTE, 0)

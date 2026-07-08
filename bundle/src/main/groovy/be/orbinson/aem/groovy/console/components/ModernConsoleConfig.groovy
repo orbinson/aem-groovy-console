@@ -43,7 +43,7 @@ class ModernConsoleConfig {
     String getJson() {
         def userId = request.getParameter(USER_ID)
         def script = request.getParameter(SCRIPT)
-        def auditRecord = script ? auditService.getAuditRecord(userId, script) : null
+        def auditRecord = script ? auditService.getAuditRecord(request, userId, script) : null
 
         def activeJobs = groovyConsoleService.activeJobs.collect { activeJob ->
             [

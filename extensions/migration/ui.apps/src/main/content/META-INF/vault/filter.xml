@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workspaceFilter version="1.0">
+    <!-- AEM Tools console entry so operators can reach the migration history UI (overlay; AEM-only) -->
+    <filter root="/apps/cq/core/content/nav/tools/groovyconsole" mode="merge"/>
+    <!-- the migration SPA assets (built by extensions/migration/ui.frontend), on a migration-owned path -->
+    <filter root="/apps/groovyconsole-migration"/>
+</workspaceFilter>

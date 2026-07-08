@@ -24,6 +24,7 @@
 
     <modules>
         <module>reports</module>
+        <module>migration</module>
     </modules>
 
 </project>

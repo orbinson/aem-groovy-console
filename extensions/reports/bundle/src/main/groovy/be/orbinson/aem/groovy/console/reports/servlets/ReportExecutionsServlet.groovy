@@ -1,5 +1,6 @@
 package be.orbinson.aem.groovy.console.reports.servlets
 
+import be.orbinson.aem.groovy.console.configuration.ConfigurationService
 import be.orbinson.aem.groovy.console.reports.ReportExecutionService
 import be.orbinson.aem.groovy.console.reports.ReportService
 import groovy.util.logging.Slf4j
@@ -36,6 +37,9 @@ class ReportExecutionsServlet extends AbstractReportsServlet {
     @Reference
     private ReportExecutionService executionService
 
+    @Reference
+    private ConfigurationService configurationService
+
     @Override
     protected void doGet(SlingHttpServletRequest request, SlingHttpServletResponse response)
             throws ServletException, IOException {
@@ -70,12 +74,7 @@ class ReportExecutionsServlet extends AbstractReportsServlet {
             return
         }
 
-        // deleting an execution requires edit access to its report (or create rights for an orphan)
-        def resolver = request.resourceResolver
-        def allowed = execution.reportName && reportService.getReport(resolver, execution.reportName) ?
-                reportService.canEdit(resolver, execution.reportName) : reportService.canCreate(resolver)
-
-        if (!allowed) {
+        if (!canManageExecution(request, execution, reportService, configurationService)) {
             writeError(response, SC_FORBIDDEN, "Not allowed to delete execution: $executionId")
 
             return

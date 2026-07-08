@@ -31,6 +31,10 @@ class XlsxReportExporter implements ReportExporter {
 
     private static final String DATE_CELL_FORMAT = "yyyy-mm-dd hh:mm:ss"
 
+    // only these hyperlink schemes are written, mirroring the UI's isSafeHref; a bare/relative href is a
+    // site-relative link and is allowed. Blocks file:, javascript:, data:, etc. from report data.
+    private static final List<String> SAFE_LINK_SCHEMES = ["http", "https", "mailto"].asImmutable()
+
     @Override
     String getFormat() {
         "xlsx"
@@ -148,7 +152,7 @@ class XlsxReportExporter implements ReportExporter {
 
         cell.setCellValue(text ?: "")
 
-        if (href) {
+        if (href && isSafeHref(href)) {
             try {
                 def hyperlink = creationHelper.createHyperlink(HyperlinkType.URL)
 
@@ -159,6 +163,13 @@ class XlsxReportExporter implements ReportExporter {
                 LOG.debug("invalid hyperlink address : {}", href, e)
             }
         }
+    }
+
+    // a scheme-bearing href must use an allowed scheme; schemeless (site-relative) hrefs are allowed
+    private static boolean isSafeHref(String href) {
+        def matcher = (href =~ /(?i)^([a-z][a-z0-9+.\-]*):/)
+
+        !matcher || SAFE_LINK_SCHEMES.contains(matcher.group(1).toLowerCase())
     }
 
     private static Number toNumber(Object value) {

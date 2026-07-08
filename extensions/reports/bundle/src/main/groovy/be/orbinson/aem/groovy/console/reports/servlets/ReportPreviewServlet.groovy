@@ -1,5 +1,6 @@
 package be.orbinson.aem.groovy.console.reports.servlets
 
+import be.orbinson.aem.groovy.console.configuration.ConfigurationService
 import be.orbinson.aem.groovy.console.reports.ReportExecutionService
 import be.orbinson.aem.groovy.console.reports.ReportService
 import groovy.util.logging.Slf4j
@@ -34,9 +35,20 @@ class ReportPreviewServlet extends AbstractReportsServlet {
     @Reference
     private ReportExecutionService executionService
 
+    @Reference
+    private ConfigurationService configurationService
+
     @Override
     protected void doPost(SlingHttpServletRequest request, SlingHttpServletResponse response)
             throws ServletException, IOException {
+        // preview runs arbitrary Groovy as the user, so it requires console permission (as running a console
+        // script does) on top of the JCR author check below
+        if (!configurationService.hasPermission(request)) {
+            writeError(response, SC_FORBIDDEN, "Not allowed to run report previews.")
+
+            return
+        }
+
         def body = readJsonBody(request)
 
         if (!body || !body["script"]) {
@@ -48,8 +60,7 @@ class ReportPreviewServlet extends AbstractReportsServlet {
         def resolver = request.resourceResolver
         def definition = ReportsServlet.fromBody(body)
 
-        // preview runs arbitrary script as the user: allow only authors — editors of the existing report,
-        // or users who may create reports for a new/unsaved one
+        // author check: editors of the existing report, or users who may create reports for a new/unsaved one
         def allowed = definition.name && reportService.getReport(resolver, definition.name) ?
                 reportService.canEdit(resolver, definition.name) : reportService.canCreate(resolver)
 

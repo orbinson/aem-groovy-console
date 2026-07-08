@@ -9,54 +9,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **Modern UI** — an IDE-style console built with [Spectrum Web Components](https://opensource.adobe.com/spectrum-web-components/)
-  and the [Monaco Editor](https://microsoft.github.io/monaco-editor/), in a new `ui.frontend` module (Lit + TypeScript +
-  Vite). It has no AEM Granite/Coral dependency and runs on AEM and plain Sling. Features a resizable editor/output split,
-  a tabbed output dock (Log/Result/Table/Trace), slide-out drawers for History, Scheduled Jobs and Help, and a status bar.
-- **Code assistance** in the modern editor, backed by new `/bin/groovyconsole/assist/*` endpoints: class completion over
-  the OSGi class space (with auto-import), member/method completion including Groovy extension (GDK) methods, binding and
-  star-import awareness, hover documentation, OSGi service-name completion inside `getService("...")`, and live
-  compile-error diagnostics (parse-only, sharing the script execution's compiler configuration).
-- **Streaming script output** — execute asynchronously with `POST /bin/groovyconsole/post.json?async=true` (returns an
-  `executionId`) and poll `GET /bin/groovyconsole/stream.json`; output is delivered while the script runs. Both UIs use it,
-  and the classic UI streams into its output panel. Backwards compatible: without the `async` parameter the endpoint
-  behaves exactly as before, so existing clients (e.g. the IntelliJ plugin) are unaffected.
-- Clickable stack-trace frames in the modern UI that jump to the offending line in the editor.
-- **Default UI** OSGi property (`be.orbinson.aem.groovy.console.configuration.impl.DefaultConfigurationService`) selecting
-  which UI `/groovyconsole` serves; both UIs are always reachable via the `.modern.html` / `.classic.html` selectors.
-- New `ui.tests` module with Playwright end-to-end tests, and a `run` Maven profile (`mvn verify -Prun -pl it.tests`) that
-  launches the aggregated Sling feature model on a fixed port for manual testing.
-- `AssistIT` and `StreamingIT` integration tests.
-- **Extension packages** — an `extensions/` area for opt-in features that ship as their own content packages, kept out
-  of the console's `all` package so the core install stays lean. The console has no dependency on any extension and is
-  fully functional without them; extensions integrate only through public SPIs, including the new
-  `be.orbinson.aem.groovy.console.api.ConsoleUiExtensionProvider`, which lets a bundle contribute panels to the modern
-  UI's activity rail (loaded dynamically via `window.GroovyConsole.registerPanel(...)`).
-- **Reports extension** (`aem-groovy-console-reports-all`) — business-facing reports backed by Groovy scripts: named
-  report definitions with an inline Groovy script and typed parameters under `/conf/groovyconsole/reports`,
-  asynchronous run-once executions (the request returns immediately and clients poll) with persisted, paginated
-  tabular results, API-driven CSV/XLSX export (XLSX via AEM's `com.adobe.granite.poi` or the ServiceMix POI bundles on
-  Sling), scheduled execution purging, a business UI at `/apps/groovyconsole/reports.html`, and a Reports drawer in the
-  modern console. Access control is governed entirely by **JCR permissions** on `/conf/groovyconsole/reports` (read =
-  view/run, write = create/edit/delete) — there are no application-level access groups. See
-  `extensions/reports/README.md`. `GroovyConsoleReportsIT` covers the API and export wiring on Sling.
+- **Modern UI** — a new IDE-style console built with the Monaco editor and Spectrum Web Components (`ui.frontend`
+  module), with no AEM Granite/Coral dependency, so it runs on AEM and plain Sling. Resizable editor/output split,
+  tabbed output (Log/Result/Table/Trace), slide-out drawers for History, Scheduled Jobs and Help, and clickable
+  stack traces that jump to the offending line. It is now the default at `/groovyconsole` (the classic UI stays
+  available at `/apps/groovyconsole.classic.html`).
+- **Code assistance** in the modern editor — class, member and method completion (including Groovy GDK methods and
+  OSGi service names), auto-import, hover documentation and live compile-error diagnostics, via new
+  `/bin/groovyconsole/assist/*` endpoints.
+- **Streaming script output** — run scripts asynchronously and stream their output while they execute
+  (`POST /bin/groovyconsole/post.json?async=true` then poll `/bin/groovyconsole/stream.json`). Backwards compatible:
+  existing clients that don't opt in behave exactly as before.
+- **Extension mechanism** — optional features ship as their own content packages, kept out of the core `all` package.
+  The console has no dependency on them and integrates only through public SPIs, including the new
+  `ConsoleUiExtensionProvider`, which lets an extension contribute a panel to the modern UI.
+- **Reports extension** — business-facing reports backed by Groovy scripts: named report definitions with typed
+  parameters, asynchronous execution with persisted, paginated results, CSV/XLSX export, and a dedicated business UI.
+  Access is governed by JCR permissions on `/conf/groovyconsole/reports`.
+- **Migration extension** — run-once deployment migrations replacing AEM Easy Content Upgrade (AECU): checksum-based
+  run-once Groovy scripts under `/conf/groovyconsole/scripts/migration`, executed in path order with fail-fast retry,
+  `.always` re-run scripts and `author`/`publish` run-mode tokens, triggered via API or a deployment listener, with a
+  run-history UI.
+- **Script unit-testing support** — a new `aem-groovy-console-test-support` module: a JUnit 5 / AEM Mocks harness to
+  unit-test Groovy Console scripts in a few lines (add a context plugin, run a script, assert on the result). A
+  JCR-backed mock is only needed for scripts that actually touch the repository.
 
 ### Changed
 
-- **BREAKING:** Upgrade Groovy from 4.0.31 to 5.0.6
-- **BREAKING:** Drop Java 8 support — minimum is now Java 11 (Groovy 5.x requires JDK 11+)
-- Bump exported API package versions to 20.0.0
-- The **modern UI is now the default** at `/groovyconsole`; the classic UI remains available
-  at `/apps/groovyconsole.classic.html`.
-- Classic UI: replaced the AEM-only ExtJS Open/Save dialogs with Bootstrap modals that also work on plain Sling, and
-  dropped the `cq.wcm.edit` and `cq.shared` clientlib dependencies (the CSRF token is now provided via
-  `granite.csrf.standalone`).
+- **BREAKING:** Upgraded Groovy from 4.0.31 to 5.0.6.
+- **BREAKING:** Dropped Java 8 support — the minimum is now Java 11 (required by Groovy 5.x).
+- Bumped exported API package versions to 20.0.0.
+- The classic UI now also works on plain Sling — its Open/Save dialogs no longer depend on AEM-only client libraries.
+
+### Security
+
+- Hardened access control across the audit, script save/download, scheduled-jobs and services endpoints: the console
+  permission is now enforced consistently, and users can only read or delete their own audit records. Previously an
+  authenticated user could access another user's records.
 
 ### Fixed
 
-- `ScheduledJobsServlet` threw a `NullPointerException` on plain Sling when a scheduled job had no next execution date.
-- The OSGi services listing servlet (`/bin/groovyconsole/services`) now enforces the console permission check.
-- CSRF token handling for the modern UI's POST/DELETE requests on AEM author instances.
+- `ScheduledJobsServlet` threw a `NullPointerException` when a scheduled job had no next execution date.
 
 ## [19.1.0] - 2026-05-04
 

@@ -70,6 +70,14 @@ class StreamingIT {
         long deadline = System.currentTimeMillis() + 60_000;
         while (System.currentTimeMillis() < deadline) {
             JsonObject poll = pollStream(executionId, offset);
+
+            // the streaming registry can briefly 404 a just-started execution while the OSGi component
+            // settles right after cold startup; keep polling until the deadline rather than failing
+            if (poll == null) {
+                Thread.sleep(250);
+                continue;
+            }
+
             received.append(poll.get("chunk").getAsString());
             offset = poll.get("offset").getAsInt();
 
@@ -206,7 +214,13 @@ class StreamingIT {
         get.addHeader("Authorization", AUTH_HEADER);
 
         try (CloseableHttpResponse response = httpClient.execute(get)) {
-            assertEquals(200, response.getStatusLine().getStatusCode());
+            int status = response.getStatusLine().getStatusCode();
+            // a transient 404 means the execution is not (yet) pollable; let the caller retry
+            if (status == 404) {
+                EntityUtils.consumeQuietly(response.getEntity());
+                return null;
+            }
+            assertEquals(200, status);
             String body = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
             return JsonParser.parseString(body).getAsJsonObject();
         }
