@@ -9,3 +9,7 @@
 target/
 dependency-reduced-pom.xml
 .mvn
+
+# Frontend build
+node_modules/
+extensions/migration/ui.apps/src/main/content/jcr_root/apps/groovyconsole-migration/spa/
