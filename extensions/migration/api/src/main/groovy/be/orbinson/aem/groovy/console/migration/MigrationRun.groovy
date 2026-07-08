@@ -34,6 +34,14 @@ interface MigrationRun {
     String getError()
 
     /**
+     * Get the path this run was scoped to, or an empty string when the configured scripts base path was
+     * used in full.
+     *
+     * @return scoped path, or an empty string
+     */
+    String getPath()
+
+    /**
      * Get the per-script results for this run, in execution order.
      *
      * @return list of script results

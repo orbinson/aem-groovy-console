@@ -82,7 +82,9 @@ class MigrationServlet extends SlingAllMethodsServlet {
         if (migrationService.hasPermission(request)) {
             def options = new MigrationRunOptions(
                     trigger: TRIGGER_API,
-                    dryRun: Boolean.parseBoolean(request.getParameter(DRY_RUN))
+                    dryRun: Boolean.parseBoolean(request.getParameter(DRY_RUN)),
+                    path: request.getParameter(PATH),
+                    data: request.getParameter(DATA)
             )
 
             try {
@@ -125,6 +127,7 @@ class MigrationServlet extends SlingAllMethodsServlet {
                 endDate    : run.endDate?.format(DATE_FORMAT_DISPLAY) ?: "",
                 runningTime: run.runningTime,
                 error      : run.error ?: "",
+                (PATH)     : run.path ?: "",
                 executed   : run.results.count { result -> result.status == MigrationStatus.SUCCESS },
                 failed     : run.results.count { result -> result.status == MigrationStatus.FAILED },
                 skipped    : run.results.count { result -> result.status == MigrationStatus.SKIPPED },

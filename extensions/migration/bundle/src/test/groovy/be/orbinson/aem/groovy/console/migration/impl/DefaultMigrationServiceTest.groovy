@@ -40,6 +40,8 @@ class DefaultMigrationServiceTest {
 
     List<String> executedScripts = []
 
+    List<String> executedData = []
+
     @BeforeEach
     void beforeEach() {
         context.build().resource(DEFAULT_SCRIPTS_BASE_PATH).commit()
@@ -49,6 +51,7 @@ class DefaultMigrationServiceTest {
         def consoleService = [
                 runScript      : { scriptContext ->
                     executedScripts << scriptContext.script
+                    executedData << scriptContext.data
 
                     if (scriptContext.script.contains(DIRTY_MARKER)) {
                         def resolver = scriptContext.resourceResolver
@@ -162,6 +165,59 @@ class DefaultMigrationServiceTest {
         assertEquals(MigrationStatus.PENDING, run.results[0].status)
         assertTrue(executedScripts.empty)
         assertEquals(["$DEFAULT_SCRIPTS_BASE_PATH/001-first.groovy" as String], migrationService.pendingScripts)
+    }
+
+    @Test
+    void runWithPathScopesToFolder() {
+        addScript("001-first.groovy", "script one")
+        addScript("sub/001-nested.groovy", "script nested")
+        addScript("sub/002-nested.groovy", "script nested two")
+
+        def run = migrationService.run(new MigrationRunOptions(path: "$DEFAULT_SCRIPTS_BASE_PATH/sub"))
+
+        assertEquals(MigrationStatus.SUCCESS, run.status)
+        assertEquals(["script nested", "script nested two"], executedScripts)
+        assertEquals("$DEFAULT_SCRIPTS_BASE_PATH/sub" as String, run.path)
+
+        // the script outside the scoped path is untouched and still pending
+        assertEquals(["$DEFAULT_SCRIPTS_BASE_PATH/001-first.groovy" as String], migrationService.pendingScripts)
+    }
+
+    @Test
+    void runWithPathScopesToSingleScript() {
+        addScript("001-first.groovy", "script one")
+        addScript("002-second.groovy", "script two")
+
+        migrationService.run(new MigrationRunOptions(path: "$DEFAULT_SCRIPTS_BASE_PATH/002-second.groovy"))
+
+        assertEquals(["script two"], executedScripts)
+    }
+
+    @Test
+    void runWithoutPathDefaultsToEmptyPath() {
+        addScript("001-first.groovy", "script one")
+
+        def run = migrationService.run(new MigrationRunOptions())
+
+        assertEquals("", run.path)
+    }
+
+    @Test
+    void runPassesDataToScriptContext() {
+        addScript("001-first.groovy", "script one")
+
+        migrationService.run(new MigrationRunOptions(data: '{"foo":"bar"}'))
+
+        assertEquals(['{"foo":"bar"}'], executedData)
+    }
+
+    @Test
+    void runWithoutDataPassesNullToScriptContext() {
+        addScript("001-first.groovy", "script one")
+
+        migrationService.run(new MigrationRunOptions())
+
+        assertEquals([null], executedData)
     }
 
     @Test
