@@ -92,11 +92,12 @@ class DefaultMigrationService implements MigrationService {
             def startDate = Calendar.instance
 
             try {
-                def pendingScripts = findScripts(resourceResolver).findAll { script ->
+                def pendingScripts = findScripts(resourceResolver, options.path).findAll { script ->
                     isPendingScript(resourceResolver, script)
                 }
 
-                LOG.info("found {} pending migration script(s) below path : {}", pendingScripts.size(), scriptsBasePath)
+                LOG.info("found {} pending migration script(s) below path : {}", pendingScripts.size(),
+                        options.path ?: scriptsBasePath)
 
                 def results
                 def status
@@ -105,7 +106,7 @@ class DefaultMigrationService implements MigrationService {
                     results = pendingScripts.collect { script -> dryRunResult(script) }
                     status = MigrationStatus.SUCCESS
                 } else {
-                    results = executeScripts(resourceResolver, pendingScripts)
+                    results = executeScripts(resourceResolver, pendingScripts, options.data)
                     status = results.any { result -> result.status == MigrationStatus.FAILED } ?
                             MigrationStatus.FAILED : MigrationStatus.SUCCESS
                 }
@@ -119,6 +120,7 @@ class DefaultMigrationService implements MigrationService {
                         startDate: startDate,
                         endDate: endDate,
                         runningTime: formatRunningTime(endDate.timeInMillis - startDate.timeInMillis),
+                        path: options.path ?: "",
                         results: results
                 )
 
@@ -149,6 +151,7 @@ class DefaultMigrationService implements MigrationService {
             valueMap.put(PN_STATUS, MigrationStatus.RUNNING.name())
             valueMap.put(PN_TRIGGER, options.trigger)
             valueMap.put(PN_START_DATE, Calendar.instance)
+            valueMap.put(PATH, options.path ?: "")
 
             resourceResolver.commit()
         }
@@ -156,7 +159,9 @@ class DefaultMigrationService implements MigrationService {
         def job = jobManager.addJob(MIGRATION_JOB_TOPIC, [
                 (RUN_ID)    : runId,
                 (PN_TRIGGER): options.trigger,
-                (DRY_RUN)   : options.dryRun
+                (DRY_RUN)   : options.dryRun,
+                (PATH)      : options.path ?: "",
+                (DATA)      : options.data ?: ""
         ] as Map<String, Object>)
 
         if (!job) {
@@ -279,42 +284,50 @@ class DefaultMigrationService implements MigrationService {
 
     // script discovery
 
-    private List<Map> findScripts(ResourceResolver resourceResolver) {
+    private List<Map> findScripts(ResourceResolver resourceResolver, String overridePath = null) {
         def scripts = []
 
-        def baseResource = resourceResolver.getResource(scriptsBasePath)
+        def rootPath = overridePath ?: scriptsBasePath
+        def rootResource = resourceResolver.getResource(rootPath)
 
-        if (baseResource) {
-            collectScripts(baseResource, scripts)
+        if (rootResource) {
+            collectScripts(rootResource, scripts)
         } else {
-            LOG.debug("migration scripts base path not found : {}", scriptsBasePath)
+            LOG.debug("migration scripts path not found : {}", rootPath)
         }
 
         scripts.sort { script -> script.path }
     }
 
+    /**
+     * Recursively collects scripts below (or at) the given resource. The resource may be a single script
+     * -- e.g. when a run is scoped to a specific path via {@link MigrationRunOptions#getPath()} -- or a
+     * folder to recurse into, same as the configured scripts base path.
+     */
     private void collectScripts(Resource resource, List<Map> scripts) {
-        resource.listChildren().each { child ->
-            if (child.name.endsWith(EXTENSION_GROOVY)) {
-                if (matchesRunModes(child.name)) {
-                    def content = loadScript(child)
+        if (resource.name.endsWith(EXTENSION_GROOVY)) {
+            addScriptEntry(resource, scripts)
+        } else {
+            resource.listChildren().each { child -> collectScripts(child, scripts) }
+        }
+    }
 
-                    if (content) {
-                        scripts << [
-                                path    : child.path,
-                                content : content,
-                                checksum: checksum(content),
-                                always  : specialTokens(child.name).contains(TOKEN_ALWAYS)
-                        ]
-                    } else {
-                        LOG.warn("migration script has no content : {}", child.path)
-                    }
-                } else {
-                    LOG.debug("skipping migration script due to run mode filter : {}", child.path)
-                }
+    private void addScriptEntry(Resource resource, List<Map> scripts) {
+        if (matchesRunModes(resource.name)) {
+            def content = loadScript(resource)
+
+            if (content) {
+                scripts << [
+                        path    : resource.path,
+                        content : content,
+                        checksum: checksum(content),
+                        always  : specialTokens(resource.name).contains(TOKEN_ALWAYS)
+                ]
             } else {
-                collectScripts(child, scripts)
+                LOG.warn("migration script has no content : {}", resource.path)
             }
+        } else {
+            LOG.debug("skipping migration script due to run mode filter : {}", resource.path)
         }
     }
 
@@ -368,7 +381,7 @@ class DefaultMigrationService implements MigrationService {
 
     // execution
 
-    private List<MigrationScriptResult> executeScripts(ResourceResolver resourceResolver, List<Map> pendingScripts) {
+    private List<MigrationScriptResult> executeScripts(ResourceResolver resourceResolver, List<Map> pendingScripts, String data) {
         def results = []
 
         def failed = false
@@ -389,7 +402,7 @@ class DefaultMigrationService implements MigrationService {
                         error: ""
                 )
             } else {
-                result = executeScript(resourceResolver, script)
+                result = executeScript(resourceResolver, script, data)
                 failed = result.status == MigrationStatus.FAILED
 
                 if (failed) {
@@ -407,7 +420,7 @@ class DefaultMigrationService implements MigrationService {
         results
     }
 
-    private MigrationScriptResult executeScript(ResourceResolver resourceResolver, Map script) {
+    private MigrationScriptResult executeScript(ResourceResolver resourceResolver, Map script, String data) {
         LOG.info("executing migration script : {}", script.path)
 
         def started = System.currentTimeMillis()
@@ -418,7 +431,8 @@ class DefaultMigrationService implements MigrationService {
                 resourceResolver: resourceResolver,
                 outputStream: outputStream,
                 printStream: new PrintStream(outputStream, true, StandardCharsets.UTF_8.name()),
-                script: script.content
+                script: script.content,
+                data: data
         )
 
         def response = groovyConsoleService.runScript(scriptContext)
@@ -476,6 +490,7 @@ class DefaultMigrationService implements MigrationService {
         valueMap.put(PN_END_DATE, run.endDate)
         valueMap.put(PN_RUNNING_TIME, run.runningTime)
         valueMap.put(PN_ERROR, run.error ?: "")
+        valueMap.put(PATH, run.path ?: "")
 
         run.results.eachWithIndex { result, index ->
             def resultName = "${String.format('%03d', index)}-${result.scriptPath.tokenize('/').last()}"

@@ -12,12 +12,14 @@ import io.wcm.testing.mock.aem.junit5.AemContextExtension
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import org.mockito.ArgumentCaptor
 
 import static be.orbinson.aem.groovy.console.migration.MigrationConstants.*
 import static javax.servlet.http.HttpServletResponse.*
 import static org.junit.jupiter.api.Assertions.*
 import static org.mockito.ArgumentMatchers.any
 import static org.mockito.Mockito.mock
+import static org.mockito.Mockito.verify
 import static org.mockito.Mockito.when
 
 @ExtendWith(AemContextExtension.class)
@@ -72,8 +74,28 @@ class MigrationServletTest {
         assertEquals(1, json.executed)
         assertEquals(1, json.failed)
         assertEquals(1, json.skipped)
+        assertEquals("", json.path)
         assertEquals(3, json.results.size())
         assertEquals("SUCCESS", json.results[0].status)
+    }
+
+    @Test
+    void postWithPathAndDataPassesThemToRunOptions() {
+        when(migrationService.hasPermission(any())).thenReturn(true)
+        when(migrationService.run(any(MigrationRunOptions))).thenReturn(migrationRun())
+
+        context.request().parameterMap = [
+                (PATH): "/conf/groovyconsole/scripts/migration/sub",
+                (DATA): '{"foo":"bar"}'
+        ]
+
+        servlet.doPost(context.request(), context.response())
+
+        def optionsCaptor = ArgumentCaptor.forClass(MigrationRunOptions)
+        verify(migrationService).run(optionsCaptor.capture())
+
+        assertEquals("/conf/groovyconsole/scripts/migration/sub", optionsCaptor.value.path)
+        assertEquals('{"foo":"bar"}', optionsCaptor.value.data)
     }
 
     @Test

@@ -47,8 +47,10 @@ script already committed itself (e.g. an explicit `session.save()` halfway) are 
 ## Triggering
 
 - **HTTP API** (CI/CD): `POST /bin/groovyconsole/migration` — synchronous by default, `async=true` returns a
-  `runId` for polling via `GET ?runId=...`, `dryRun=true` previews without executing. `GET ?registry=true` /
-  `?pending=true` expose the per-script state. Returns `409 Conflict` while a run is in progress.
+  `runId` for polling via `GET ?runId=...`, `dryRun=true` previews without executing. `path=...` scopes the run
+  to a single script or folder instead of the configured scripts base path; `data=...` (JSON or plain string) is
+  made available to every script in the run as the `data` binding variable. `GET ?registry=true` / `?pending=true`
+  expose the per-script state. Returns `409 Conflict` while a run is in progress.
 - **Resource listener** (opt-in, disabled by default): enqueues a run automatically when migration scripts
   are added/changed, debounced. Enable via the `MigrationScriptListener` OSGi configuration.
 - **Standalone history page**: `/apps/groovyconsole/migrations.html` shows the run history and per-script
@@ -66,6 +68,15 @@ curl -su admin:admin "http://localhost:4502/bin/groovyconsole/migration?runId=$r
 
 # preview which scripts would run
 curl -u admin:admin -X POST "http://localhost:4502/bin/groovyconsole/migration?dryRun=true"
+
+# run a single script, or everything below a specific folder, instead of the full base path
+curl -u admin:admin -X POST --data-urlencode "path=/conf/groovyconsole/scripts/migration/2025/001-activate-new-templates.groovy" \
+    http://localhost:4502/bin/groovyconsole/migration
+curl -u admin:admin -X POST --data-urlencode "path=/conf/groovyconsole/scripts/migration/2025" \
+    http://localhost:4502/bin/groovyconsole/migration
+
+# pass data to the scripts in the run; available to scripts as the "data" binding (parsed as JSON when possible)
+curl -u admin:admin -X POST --data-urlencode 'data={"tenant":"acme"}' http://localhost:4502/bin/groovyconsole/migration
 
 # inspect the per-script registry state
 curl -u admin:admin "http://localhost:4502/bin/groovyconsole/migration?registry=true"
