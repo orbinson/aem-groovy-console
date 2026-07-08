@@ -50,6 +50,20 @@
             <artifactId>aem-groovy-console-reports-bundle</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <!-- report DSL classes (ReportColumnType, ReportDsl, ReportScriptContext) the sample script and tests use -->
+        <dependency>
+            <groupId>be.orbinson.aem</groupId>
+            <artifactId>aem-groovy-console-reports-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!-- Unit-test the shipped report scripts -->
+        <dependency>
+            <groupId>be.orbinson.aem</groupId>
+            <artifactId>aem-groovy-console-test-support</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <profiles>
