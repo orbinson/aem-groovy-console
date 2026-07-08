@@ -46,16 +46,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Hardened access control across the audit, script save/download, scheduled-jobs and services endpoints: the console
   permission is now enforced consistently, and users can only read or delete their own audit records. Previously an
   authenticated user could access another user's records.
-- Authoring or previewing a **report** now requires the console permission (administrator or an allowed group) on top
-  of JCR write access, so only developers can introduce server-side Groovy; running, viewing and exporting reports
-  still need only JCR access. XLSX export rejects unsafe link schemes.
 
 ### Fixed
 
-- `ScheduledJobsServlet` threw a `NullPointerException` on plain Sling when a scheduled job had no next execution date.
-- CSRF token handling for the modern UI's POST/DELETE requests on AEM author instances.
-- Modern UI and reports stability: the live-output buffer is now bounded, editors and listeners are disposed properly,
-  concurrent history/report refreshes apply in order, and a failed report preview never leaves uncommitted changes.
+- `ScheduledJobsServlet` threw a `NullPointerException` when a scheduled job had no next execution date.
 
 ## [19.1.0] - 2026-05-04
 
