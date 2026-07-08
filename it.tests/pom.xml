@@ -78,9 +78,6 @@
                                     <additionalFeatureFile>${project.build.directory}/cp-conversion/fm.out/aem-groovy-console-migration-all.json</additionalFeatureFile>
                                 </additionalFeatureFiles>
                                 <artifactsOverrides>
-                                    <!-- WORKAROUND: Starter 14 ships jetty12 1.1.8; jetty12.json pins 1.2.0,
-                                         take the highest. Remove once we move to Sling Starter 15. -->
-                                    <artifactsOverride>org.apache.felix:org.apache.felix.http.jetty12:HIGHEST</artifactsOverride>
                                     <artifactsOverride>*:*:HIGHEST</artifactsOverride>
                                 </artifactsOverrides>
                                 <osgiBsnCollisionDetection>true</osgiBsnCollisionDetection>

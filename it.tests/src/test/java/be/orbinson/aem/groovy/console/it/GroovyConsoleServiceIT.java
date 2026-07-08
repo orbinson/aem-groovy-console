@@ -267,7 +267,7 @@ class GroovyConsoleServiceIT {
 
         assertNotNull(response, "Could not get response from API");
         assertEquals("", response.get("exceptionStackTrace").getAsString(),
-                 "groovy-xml fragment extensions not registered");
+                "groovy-xml fragment extensions not registered");
         assertEquals("1", response.get("result").getAsString());
     }
 

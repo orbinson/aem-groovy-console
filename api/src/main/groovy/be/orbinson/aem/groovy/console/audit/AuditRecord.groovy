@@ -11,14 +11,25 @@ class AuditRecord implements RunScriptResponse {
 
     private static final Integer DEPTH_RELATIVE_PATH = 3
 
-    final String path
+    private final String path
 
     @Delegate
-    final RunScriptResponse response
+    private final RunScriptResponse response
 
     AuditRecord(Resource resource) {
         path = resource.path
         response = DefaultRunScriptResponse.fromAuditRecordResource(resource)
+    }
+
+    // explicit (non-final) getters: a `final` field here would otherwise make Groovy generate a `final`
+    // accessor, which bnd-baseline treats as a MAJOR breaking change to this exported package if the
+    // build toolchain ever flips it relative to a previously released jar (see git history for details)
+    String getPath() {
+        path
+    }
+
+    RunScriptResponse getResponse() {
+        response
     }
 
     String getDownloadUrl() {
