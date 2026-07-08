@@ -1,0 +1,210 @@
+:root {
+  /* Adobe Clean is proprietary; use an open fallback stack with the Spectrum look. */
+  --spectrum-sans-font-family-stack: 'Source Sans 3', 'Source Sans Pro', system-ui, -apple-system, 'Segoe UI',
+    Roboto, Helvetica, Arial, sans-serif;
+  --spectrum-code-font-family-stack: 'Source Code Pro', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+}
+
+.gcm-root-theme {
+  display: block;
+  min-height: 100vh;
+  background-color: var(--spectrum-gray-100);
+  color: var(--spectrum-gray-800);
+  font-family: var(--spectrum-sans-font-family-stack);
+}
+
+.gcm-frame {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* ---- app bar ---- */
+
+.gcm-app-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 24px;
+  border-bottom: 1px solid var(--spectrum-gray-300);
+  background: var(--spectrum-gray-50);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.gcm-brand {
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--spectrum-gray-800);
+  text-decoration: none;
+}
+
+.gcm-app-bar-actions {
+  margin-inline-start: auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* ---- page layout ---- */
+
+.gcm-main {
+  flex: 1;
+}
+
+.gcm-page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.gcm-page-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 24px 0 12px;
+}
+
+.gcm-page-header h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.gcm-page-actions {
+  margin-inline-start: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.gcm-breadcrumbs {
+  font-size: 13px;
+  color: var(--spectrum-gray-600);
+  margin-bottom: 8px;
+}
+
+.gcm-breadcrumbs a {
+  color: var(--spectrum-blue-900);
+  text-decoration: none;
+}
+
+.gcm-breadcrumbs a:hover {
+  text-decoration: underline;
+}
+
+.gcm-empty {
+  color: var(--spectrum-gray-600);
+}
+
+/* ---- run metadata ---- */
+
+.gcm-meta {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 4px 16px;
+  margin: 0 0 16px;
+  font-size: 13px;
+}
+
+.gcm-meta dt {
+  font-weight: 600;
+  color: var(--spectrum-gray-700);
+}
+
+.gcm-meta dd {
+  margin: 0;
+}
+
+/* ---- tables ---- */
+
+.gcm-table-wrapper {
+  overflow-x: auto;
+  border: 1px solid var(--spectrum-gray-300);
+  border-radius: 6px;
+}
+
+.gcm-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.gcm-table th,
+.gcm-table td {
+  text-align: left;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--spectrum-gray-200);
+  white-space: nowrap;
+}
+
+.gcm-table th {
+  position: sticky;
+  top: 0;
+  background: var(--spectrum-gray-200);
+  font-weight: 600;
+}
+
+.gcm-table tbody tr:hover {
+  background: var(--spectrum-gray-100);
+}
+
+.gcm-table .gcm-cell-number {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.gcm-cell-empty {
+  color: var(--spectrum-gray-500);
+}
+
+.gcm-table a {
+  color: var(--spectrum-blue-900);
+}
+
+.gcm-cell-script {
+  font-family: var(--spectrum-code-font-family-stack);
+  font-size: 12px;
+  max-width: 420px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gcm-cell-output {
+  white-space: normal;
+  min-width: 280px;
+}
+
+.gcm-output {
+  font-family: var(--spectrum-code-font-family-stack);
+  font-size: 12px;
+  margin: 4px 0;
+  padding: 6px 8px;
+  background: var(--spectrum-gray-75);
+  border-radius: 4px;
+  max-height: 160px;
+  max-width: 480px;
+  overflow: auto;
+  white-space: pre-wrap;
+}
+
+.gcm-output-error {
+  color: var(--spectrum-red-900);
+}
+
+/* ---- toast ---- */
+
+.gcm-toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+}

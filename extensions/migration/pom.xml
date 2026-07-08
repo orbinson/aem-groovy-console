@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>be.orbinson.aem</groupId>
+        <artifactId>aem-groovy-console-extensions</artifactId>
+        <version>19.2.0-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>aem-groovy-console-migration</artifactId>
+    <packaging>pom</packaging>
+    <name>AEM Groovy Console - Migration</name>
+    <description>
+        Deployment migration extension for the AEM Groovy Console, replacing the deprecated AEM Easy Content
+        Upgrade (AECU) project.  Groovy migration scripts deployed below /conf/groovyconsole/scripts/migration
+        execute with checksum-based run-once semantics, in deterministic path order with fail-fast behavior.
+        Deployed as a separate content package on top of the Groovy Console.
+    </description>
+
+    <modules>
+        <module>api</module>
+        <module>bundle</module>
+        <module>ui.config</module>
+        <module>ui.frontend</module>
+        <module>ui.apps</module>
+        <module>ui.content</module>
+        <module>all</module>
+    </modules>
+
+</project>
