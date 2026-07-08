@@ -94,8 +94,8 @@
         <!-- Versions -->
         <bnd.version>6.4.0</bnd.version>
         <aem.version>6.5.10</aem.version>
-        <groovy.version>4.0.31</groovy.version>
-        <asm.version>9.7</asm.version>
+        <groovy.version>4.0.32</groovy.version>
+        <asm.version>9.10.1</asm.version>
         <njord.version>0.9.4</njord.version>
 
         <!-- SonarCloud -->

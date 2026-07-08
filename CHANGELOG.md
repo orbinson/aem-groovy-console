@@ -16,12 +16,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Supports `.always.groovy` re-run scripts and `author`/`publish` run-mode file name tokens. Triggered via
   `POST /bin/groovyconsole/migration` (sync, `async=true` with `runId` polling, or `dryRun=true`), an opt-in
   debounced resource listener on script deployments, and a history UI at `/apps/groovyconsole/migrations.html`
-  (also linked from the AEM Tools console). Run history and the per-script registry are persisted below
-  `/var/groovyconsole/migration`. Installed as its own content package on top of the console; see
-  `extensions/migration/README.md`. `MigrationIT` covers the API on Sling.
+  (also linked from the AEM Tools console). A run can be scoped to a single script or folder via `path=...`
+  (instead of the configured scripts base path), and `data=...` (JSON or plain string, mirroring
+  `AecuService.execute(path, data)`) is made available to every script in the run as the `data` binding
+  variable. Run history and the per-script registry are persisted below `/var/groovyconsole/migration`.
+  Installed as its own content package on top of the console; see `extensions/migration/README.md`.
+  `MigrationIT` covers the API on Sling.
 - **Extension packages** — an `extensions/` area for opt-in features that ship as their own content packages,
   kept out of the console's `all` package so the core install stays lean. The console has no dependency on any
   extension and is fully functional without them.
+
+### Changed
+
+- Upgrade Groovy from 4.0.31 to 4.0.32.
+- Upgrade ASM (vendored for Groovy's runtime bytecode generation) from 9.7 to 9.10.1, for compatibility with
+  newer JVMs (up to Java 25).
 
 ### Security
 
