@@ -360,7 +360,8 @@ executed with **checksum-based run-once semantics**: a script runs when it is ne
 execution was not successful. Scripts execute in deterministic alphanumeric path order with fail-fast behavior.
 Runs are triggered over HTTP (`POST /bin/groovyconsole/migration`, sync or async — ideal for CI/CD pipelines), by
 an opt-in resource listener reacting to script deployments, or from the UI: a migration history page at
-`/apps/groovyconsole/migrations.html` and a Migrations drawer in the modern console.
+`/apps/groovyconsole/migrations.html` (also linked from the AEM Tools console) and a Migrations drawer in the
+modern console.
 
 See **[`extensions/migration/README.md`](extensions/migration/README.md)** for the full documentation — script
 conventions (`.always.groovy`, `author`/`publish` run-mode tokens), the HTTP API and configuration.

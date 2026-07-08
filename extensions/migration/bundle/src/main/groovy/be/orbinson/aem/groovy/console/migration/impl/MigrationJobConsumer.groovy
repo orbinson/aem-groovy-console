@@ -35,7 +35,9 @@ class MigrationJobConsumer implements JobConsumer {
             migrationService.run(new MigrationRunOptions(
                     trigger: job.getProperty(PN_TRIGGER, TRIGGER_API),
                     dryRun: job.getProperty(DRY_RUN, false),
-                    runId: runId
+                    runId: runId,
+                    path: job.getProperty(PATH, ""),
+                    data: job.getProperty(DATA, "")
             ))
         } catch (Exception e) {
             LOG.error("error processing migration job with run ID : $runId", e)

@@ -26,10 +26,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Reports extension** — business-facing reports backed by Groovy scripts: named report definitions with typed
   parameters, asynchronous execution with persisted, paginated results, CSV/XLSX export, and a dedicated business UI.
   Access is governed by JCR permissions on `/conf/groovyconsole/reports`.
-- **Migration extension** — run-once deployment migrations replacing AEM Easy Content Upgrade (AECU): checksum-based
-  run-once Groovy scripts under `/conf/groovyconsole/scripts/migration`, executed in path order with fail-fast retry,
-  `.always` re-run scripts and `author`/`publish` run-mode tokens, triggered via API or a deployment listener, with a
-  run-history UI.
+- **Migration extension** (`aem-groovy-console-migration-all`) — run-once deployment migrations replacing the
+  deprecated AEM Easy Content Upgrade (AECU) project. Groovy scripts deployed below
+  `/conf/groovyconsole/scripts/migration` execute with checksum-based run-once semantics in deterministic path
+  order with fail-fast behavior (failed/skipped scripts stay pending and are retried on the next trigger).
+  Supports `.always.groovy` re-run scripts and `author`/`publish` run-mode file name tokens. Triggered via
+  `POST /bin/groovyconsole/migration` (sync, `async=true` with `runId` polling, or `dryRun=true`), an opt-in
+  debounced resource listener on script deployments, and a history UI at `/apps/groovyconsole/migrations.html`
+  (also linked from the AEM Tools console). A run can be scoped to a single script or folder via `path=...`
+  (instead of the configured scripts base path), and `data=...` (JSON or plain string, mirroring
+  `AecuService.execute(path, data)`) is made available to every script in the run as the `data` binding
+  variable. Run history and the per-script registry are persisted below `/var/groovyconsole/migration`.
+  Installed as its own content package on top of the console; see `extensions/migration/README.md`.
+  `MigrationIT` covers the API on Sling.
 - **Script unit-testing support** — a new `aem-groovy-console-test-support` module: a JUnit 5 / AEM Mocks harness to
   unit-test Groovy Console scripts in a few lines (add a context plugin, run a script, assert on the result). A
   JCR-backed mock is only needed for scripts that actually touch the repository.

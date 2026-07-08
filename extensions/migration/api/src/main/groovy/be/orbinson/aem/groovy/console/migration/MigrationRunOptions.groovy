@@ -16,4 +16,19 @@ class MigrationRunOptions {
 
     /** Optional pre-generated run ID, used for asynchronous runs that are polled by ID. */
     String runId
+
+    /**
+     * Optional path to scope the run to, instead of the configured scripts base path: either a folder to
+     * recurse into (same alphanumeric ordering and run-mode filtering as a full run), or a single script
+     * to run directly. Still subject to the same checksum-based run-once and fail-fast semantics as a full
+     * run. Mirrors {@code AecuService.execute(String path, String data)}.
+     */
+    String path
+
+    /**
+     * Optional JSON or String data made available to every script executed in this run as the "data"
+     * binding variable (see {@code be.orbinson.aem.groovy.console.api.context.ScriptContext#getData()}).
+     * Mirrors {@code AecuService.execute(String path, String data)}.
+     */
+    String data
 }

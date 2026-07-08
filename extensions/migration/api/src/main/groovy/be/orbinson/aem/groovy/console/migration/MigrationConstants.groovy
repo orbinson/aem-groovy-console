@@ -24,6 +24,12 @@ class MigrationConstants {
 
     public static final String PENDING = "pending"
 
+    /** Optional path to scope a run to, instead of the configured scripts base path. */
+    public static final String PATH = "path"
+
+    /** Optional JSON or String data to be made available to scripts as the "data" binding variable. */
+    public static final String DATA = "data"
+
     // triggers
 
     public static final String TRIGGER_API = "API"

@@ -27,6 +27,8 @@ class DefaultMigrationRun implements MigrationRun {
 
     String error = ""
 
+    String path = ""
+
     List<MigrationScriptResult> results = []
 
     static DefaultMigrationRun fromResource(Resource resource) {
@@ -44,6 +46,7 @@ class DefaultMigrationRun implements MigrationRun {
                 endDate: properties.get(PN_END_DATE, Calendar),
                 runningTime: properties.get(PN_RUNNING_TIME, ""),
                 error: properties.get(PN_ERROR, ""),
+                path: properties.get(PATH, ""),
                 results: results
         )
     }
