@@ -3,7 +3,6 @@ package be.orbinson.aem.groovy.console.servlets
 
 import be.orbinson.aem.groovy.console.audit.AuditRecord
 import be.orbinson.aem.groovy.console.audit.AuditService
-import be.orbinson.aem.groovy.console.audit.impl.AuditAccessControl
 import be.orbinson.aem.groovy.console.configuration.ConfigurationService
 import be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants
 import be.orbinson.aem.groovy.console.utils.GroovyScriptUtils
@@ -41,13 +40,7 @@ class AuditServlet extends AbstractJsonResponseServlet {
         def userId = request.getParameter(GroovyConsoleConstants.USER_ID)
 
         if (script) {
-            if (!AuditAccessControl.canAccessAuditRecord(request, userId, configurationService)) {
-                response.status = SC_FORBIDDEN
-
-                return
-            }
-
-            writeJsonResponse(response, auditService.getAuditRecord(userId, script) ?: [:])
+            writeJsonResponse(response, auditService.getAuditRecord(request, userId, script) ?: [:])
         } else {
             writeJsonResponse(response, getAuditRecordsData(request))
         }
@@ -65,13 +58,7 @@ class AuditServlet extends AbstractJsonResponseServlet {
         def userId = request.getParameter(GroovyConsoleConstants.USER_ID)
 
         if (script) {
-            if (!AuditAccessControl.canAccessAuditRecord(request, userId, configurationService)) {
-                response.status = SC_FORBIDDEN
-
-                return
-            }
-
-            auditService.deleteAuditRecord(userId, script)
+            auditService.deleteAuditRecord(request, userId, script)
         } else {
             auditService.deleteAllAuditRecords(request.resourceResolver.userID)
         }

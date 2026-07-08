@@ -1,8 +1,6 @@
 package be.orbinson.aem.groovy.console.servlets
 
 import be.orbinson.aem.groovy.console.audit.AuditService
-import be.orbinson.aem.groovy.console.audit.impl.AuditAccessControl
-import be.orbinson.aem.groovy.console.configuration.ConfigurationService
 import be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants
 import org.apache.sling.api.SlingHttpServletRequest
 import org.apache.sling.api.SlingHttpServletResponse
@@ -13,7 +11,6 @@ import org.osgi.service.component.annotations.Reference
 import javax.servlet.Servlet
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST
-import static javax.servlet.http.HttpServletResponse.SC_FORBIDDEN
 
 @Component(service = Servlet, immediate = true, property = [
         "sling.servlet.paths=/bin/groovyconsole/download"
@@ -23,21 +20,12 @@ class ScriptDownloadServlet extends SlingSafeMethodsServlet {
     @Reference
     private AuditService auditService
 
-    @Reference
-    private ConfigurationService configurationService
-
     @Override
     protected void doGet(SlingHttpServletRequest request, SlingHttpServletResponse response) {
         def userId = request.getParameter(GroovyConsoleConstants.USER_ID)
         def script = request.getParameter(GroovyConsoleConstants.SCRIPT)
 
-        if (!AuditAccessControl.canAccessAuditRecord(request, userId, configurationService)) {
-            response.status = SC_FORBIDDEN
-
-            return
-        }
-
-        def auditRecord = auditService.getAuditRecord(userId, script)
+        def auditRecord = auditService.getAuditRecord(request, userId, script)
 
         if (auditRecord) {
             response.setHeader("Content-Disposition", "attachment; filename=${auditRecord.outputFileName}")
