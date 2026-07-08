@@ -106,12 +106,21 @@ class DefaultConfigurationService implements ConfigurationService {
         resourceResolverFactory.getServiceResourceResolver(null).withCloseable { resourceResolver ->
             def userManager = resourceResolver.adaptTo(UserManager);
             if (userManager != null) {
-                def user = resourceResolver.adaptTo(UserManager).getAuthorizable(request.userPrincipal) as User
-                def memberOfGroupIds = user.memberOf()*.ID
+                def principal = request.userPrincipal
+                def authorizable = principal ? userManager.getAuthorizable(principal) : null
 
-                LOG.debug("member of group IDs : {}, allowed group IDs : {}", memberOfGroupIds, groupIds)
+                if (authorizable instanceof User) {
+                    def user = authorizable as User
+                    def memberOfGroupIds = user.memberOf()*.ID
 
-                user.admin || (groupIds ? memberOfGroupIds.intersect(groupIds as Iterable) : false)
+                    LOG.debug("member of group IDs : {}, allowed group IDs : {}", memberOfGroupIds, groupIds)
+
+                    user.admin || (groupIds ? memberOfGroupIds.intersect(groupIds as Iterable) : false)
+                } else {
+                    LOG.debug("no user found for request principal : {}", principal)
+
+                    false
+                }
             } else {
                 LOG.debug("UserManager not available, probably in a Sling Based application, falling back to is admin check")
                 return request.getResourceResolver().getUserID() == "admin"

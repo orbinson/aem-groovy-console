@@ -43,6 +43,12 @@ class ScheduledJobsServlet extends AbstractJsonResponseServlet {
     @Override
     protected void doGet(SlingHttpServletRequest request, SlingHttpServletResponse response)
             throws ServletException, IOException {
+        if (!configurationService.hasScheduledJobPermission(request)) {
+            response.status = SC_FORBIDDEN
+
+            return
+        }
+
         def scheduledJob = findScheduledJobById(request)
 
         if (scheduledJob) {

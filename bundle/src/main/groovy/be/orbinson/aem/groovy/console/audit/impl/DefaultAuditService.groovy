@@ -128,7 +128,7 @@ class DefaultAuditService implements AuditService {
         def auditRecord = null
 
         withResourceResolver { ResourceResolver resourceResolver ->
-            def auditRecordResource = resourceResolver.getResource("$AUDIT_PATH/$userId").getChild(relativePath)
+            def auditRecordResource = resourceResolver.getResource("$AUDIT_PATH/$userId/$relativePath")
 
             if (auditRecordResource) {
                 auditRecord = new AuditRecord(auditRecordResource)
@@ -241,7 +241,8 @@ class DefaultAuditService implements AuditService {
 
     private static List<AuditRecord> getAuditRecordsForDateRange(List<AuditRecord> auditRecords, Calendar startDate, Calendar endDate) {
         auditRecords.findAll { auditRecord ->
-            def auditRecordDate = auditRecord.date
+            // compare on a copy so the record's own timestamp keeps its time-of-day for later display
+            def auditRecordDate = auditRecord.date.clone() as Calendar
 
             auditRecordDate.set(Calendar.HOUR_OF_DAY, 0)
             auditRecordDate.set(Calendar.MINUTE, 0)
