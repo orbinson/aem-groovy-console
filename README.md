@@ -32,9 +32,12 @@ directly via the `.modern.html` / `.classic.html` selectors. See [Modern UI](#mo
 
 ## Compatibility
 
-AEM Groovy Console 20.x requires **Java 11, 17 or 21** with an embedded Groovy version of 5.0.6.
+AEM Groovy Console 20.x requires **Java 11, 17 or 21** with an embedded Groovy version of 5.x (currently 5.0.6),
+and adds the modern UI, streaming execution, code assistance and the reports extension.
 
-For environments still on Java 8, use AEM Groovy Console 19.x (last release on the Groovy 4.x line).
+Projects still on Java 8, or that need to stay on Groovy 4.x — for example to run this migration extension
+alongside AECU during a transition, see [Migrating from AECU](#migrating-from-aecu) below — should use the 19.x
+line instead: it's the maintenance line, and embeds Groovy 4.x.
 
 Supported versions:
 
@@ -365,6 +368,14 @@ modern console.
 
 See **[`extensions/migration/README.md`](extensions/migration/README.md)** for the full documentation — script
 conventions (`.always.groovy`, `author`/`publish` run-mode tokens), the HTTP API and configuration.
+
+#### Migrating from AECU
+
+If you need to run AECU and this migration extension **on the same AEM instance** during a transition — e.g.
+moving scripts over gradually instead of in one cutover — start on **19.2.0**: AECU hard-depends on Groovy 4.x,
+so it cannot coexist with the 20.x line's Groovy 5.x runtime. Once every script has moved over and AECU is
+uninstalled, you can upgrade to the 20.x line in a second phase to pick up the modern UI, streaming execution,
+code assistance and the reports extension.
 
 ## Registering Additional Metaclasses
 
