@@ -45,15 +45,41 @@ class MigrationIT {
     static void setUp() {
         httpClient = HttpClients.createDefault();
 
-        // Wait for the Sling Starter and the Groovy Console content package to be fully installed.  The health
-        // check alone is not sufficient: bundle refreshes (e.g. Groovy fragment attachment) can briefly unregister
-        // the servlets right after the services become healthy, so also probe the actual endpoints.
-        await().atMost(180, TimeUnit.SECONDS)
-                .pollInterval(5, TimeUnit.SECONDS)
-                .untilAsserted(() -> {
-                    assertTrue(isHealthy(), "System not healthy");
-                    assertTrue(endpointsAvailable(), "Groovy Console endpoints not available");
-                });
+        // Wait for the Sling Starter and the Groovy Console content package to be fully installed and *stable*.
+        // The health check alone is not sufficient: bundle refreshes (e.g. Groovy fragment attachment) can briefly
+        // unregister the servlets right after the services become healthy, so also probe the actual endpoints, and
+        // require a continuous window of successful checks rather than a single one-off success.
+        waitForStableReadiness(300, 15);
+    }
+
+    private static void waitForStableReadiness(long overallTimeoutSec, long stabilityWindowSec) {
+        long deadline = System.currentTimeMillis() + overallTimeoutSec * 1000;
+        long stableSince = -1;
+
+        while (System.currentTimeMillis() < deadline) {
+            boolean ready = isHealthy() && endpointsAvailable();
+            long now = System.currentTimeMillis();
+
+            if (ready) {
+                if (stableSince < 0) {
+                    stableSince = now;
+                } else if (now - stableSince >= stabilityWindowSec * 1000) {
+                    return;
+                }
+            } else {
+                stableSince = -1;
+            }
+
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                fail("Interrupted while waiting for Groovy Console readiness");
+            }
+        }
+
+        fail("Groovy Console did not become stable within " + overallTimeoutSec
+                + "s (need " + stabilityWindowSec + "s of continuous OK)");
     }
 
     @AfterAll
