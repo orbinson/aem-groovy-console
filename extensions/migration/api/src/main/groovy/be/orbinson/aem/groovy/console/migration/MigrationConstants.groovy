@@ -36,6 +36,8 @@ class MigrationConstants {
 
     public static final String TRIGGER_LISTENER = "LISTENER"
 
+    public static final String TRIGGER_JMX = "JMX"
+
     // resource node names
 
     public static final String NN_RESULTS = "results"
