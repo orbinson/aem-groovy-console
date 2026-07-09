@@ -20,7 +20,9 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
+import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.*;
 
 class GroovyConsoleServiceIT {
@@ -34,39 +36,13 @@ class GroovyConsoleServiceIT {
     @BeforeAll
     static void setUp() {
         httpClient = HttpClients.createDefault();
-        waitForStableReadiness(300, 15);
-    }
 
-    /**
-     * Polls the Groovy Console servlet with a no-op script until it has returned 200 OK for a
-     * continuous window. This guards against the Sling Starter package-install refresh cascade
-     * that briefly tears down our bundle: a single OK isn't enough — we need stability before
-     * the test cases start firing requests.
-     */
-    private static void waitForStableReadiness(long overallTimeoutSec, long stabilityWindowSec) {
-        long deadline = System.currentTimeMillis() + overallTimeoutSec * 1000;
-        long stableSince = -1;
-        while (System.currentTimeMillis() < deadline) {
-            boolean ready = isGroovyConsoleReady();
-            long now = System.currentTimeMillis();
-            if (ready) {
-                if (stableSince < 0) {
-                    stableSince = now;
-                } else if (now - stableSince >= stabilityWindowSec * 1000) {
-                    return;
-                }
-            } else {
-                stableSince = -1;
-            }
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                fail("Interrupted while waiting for Groovy Console readiness");
-            }
-        }
-        fail("Groovy Console did not become stable within " + overallTimeoutSec
-                + "s (need " + stabilityWindowSec + "s of continuous OK)");
+        // All bundles/content are pre-converted into the launch feature (cp-converter), so there is no
+        // post-startup content-package install cascade to wait out here -- a single successful check
+        // against the actual servlet is sufficient (see GroovyConsoleReportsIT).
+        await().atMost(180, TimeUnit.SECONDS)
+                .pollInterval(5, TimeUnit.SECONDS)
+                .untilAsserted(() -> assertTrue(isGroovyConsoleReady(), "Groovy Console not ready"));
     }
 
     private static boolean isGroovyConsoleReady() {
