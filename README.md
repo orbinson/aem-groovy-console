@@ -228,9 +228,9 @@ console first). The console works fine without it; installing it adds the migrat
 Groovy migration scripts are deployed via content package below `/conf/groovyconsole/scripts/migration` and
 executed with **checksum-based run-once semantics**: a script runs when it is new, its content changed or its last
 execution was not successful. Scripts execute in deterministic alphanumeric path order with fail-fast behavior.
-Runs are triggered over HTTP (`POST /bin/groovyconsole/migration`, sync or async — ideal for CI/CD pipelines), by
-an opt-in resource listener reacting to script deployments, or from a migration history page at
-`/apps/groovyconsole/migrations.html` (also linked from the AEM Tools console).
+Runs are triggered over HTTP (`POST /bin/groovyconsole/migration`, sync or async — ideal for CI/CD pipelines), a
+JMX MBean (for JConsole or scripted JMX clients), an opt-in resource listener reacting to script deployments, or
+from a migration history page at `/apps/groovyconsole/migrations.html` (also linked from the AEM Tools console).
 
 See **[`extensions/migration/README.md`](extensions/migration/README.md)** for the full documentation — script
 conventions (`.always.groovy`, `author`/`publish` run-mode tokens), the HTTP API and configuration.

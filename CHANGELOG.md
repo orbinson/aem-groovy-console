@@ -14,8 +14,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `/conf/groovyconsole/scripts/migration` execute with checksum-based run-once semantics in deterministic path
   order with fail-fast behavior (failed/skipped scripts stay pending and are retried on the next trigger).
   Supports `.always.groovy` re-run scripts and `author`/`publish` run-mode file name tokens. Triggered via
-  `POST /bin/groovyconsole/migration` (sync, `async=true` with `runId` polling, or `dryRun=true`), an opt-in
-  debounced resource listener on script deployments, and a history UI at `/apps/groovyconsole/migrations.html`
+  `POST /bin/groovyconsole/migration` (sync, `async=true` with `runId` polling, or `dryRun=true`), a JMX MBean
+  (`be.orbinson.aem.groovyconsole:type=Migration`, mirroring `AecuServiceMBean`), an opt-in debounced resource
+  listener on script deployments, and a history UI at `/apps/groovyconsole/migrations.html`
   (also linked from the AEM Tools console). A run can be scoped to a single script or folder via `path=...`
   (instead of the configured scripts base path), and `data=...` (JSON or plain string, mirroring
   `AecuService.execute(path, data)`) is made available to every script in the run as the `data` binding

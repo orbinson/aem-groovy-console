@@ -53,6 +53,10 @@ script already committed itself (e.g. an explicit `session.save()` halfway) are 
   expose the per-script state. Returns `409 Conflict` while a run is in progress.
 - **Resource listener** (opt-in, disabled by default): enqueues a run automatically when migration scripts
   are added/changed, debounced. Enable via the `MigrationScriptListener` OSGi configuration.
+- **JMX** (e.g. JConsole, or a scripted JMX client): `be.orbinson.aem.groovyconsole:type=Migration` exposes
+  `run()`, `run(path)` and `run(path, data)` (synchronous, same semantics as the HTTP API above), plus
+  `isRunning()`, `getPendingScripts()` and `getRuns(count)`. Mirrors `AecuServiceMBean`, adapted to this
+  service's always-run-once-and-fail-fast model (there is no history-bypassing execute mode).
 - **Standalone history page**: `/apps/groovyconsole/migrations.html` shows the run history and per-script
   registry in table format. On AEM the page is also linked from the Tools console.
 
