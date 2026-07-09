@@ -91,6 +91,18 @@ curl -u admin:admin "http://localhost:4502/bin/groovyconsole/migration?registry=
 Triggering requires the `admin` user or membership in one of the groups configured via
 `allowedMigrationGroups` (see below).
 
+## Health checks
+
+Two Apache Felix Health Checks are registered under the `migration` tag (mirroring AECU's
+`LastRunHealthCheck`/`SelfCheckHealthCheck`), queryable as a group via `GET /system/health?tags=migration`
+(or any other Felix HC-compatible client, e.g. the Web Console "Health Check" tab or the
+`org.apache.felix.hc.core.HealthCheckExecutorMBean` JMX MBean):
+
+- **Last Run** (tag `migration-last-run`) — CRITICAL if the most recent run failed, WARN if a run is still in
+  progress, OK if the most recent run succeeded or none has run yet.
+- **Self Check** — CRITICAL if the extension's service user cannot log in or its repository root
+  (`/var/groovyconsole/migration`) is unreachable; independent of any particular run's outcome.
+
 ## Configuration
 
 `be.orbinson.aem.groovy.console.migration.impl.DefaultMigrationService`:

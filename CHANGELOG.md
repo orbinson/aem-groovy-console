@@ -38,6 +38,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (instead of the configured scripts base path), and `data=...` (JSON or plain string, mirroring
   `AecuService.execute(path, data)`) is made available to every script in the run as the `data` binding
   variable. Run history and the per-script registry are persisted below `/var/groovyconsole/migration`.
+  Two Felix Health Checks (tag `migration`) report the last run's outcome and the extension's own service
+  user/repository setup, mirroring AECU's `LastRunHealthCheck`/`SelfCheckHealthCheck`.
   Installed as its own content package on top of the console; see `extensions/migration/README.md`.
   `MigrationIT` covers the API on Sling.
 - **Script unit-testing support** — a new `aem-groovy-console-test-support` module: a JUnit 5 / AEM Mocks harness to

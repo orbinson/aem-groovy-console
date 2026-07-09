@@ -237,6 +237,30 @@ class MigrationIT {
         assertFalse(response.getAsJsonArray("data").isEmpty(), "Expected at least one migration run in the history");
     }
 
+    @Test
+    @Order(9)
+    void testHealthChecksReportOk() throws Exception {
+        // ensure the last run is a successful one regardless of what earlier tests left behind (e.g. the
+        // intentional failure in testFailFastSkipsRemainingScripts), so this assertion is deterministic
+        postMigration(200);
+
+        HttpGet healthCheck = new HttpGet(BASE_URL + "/system/health.json?tags=migration");
+        healthCheck.addHeader("Authorization", AUTH_HEADER);
+
+        try (CloseableHttpResponse response = httpClient.execute(healthCheck)) {
+            assertEquals(200, response.getStatusLine().getStatusCode());
+
+            String body = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
+            JsonObject jsonResponse = JsonParser.parseString(body).getAsJsonObject();
+
+            assertEquals("OK", jsonResponse.get("overallResult").getAsString());
+            assertTrue(body.contains("AEM Groovy Console Migration - Last Run"),
+                    "Expected the last-run health check to be present");
+            assertTrue(body.contains("AEM Groovy Console Migration - Self Check"),
+                    "Expected the self-check health check to be present");
+        }
+    }
+
     private static boolean endpointsAvailable() {
         try {
             // probe the console post servlet
