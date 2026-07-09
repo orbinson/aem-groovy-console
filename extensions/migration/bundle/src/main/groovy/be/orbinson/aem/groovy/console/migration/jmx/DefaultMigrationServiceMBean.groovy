@@ -4,18 +4,18 @@ import be.orbinson.aem.groovy.console.migration.MigrationRun
 import be.orbinson.aem.groovy.console.migration.MigrationRunOptions
 import be.orbinson.aem.groovy.console.migration.MigrationScriptResult
 import be.orbinson.aem.groovy.console.migration.MigrationService
-import com.adobe.granite.jmx.annotation.AnnotatedStandardMBean
 import org.osgi.service.component.annotations.Component
 import org.osgi.service.component.annotations.Reference
 
 import javax.management.NotCompliantMBeanException
+import javax.management.StandardMBean
 
 import static be.orbinson.aem.groovy.console.migration.MigrationConstants.TRIGGER_JMX
 
 @Component(service = MigrationServiceMBean, immediate = true, property = [
         "jmx.objectname=be.orbinson.aem.groovyconsole:type=Migration"
 ])
-class DefaultMigrationServiceMBean extends AnnotatedStandardMBean implements MigrationServiceMBean {
+class DefaultMigrationServiceMBean extends StandardMBean implements MigrationServiceMBean {
 
     @Reference
     private MigrationService migrationService

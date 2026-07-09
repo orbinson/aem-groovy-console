@@ -1,7 +1,5 @@
 package be.orbinson.aem.groovy.console.migration.jmx
 
-import com.adobe.granite.jmx.annotation.Description
-import com.adobe.granite.jmx.annotation.Name
 import org.osgi.annotation.versioning.ProviderType
 
 /**
@@ -9,30 +7,51 @@ import org.osgi.annotation.versioning.ProviderType
  * Mirrors {@code de.valtech.aecu.core.jmx.AecuServiceMBean}, adapted to this service's run-once/fail-fast model
  * (there is no "bypass history" execution mode: every run, however triggered, respects the same checksum-based
  * run-once and fail-fast semantics as an HTTP-triggered run).
+ * <p>
+ * Registered as a plain "Standard MBean" (this interface's simple name + the "MBean" suffix, per the JMX naming
+ * convention) rather than via an annotated/dynamic MBean base class, so this stays dependency-free and works the
+ * same on plain Sling and on AEM.
  */
-@Description("AEM Groovy Console - Migration Extension")
 @ProviderType
 interface MigrationServiceMBean {
 
-    @Description("Returns true if a migration run is currently in progress")
+    /**
+     * Returns true if a migration run is currently in progress.
+     */
     boolean isRunning()
 
-    @Description("Returns the paths of all scripts that are currently pending (new, changed or previously failed)")
+    /**
+     * Returns the paths of all scripts that are currently pending (new, changed or previously failed).
+     */
     List<String> getPendingScripts()
 
-    @Description("Runs all pending migration scripts synchronously and returns a summary of the result")
+    /**
+     * Runs all pending migration scripts synchronously and returns a summary of the result.
+     */
     String run()
 
-    @Description("Runs the pending scripts below the given path (a single script or a folder) instead of the " +
-            "configured scripts base path, and returns a summary of the result")
-    String run(@Name("Path") @Description("Path to a single script or folder to run") String path)
+    /**
+     * Runs the pending scripts below the given path (a single script or a folder) instead of the configured
+     * scripts base path, and returns a summary of the result.
+     *
+     * @param path path to a single script or folder to run
+     */
+    String run(String path)
 
-    @Description("Same as run(Path), and makes the given JSON or plain string data available to every script in " +
-            "the run as the \"data\" binding variable")
-    String run(@Name("Path") @Description("Path to a single script or folder to run") String path,
-               @Name("Data") @Description("JSON or plain string data, bound as \"data\" in every script") String data)
+    /**
+     * Same as {@link #run(String)}, and makes the given JSON or plain string data available to every script in
+     * the run as the "data" binding variable.
+     *
+     * @param path path to a single script or folder to run
+     * @param data JSON or plain string data, bound as "data" in every script
+     */
+    String run(String path, String data)
 
-    @Description("Returns a summary of the most recent migration runs, newest first")
-    String getRuns(@Name("Count") @Description("Maximum number of runs to include") int count)
+    /**
+     * Returns a summary of the most recent migration runs, newest first.
+     *
+     * @param count maximum number of runs to include
+     */
+    String getRuns(int count)
 
 }
