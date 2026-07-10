@@ -9,6 +9,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Supplier;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.jcr.Session;
 import javax.jcr.query.Query;
@@ -48,6 +50,9 @@ public class QueryPlanAuditor implements QueryAuditService {
     private static final String EXECUTE_PREFIX = "query execute ";
 
     private static final String INTERNAL_MARKER = "oak-internal";
+
+    /** Oak logs an XPath query as its JCR-SQL2 conversion with the original appended as a trailing comment. */
+    private static final Pattern XPATH_COMMENT = Pattern.compile("/\\* xpath: (.*) \\*/\\s*$", Pattern.DOTALL);
 
     /** Oak's query engine logger and AEM's QueryBuilder logger. */
     private static final List<String> QUERY_LOGGERS = Arrays.asList(
@@ -96,7 +101,15 @@ public class QueryPlanAuditor implements QueryAuditService {
 
         List<AuditedQuery> results = new ArrayList<>();
         for (String statement : collectStatements(appender.list, marker)) {
-            results.add(new AuditedQuery(statement, explain(session, statement)));
+            String language = isSql2(statement) ? Query.JCR_SQL2 : Query.XPATH;
+            String plan = explain(session, statement, language);
+            // Report a converted XPath query as its original statement (the plan is the same either way).
+            Matcher xpath = XPATH_COMMENT.matcher(statement);
+            if (xpath.find()) {
+                results.add(new AuditedQuery(xpath.group(1), Query.XPATH, plan));
+            } else {
+                results.add(new AuditedQuery(statement, language, plan));
+            }
         }
         return new AuditResult<>(workResult, results);
     }
@@ -123,8 +136,7 @@ public class QueryPlanAuditor implements QueryAuditService {
      * statements as JCR-SQL2 (it converts XPath internally), but AEM's QueryBuilder logs XPath, so the language is
      * detected rather than assumed — and the reported statement/plan are then in whatever language Oak executed.
      */
-    private static String explain(Session session, String statement) {
-        String language = isSql2(statement) ? Query.JCR_SQL2 : Query.XPATH;
+    private static String explain(Session session, String statement, String language) {
         try {
             return session.getWorkspace().getQueryManager()
                     .createQuery("explain " + statement, language)

@@ -19,13 +19,23 @@ An extension may only touch the console through its **public APIs** — never by
 |---|---|---|
 | Script execution | `GroovyConsoleService.runScript(ScriptContext)` | Run Groovy with all console bindings, star imports, metaclasses, timeout and audit. |
 | Bindings / imports / metaclasses | `BindingExtensionProvider`, `StarImportExtensionProvider`, `CompilationCustomizerExtensionProvider`, `ScriptMetaClassExtensionProvider` | Add your own bindings/imports for scripts your extension runs (gate on your own `ScriptContext` marker type). |
-| Modern UI panels | `be.orbinson.aem.groovy.console.api.ConsoleUiExtensionProvider` (OSGi service returning ES module URLs) | Contribute a panel to the console's activity rail. |
+| Modern UI hooks | `be.orbinson.aem.groovy.console.api.ConsoleUiExtensionProvider` (OSGi service returning ES module URLs) | Contribute activity-rail panels, run actions, and output-dock result tabs to the console. |
 | Its own pages/endpoints | Path-bound Sling servlets under your own path | Serve your extension's UI shell and JSON API; they exist only when the extension is installed. |
 
-On the frontend, an announced module is loaded dynamically by the console SPA and registers panels via the
-`window.GroovyConsole.registerPanel({ id, title, element, iconHtml })` global. Panels are self-contained custom
-elements and talk to the shell **only through DOM events** — `gc-set-script` (`{ script, message? }`) and
-`gc-toast` (`{ message, variant? }`) — never via imports. The console stays fully functional with no providers.
+On the frontend, an announced module is loaded dynamically by the console SPA and registers its hooks via the
+`window.GroovyConsole` global:
+
+- `registerPanel({ id, title, element, iconHtml })` — a drawer panel behind an activity-rail button (see reports).
+- `registerRunAction({ id, label, run })` — an entry in the Run button's options menu (the chevron only appears
+  when at least one action is registered). `run({ script, data })` executes the current script your way and
+  resolves to a `RunScriptResponse`-shaped object; extra fields are kept on the stored result.
+- `registerRunResultTab({ id, label, element, isRelevant })` — a tab in the output dock next to Log/Result, shown
+  when `isRelevant(result)` is true (typically: your run action attached an extra field). The dock renders your
+  custom element and assigns the run result to its `result` property (see query-audit).
+
+Panels and result tabs are self-contained custom elements and talk to the shell **only through DOM events** —
+`gc-set-script` (`{ script, message? }`) and `gc-toast` (`{ message, variant? }`) — never via imports. The console
+stays fully functional with no providers.
 
 ## Module layout (mirror `reports/`)
 
@@ -59,8 +69,9 @@ the extension bundle (so the page only exists when the extension is installed).
    `ServiceUserMapper` amendment. Enforce permissions in every servlet *before* any service-resolver read.
 6. **Optional 3rd-party deps** (e.g. POI): isolate them in a separate bundle with wide OSGi import ranges so the
    core extension degrades gracefully when the provider is absent (see `reports/exporter-xlsx`).
-7. **UI panel** (optional): register a `ConsoleUiExtensionProvider` returning your ES module URL(s); build the
-   module as a Vite entry; register panels via `window.GroovyConsole.registerPanel(...)`.
+7. **UI hooks** (optional): register a `ConsoleUiExtensionProvider` returning your ES module URL(s); build the
+   module as a Vite entry (or ship a plain ES module like query-audit); register panels, run actions, and result
+   tabs via the `window.GroovyConsole` globals described above.
 8. **Package**: the `all` module embeds your bundles + content packages into a single
    `aem-groovy-console-<name>-all` zip. Do **not** add it to the console's `all` package.
 9. **Tests**:

@@ -1,9 +1,13 @@
 import { html, LitElement, nothing } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
+import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 import type { RunScriptResponse, TableResult } from '../api/types';
+import { getRunResultTabs, onExtensionsChanged } from '../extensions/registry';
+import type { ConsoleRunResultTabExtension, ExtendedRunResult } from '../extensions/registry';
 import { store, StoreController } from '../state/store';
 
-type DockTab = 'result' | 'log' | 'trace' | 'table';
+/** Built-in tab ids, or the id of an extension-registered result tab. */
+type DockTab = 'result' | 'log' | 'trace' | 'table' | string;
 
 function parseTable(result?: string): TableResult | null {
   if (!result) {
@@ -25,9 +29,28 @@ export class GcResult extends LitElement {
   @state() private selectedTab: DockTab = 'log';
 
   private lastResult: RunScriptResponse | null = null;
+  private unsubscribeExtensions?: () => void;
 
   createRenderRoot(): this {
     return this;
+  }
+
+  connectedCallback(): void {
+    super.connectedCallback();
+    this.unsubscribeExtensions = onExtensionsChanged(() => this.requestUpdate());
+  }
+
+  disconnectedCallback(): void {
+    this.unsubscribeExtensions?.();
+    super.disconnectedCallback();
+  }
+
+  /** Extension result tabs that apply to the given run result (e.g. Query audit after an audited run). */
+  private relevantExtensionTabs(result: RunScriptResponse | null): ConsoleRunResultTabExtension[] {
+    if (!result) {
+      return [];
+    }
+    return getRunResultTabs().filter((tab) => tab.isRelevant(result as ExtendedRunResult));
   }
 
   protected willUpdate(): void {
@@ -35,10 +58,13 @@ export class GcResult extends LitElement {
 
     if (result !== this.lastResult) {
       this.lastResult = result;
-      // Default to the Log (output) tab — it's what's wanted most of the time. Errors still
-      // jump to the trace; tables and the raw result are available as secondary tabs.
+      const extensionTabs = this.relevantExtensionTabs(result);
+      // Default to the Log (output) tab — it's what's wanted most of the time. Errors still jump to the
+      // trace; a relevant extension tab (present only for that extension's run mode) beats the log.
       if (result?.exceptionStackTrace?.length) {
         this.selectedTab = 'trace';
+      } else if (extensionTabs.length) {
+        this.selectedTab = extensionTabs[0].id;
       } else if (result?.output?.length) {
         this.selectedTab = 'log';
       } else if (parseTable(result?.result)) {
@@ -131,6 +157,15 @@ export class GcResult extends LitElement {
       const body = this.querySelector('.gc-dock-body');
       body?.scrollTo({ top: body.scrollHeight });
     }
+
+    // extension result tab: hand the run result to the extension's element (it renders itself)
+    const extensionTab = getRunResultTabs().find((tab) => tab.id === this.selectedTab);
+    if (extensionTab) {
+      const element = this.querySelector(extensionTab.element) as (HTMLElement & { result?: unknown }) | null;
+      if (element && element.result !== this.store.state.result) {
+        element.result = this.store.state.result;
+      }
+    }
   }
 
   protected render() {
@@ -164,14 +199,17 @@ export class GcResult extends LitElement {
     const table = parseTable(response.result);
     const error = !!response.exceptionStackTrace?.length;
 
+    const extensionTabs = this.relevantExtensionTabs(response);
     const tabs: Array<{ id: DockTab; label: string; show: boolean }> = [
       { id: 'log', label: 'Log', show: !!response.output?.length },
       { id: 'result', label: 'Result', show: !table && !!response.result?.length },
       { id: 'table', label: 'Table', show: !!table },
       { id: 'trace', label: 'Trace', show: error },
+      ...extensionTabs.map((tab) => ({ id: tab.id, label: tab.label, show: true })),
     ];
     const visibleTabs = tabs.filter((tab) => tab.show);
     const active = this.activeContent(response);
+    const selectedExtensionTab = extensionTabs.find((tab) => tab.id === this.selectedTab);
 
     return html`
       <div class="gc-dock ${error ? 'gc-dock-error' : ''}">
@@ -205,15 +243,17 @@ export class GcResult extends LitElement {
             : nothing}
         </div>
         <div class="gc-dock-body">
-          ${this.selectedTab === 'table' && table
-            ? this.renderTable(table)
-            : this.selectedTab === 'trace' && active
-              ? this.renderTrace(active.text)
-              : active
-                ? html`<pre class="gc-dock-pre">${active.text}</pre>`
-                : visibleTabs.length === 0
-                  ? html`<div class="gc-dock-empty">Script completed without output.</div>`
-                  : nothing}
+          ${selectedExtensionTab
+            ? unsafeHTML(`<${selectedExtensionTab.element}></${selectedExtensionTab.element}>`)
+            : this.selectedTab === 'table' && table
+              ? this.renderTable(table)
+              : this.selectedTab === 'trace' && active
+                ? this.renderTrace(active.text)
+                : active
+                  ? html`<pre class="gc-dock-pre">${active.text}</pre>`
+                  : visibleTabs.length === 0
+                    ? html`<div class="gc-dock-empty">Script completed without output.</div>`
+                    : nothing}
         </div>
       </div>
     `;

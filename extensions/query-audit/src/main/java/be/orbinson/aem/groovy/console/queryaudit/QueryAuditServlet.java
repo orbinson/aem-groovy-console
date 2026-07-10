@@ -40,9 +40,9 @@ import be.orbinson.aem.groovy.console.response.RunScriptResponse;
  * Oak repository has an index that covers it. Same permission model as script execution.
  * <p>
  * {@code POST /bin/groovyconsole/query-audit} with either a {@code script} (source) or a {@code scriptPath} (JCR path
- * of a saved/deployed script). Returns JSON:
+ * of a saved/deployed script), plus an optional {@code data} parameter (same as a normal console run). Returns JSON:
  * <pre>
- * { "output": "...", "exceptionStackTrace": "",
+ * { "result": "...", "output": "...", "exceptionStackTrace": "", "runningTime": "...",
  *   "queries": [ { "statement": "...", "plan": "...", "needsIndex": true } ] }
  * </pre>
  * {@code needsIndex=true} means Oak had to traverse — no index on this instance covers that query.
@@ -108,8 +108,10 @@ public class QueryAuditServlet extends SlingAllMethodsServlet {
     private void writeReport(SlingHttpServletResponse response, RunScriptResponse runScriptResponse,
                              List<AuditedQuery> queries) throws IOException {
         Map<String, Object> report = new LinkedHashMap<>();
+        report.put("result", runScriptResponse != null ? runScriptResponse.getResult() : null);
         report.put("output", runScriptResponse != null ? runScriptResponse.getOutput() : null);
         report.put("exceptionStackTrace", runScriptResponse != null ? runScriptResponse.getExceptionStackTrace() : null);
+        report.put("runningTime", runScriptResponse != null ? runScriptResponse.getRunningTime() : null);
         List<Map<String, Object>> auditedQueries = new ArrayList<>();
         for (AuditedQuery query : queries) {
             auditedQueries.add(query.toMap());

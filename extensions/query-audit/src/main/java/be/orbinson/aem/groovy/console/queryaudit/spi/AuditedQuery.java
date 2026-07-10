@@ -10,15 +10,22 @@ import org.osgi.annotation.versioning.ProviderType;
 public final class AuditedQuery {
 
     private final String statement;
+    private final String language;
     private final String plan;
 
-    public AuditedQuery(String statement, String plan) {
+    public AuditedQuery(String statement, String language, String plan) {
         this.statement = statement;
+        this.language = language;
         this.plan = plan;
     }
 
     public String getStatement() {
         return statement;
+    }
+
+    /** The JCR query language of the statement, e.g. {@code JCR-SQL2} or {@code xpath}. */
+    public String getLanguage() {
+        return language;
     }
 
     public String getPlan() {
@@ -33,6 +40,7 @@ public final class AuditedQuery {
     public Map<String, Object> toMap() {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("statement", statement);
+        map.put("language", language);
         map.put("plan", plan);
         map.put("needsIndex", isNeedsIndex());
         return map;

@@ -1,98 +1,123 @@
 /*
- * Query-audit panel for the modern AEM Groovy Console.
+ * Query-audit integration for the modern AEM Groovy Console.
  *
- * Self-contained ES module (no build step, no framework): defines the <query-audit-panel> custom element and
- * registers it in the console's activity rail. The panel POSTs a script to /bin/groovyconsole/query-audit and shows,
- * per JCR query the script runs, whether the live Oak instance has an index that covers it.
+ * Self-contained ES module (no build step, no framework). Registers with the console shell:
+ *
+ *  - a run action "Run with query audit" in the Run button's options menu — POSTs the active script to
+ *    /bin/groovyconsole/query-audit, which executes it while capturing every JCR query it runs
+ *  - a "Query audit" result tab in the output dock (next to Log/Result) rendered by the
+ *    <query-audit-result> custom element, showing per query whether an Oak index covers it
  */
 (() => {
   const ENDPOINT = '/bin/groovyconsole/query-audit';
 
-  const ICON =
-    '<svg viewBox="0 0 18 18" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5">' +
-    '<path d="M2 4h10M2 8h7M2 12h5"/><circle cx="13" cy="12" r="3"/><path d="M15.2 14.2L17 16"/></svg>';
-
-  class QueryAuditPanel extends HTMLElement {
-    connectedCallback() {
-      if (this.dataset.ready) {
-        return;
-      }
-      this.dataset.ready = 'true';
-      this.innerHTML = `
-        <style>
-          .qa { display: flex; flex-direction: column; gap: 12px; padding: 12px; font: 13px/1.4 system-ui, sans-serif; }
-          .qa button { align-self: flex-start; padding: 6px 14px; cursor: pointer; }
-          .qa table { width: 100%; border-collapse: collapse; }
-          .qa th, .qa td { text-align: left; padding: 6px 8px; border-bottom: 1px solid rgba(128,128,128,.3); vertical-align: top; }
-          .qa td.stmt { font-family: monospace; white-space: pre-wrap; word-break: break-word; }
-          .qa .needs { color: #d7373f; font-weight: 600; }
-          .qa .ok { color: #268e6c; font-weight: 600; }
-          .qa .msg { opacity: .8; }
-        </style>
-        <div class="qa">
-          <button type="button">Audit active script</button>
-          <div class="results msg">Runs the script currently in the editor and reports, per JCR query, whether an Oak index covers it.</div>
-        </div>`;
-
-      this._results = this.querySelector('.results');
-      this.querySelector('button').addEventListener('click', () => this._audit());
+  class QueryAuditResult extends HTMLElement {
+    get result() {
+      return this._result;
     }
 
-    async _audit() {
-      const script = (window.GroovyConsole?.getScript?.() ?? '').trim();
-      if (!script) {
-        this._results.className = 'results msg';
-        this._results.textContent = 'The editor is empty — nothing to audit.';
+    set result(value) {
+      if (value === this._result) {
         return;
       }
-
-      this._results.className = 'results msg';
-      this._results.textContent = 'Auditing…';
-
-      try {
-        const response = await fetch(ENDPOINT, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: 'script=' + encodeURIComponent(script),
-        });
-        if (!response.ok) {
-          throw new Error('HTTP ' + response.status);
-        }
-        this._render(await response.json());
-      } catch (e) {
-        this._results.className = 'results msg';
-        this._results.textContent = 'Audit failed: ' + e.message;
-      }
+      this._result = value;
+      this._render(value?.queryAudit);
     }
 
-    _render(report) {
-      if (report.exceptionStackTrace) {
-        this._results.className = 'results msg';
-        this._results.textContent = 'Script failed:\n' + report.exceptionStackTrace;
+    _render(queries) {
+      if (!Array.isArray(queries)) {
+        this.innerHTML = '';
         return;
       }
 
-      const queries = report.queries || [];
-      if (!queries.length) {
-        this._results.className = 'results msg';
-        this._results.textContent = 'The script executed no JCR queries.';
-        return;
-      }
+      const needing = queries.filter((query) => query.needsIndex).length;
+      const summary = !queries.length
+        ? 'The script executed no JCR queries.'
+        : needing
+          ? `${queries.length} ${plural(queries.length, 'query', 'queries')} — ${needing} not covered by an Oak index`
+          : `All ${queries.length} ${plural(queries.length, 'query is', 'queries are')} covered by an Oak index`;
 
-      this._results.className = 'results';
       const rows = queries
         .map(
-          (q) =>
-            `<tr><td class="${q.needsIndex ? 'needs' : 'ok'}">${q.needsIndex ? 'needs index' : 'indexed'}</td>` +
-            `<td class="stmt">${escapeHtml(q.statement)}</td>` +
-            `<td class="stmt">${escapeHtml(q.plan)}</td></tr>`
+          (query) => `
+            <div class="qa-row">
+              <span class="qa-badge ${query.needsIndex ? 'qa-needs' : 'qa-ok'}">
+                ${query.needsIndex ? 'needs index' : 'indexed'}
+              </span>
+              <div class="qa-detail">
+                <code class="qa-statement">${escapeHtml(query.statement)}</code>
+                <div class="qa-meta">
+                  ${query.language ? `<span class="qa-lang">${escapeHtml(displayLanguage(query.language))}</span>` : ''}
+                  <details class="qa-plan">
+                    <summary>Oak plan</summary>
+                    <pre>${highlightTraverse(escapeHtml(query.plan))}</pre>
+                  </details>
+                </div>
+              </div>
+            </div>`
         )
         .join('');
-      this._results.innerHTML =
-        '<table><thead><tr><th>Index</th><th>Query</th><th>Oak plan</th></tr></thead><tbody>' +
-        rows +
-        '</tbody></table>';
+
+      this.innerHTML = `
+        <style>
+          /* match the dock's built-in tabs: .gc-dock-pre pads 10px 14px inside the unpadded dock body */
+          query-audit-result { display: block; padding: 10px 14px; font-size: 13px; }
+          query-audit-result .qa-summary { margin: 0 0 8px; font-weight: 600; }
+          query-audit-result .qa-summary.qa-warn { color: var(--spectrum-negative-content-color-default, #d7373f); }
+          query-audit-result .qa-summary.qa-good { color: var(--spectrum-positive-content-color-default, #268e6c); }
+          query-audit-result .qa-row {
+            display: flex; align-items: flex-start; gap: 10px;
+            padding: 8px 0; border-top: 1px solid var(--spectrum-gray-200, rgba(128, 128, 128, 0.25));
+          }
+          query-audit-result .qa-badge {
+            flex: none; box-sizing: border-box; min-width: 92px; margin-top: 1px; padding: 2px 8px;
+            border-radius: 10px; text-align: center;
+            font-size: 11px; font-weight: 700; white-space: nowrap; color: #fff;
+          }
+          query-audit-result .qa-needs { background: var(--spectrum-negative-background-color-default, #d7373f); }
+          query-audit-result .qa-ok { background: var(--spectrum-positive-background-color-default, #268e6c); }
+          query-audit-result .qa-detail { min-width: 0; flex: 1; }
+          query-audit-result .qa-statement {
+            display: block; font-family: var(--spectrum-code-font-family-stack, ui-monospace, Menlo, monospace);
+            font-size: 12px; white-space: pre-wrap; word-break: break-word;
+          }
+          query-audit-result .qa-meta { display: flex; align-items: baseline; gap: 10px; margin-top: 4px; }
+          query-audit-result .qa-lang {
+            flex: none; padding: 1px 6px; border-radius: 4px;
+            border: 1px solid var(--spectrum-gray-300, rgba(128, 128, 128, 0.4));
+            font-size: 10px; font-weight: 600; letter-spacing: 0.3px; opacity: 0.75;
+          }
+          query-audit-result .qa-plan { flex: 1; min-width: 0; }
+          query-audit-result .qa-plan summary { cursor: pointer; font-size: 12px; opacity: 0.75; }
+          query-audit-result .qa-plan pre {
+            margin: 4px 0 0; padding: 6px 10px; border-radius: 0 4px 4px 0;
+            border-left: 3px solid var(--spectrum-gray-300, rgba(128, 128, 128, 0.4));
+            background: var(--spectrum-gray-100, rgba(128, 128, 128, 0.12));
+            font-family: var(--spectrum-code-font-family-stack, ui-monospace, Menlo, monospace);
+            font-size: 12px; white-space: pre-wrap; word-break: break-word;
+          }
+          query-audit-result .qa-plan mark {
+            background: transparent; font-weight: 700;
+            color: var(--spectrum-negative-content-color-default, #d7373f);
+          }
+        </style>
+        <div class="qa-summary ${!queries.length ? '' : needing ? 'qa-warn' : 'qa-good'}">${summary}</div>
+        ${rows}`;
     }
+  }
+
+  function plural(count, singular, pluralForm) {
+    return count === 1 ? singular : pluralForm;
+  }
+
+  /** The backend reports JCR language constants ("JCR-SQL2", "xpath"); prettify the lowercase ones. */
+  function displayLanguage(language) {
+    return language === 'xpath' ? 'XPath' : language;
+  }
+
+  /** Emphasize the traversal marker inside an (already escaped) Oak plan. */
+  function highlightTraverse(escapedPlan) {
+    return escapedPlan.replace(/traverse/gi, (match) => `<mark>${match}</mark>`);
   }
 
   function escapeHtml(value) {
@@ -102,16 +127,44 @@
       .replaceAll('>', '&gt;');
   }
 
-  if (!customElements.get('query-audit-panel')) {
-    customElements.define('query-audit-panel', QueryAuditPanel);
+  /** Run the script through the query-audit endpoint; the report becomes the console's run result. */
+  async function runWithQueryAudit({ script, data }) {
+    const body = new URLSearchParams({ script, data: data ?? '' });
+    const response = await fetch(ENDPOINT, { method: 'POST', body });
+    if (!response.ok) {
+      throw new Error('HTTP ' + response.status);
+    }
+    const report = await response.json();
+    if (report.error) {
+      throw new Error(report.error);
+    }
+    return {
+      result: report.result,
+      output: report.output,
+      exceptionStackTrace: report.exceptionStackTrace,
+      runningTime: report.runningTime,
+      queryAudit: report.queries || [],
+    };
   }
 
-  if (window.GroovyConsole && typeof window.GroovyConsole.registerPanel === 'function') {
-    window.GroovyConsole.registerPanel({
+  if (!customElements.get('query-audit-result')) {
+    customElements.define('query-audit-result', QueryAuditResult);
+  }
+
+  const console_ = window.GroovyConsole;
+  if (typeof console_?.registerRunAction === 'function' && typeof console_?.registerRunResultTab === 'function') {
+    console_.registerRunAction({
       id: 'query-audit',
-      title: 'Query audit',
-      element: 'query-audit-panel',
-      iconHtml: ICON,
+      label: 'Run with query audit',
+      run: runWithQueryAudit,
     });
+    console_.registerRunResultTab({
+      id: 'query-audit',
+      label: 'Query audit',
+      element: 'query-audit-result',
+      isRelevant: (result) => Array.isArray(result?.queryAudit),
+    });
+  } else {
+    console.warn('[query-audit] this console version does not support run actions — update the AEM Groovy Console.');
   }
 })();

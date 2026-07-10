@@ -102,6 +102,25 @@ body {
   background: var(--spectrum-gray-200);
 }
 
+/* Split Run button: primary Run + attached options chevron (only rendered when extensions register run actions).
+   The group background shows through the 1px gap as the divider between the two segments. */
+.gc-run-group {
+  display: inline-flex;
+  gap: 1px;
+  border-radius: 16px;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+/* direct child only: the chevron sits nested inside .gc-overflow and must not pick up the left rounding */
+.gc-run-group > sp-button {
+  --mod-button-border-radius: 16px 0 0 16px;
+}
+
+.gc-run-group .gc-run-more {
+  --mod-button-border-radius: 0 16px 16px 0;
+  min-width: 0;
+}
+
 .gc-classic-link {
   font-size: 13px;
   color: var(--spectrum-blue-900);

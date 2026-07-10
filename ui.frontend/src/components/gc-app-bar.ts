@@ -2,17 +2,23 @@ import { html, LitElement, nothing } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { config } from '../config';
 import { StoreController } from '../state/store';
+import { getRunActions, onExtensionsChanged } from '../extensions/registry';
+import type { ConsoleRunActionExtension } from '../extensions/registry';
 
 /** Top app bar: brand, current script name, primary Run action, theme switch, and a file menu. */
 @customElement('gc-app-bar')
 export class GcAppBar extends LitElement {
   private store = new StoreController(this);
+  private unsubscribeExtensions?: () => void;
 
   @state() private menuOpen = false;
+  @state() private runMenuOpen = false;
+  @state() private runActions: readonly ConsoleRunActionExtension[] = getRunActions();
 
   private outsideClickListener = (event: MouseEvent): void => {
-    if (this.menuOpen && !this.contains(event.target as Node)) {
+    if ((this.menuOpen || this.runMenuOpen) && !this.contains(event.target as Node)) {
       this.menuOpen = false;
+      this.runMenuOpen = false;
     }
   };
 
@@ -23,16 +29,23 @@ export class GcAppBar extends LitElement {
   connectedCallback(): void {
     super.connectedCallback();
     window.addEventListener('click', this.outsideClickListener);
+    this.unsubscribeExtensions = onExtensionsChanged(() => (this.runActions = [...getRunActions()]));
   }
 
   disconnectedCallback(): void {
     window.removeEventListener('click', this.outsideClickListener);
+    this.unsubscribeExtensions?.();
     super.disconnectedCallback();
   }
 
   private emit(name: string): void {
     this.menuOpen = false;
     this.dispatchEvent(new CustomEvent(name, { bubbles: true, composed: true }));
+  }
+
+  private emitRunAction(actionId: string): void {
+    this.runMenuOpen = false;
+    this.dispatchEvent(new CustomEvent('gc-run-action', { detail: { actionId }, bubbles: true, composed: true }));
   }
 
   protected render() {
@@ -46,11 +59,47 @@ export class GcAppBar extends LitElement {
         </span>
 
         <div class="gc-app-bar-actions">
-          <sp-button variant="accent" size="m" ?disabled=${running} @click=${() => this.emit('gc-run')}>
-            ${running
-              ? html`<sp-progress-circle indeterminate size="s" slot="icon"></sp-progress-circle> Running…`
-              : 'Run'}
-          </sp-button>
+          <div class="gc-run-group">
+            <sp-button variant="accent" size="m" ?disabled=${running} @click=${() => this.emit('gc-run')}>
+              ${running
+                ? html`<sp-progress-circle indeterminate size="s" slot="icon"></sp-progress-circle> Running…`
+                : 'Run'}
+            </sp-button>
+            ${this.runActions.length
+              ? html`
+                  <div class="gc-overflow">
+                    <sp-button
+                      class="gc-run-more"
+                      variant="accent"
+                      size="m"
+                      ?disabled=${running}
+                      aria-label="More run options"
+                      aria-haspopup="true"
+                      aria-expanded=${this.runMenuOpen}
+                      @click=${(event: Event) => {
+                        event.stopPropagation();
+                        this.runMenuOpen = !this.runMenuOpen;
+                      }}
+                    >
+                      ▾
+                    </sp-button>
+                    ${this.runMenuOpen
+                      ? html`
+                          <div class="gc-overflow-menu" role="menu">
+                            ${this.runActions.map(
+                              (action) => html`
+                                <button role="menuitem" @click=${() => this.emitRunAction(action.id)}>
+                                  ${action.label}
+                                </button>
+                              `,
+                            )}
+                          </div>
+                        `
+                      : nothing}
+                  </div>
+                `
+              : nothing}
+          </div>
           ${config.aem && config.distributedExecutionEnabled
             ? html`
                 <sp-button variant="primary" size="m" treatment="outline" ?disabled=${running}
