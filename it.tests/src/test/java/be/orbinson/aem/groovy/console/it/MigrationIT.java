@@ -45,9 +45,10 @@ class MigrationIT {
     static void setUp() {
         httpClient = HttpClients.createDefault();
 
-        // Wait for the Sling Starter and the Groovy Console content package to be fully installed.  The health
-        // check alone is not sufficient: bundle refreshes (e.g. Groovy fragment attachment) can briefly unregister
-        // the servlets right after the services become healthy, so also probe the actual endpoints.
+        // All bundles/content are pre-converted into the launch feature (cp-converter), so there is no
+        // post-startup content-package install cascade to wait out here, unlike the older jetty12-1.1.8-era
+        // whiteboard-corruption workaround this used to carry -- a single successful check once the health
+        // check reports OK and the endpoints are actually reachable is sufficient (see GroovyConsoleReportsIT).
         await().atMost(180, TimeUnit.SECONDS)
                 .pollInterval(5, TimeUnit.SECONDS)
                 .untilAsserted(() -> {
@@ -209,6 +210,30 @@ class MigrationIT {
 
         assertFalse(response.get("running").getAsBoolean());
         assertFalse(response.getAsJsonArray("data").isEmpty(), "Expected at least one migration run in the history");
+    }
+
+    @Test
+    @Order(9)
+    void testHealthChecksReportOk() throws Exception {
+        // ensure the last run is a successful one regardless of what earlier tests left behind (e.g. the
+        // intentional failure in testFailFastSkipsRemainingScripts), so this assertion is deterministic
+        postMigration(200);
+
+        HttpGet healthCheck = new HttpGet(BASE_URL + "/system/health.json?tags=migration");
+        healthCheck.addHeader("Authorization", AUTH_HEADER);
+
+        try (CloseableHttpResponse response = httpClient.execute(healthCheck)) {
+            assertEquals(200, response.getStatusLine().getStatusCode());
+
+            String body = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
+            JsonObject jsonResponse = JsonParser.parseString(body).getAsJsonObject();
+
+            assertEquals("OK", jsonResponse.get("overallResult").getAsString());
+            assertTrue(body.contains("AEM Groovy Console Migration - Last Run"),
+                    "Expected the last-run health check to be present");
+            assertTrue(body.contains("AEM Groovy Console Migration - Self Check"),
+                    "Expected the self-check health check to be present");
+        }
     }
 
     private static boolean endpointsAvailable() {

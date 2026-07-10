@@ -31,12 +31,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `/conf/groovyconsole/scripts/migration` execute with checksum-based run-once semantics in deterministic path
   order with fail-fast behavior (failed/skipped scripts stay pending and are retried on the next trigger).
   Supports `.always.groovy` re-run scripts and `author`/`publish` run-mode file name tokens. Triggered via
-  `POST /bin/groovyconsole/migration` (sync, `async=true` with `runId` polling, or `dryRun=true`), an opt-in
-  debounced resource listener on script deployments, and a history UI at `/apps/groovyconsole/migrations.html`
+  `POST /bin/groovyconsole/migration` (sync, `async=true` with `runId` polling, or `dryRun=true`), a JMX MBean
+  (`be.orbinson.aem.groovyconsole:type=Migration`, mirroring `AecuServiceMBean`), an opt-in debounced resource
+  listener on script deployments, and a history UI at `/apps/groovyconsole/migrations.html`
   (also linked from the AEM Tools console). A run can be scoped to a single script or folder via `path=...`
   (instead of the configured scripts base path), and `data=...` (JSON or plain string, mirroring
   `AecuService.execute(path, data)`) is made available to every script in the run as the `data` binding
   variable. Run history and the per-script registry are persisted below `/var/groovyconsole/migration`.
+  Two Felix Health Checks (tag `migration`) report the last run's outcome and the extension's own service
+  user/repository setup, mirroring AECU's `LastRunHealthCheck`/`SelfCheckHealthCheck`.
   Installed as its own content package on top of the console; see `extensions/migration/README.md`.
   `MigrationIT` covers the API on Sling.
 - **Script unit-testing support** — a new `aem-groovy-console-test-support` module: a JUnit 5 / AEM Mocks harness to
