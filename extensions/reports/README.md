@@ -70,9 +70,13 @@ coerced to the declared type and passed to the script as the `params` binding (`
 Any parameter can set **`multiple`**, which turns it into a repeatable field (the user adds/removes values) and
 passes `params.<name>` as a **`List`** of the coerced values.
 
-- **`TAG`** browses `cq:Tag` nodes under `rootPath` (default `/content/cq:tags`) purely via JCR — it imports no
-  AEM API, so on a plain Sling instance the picker is simply empty rather than broken. The submitted value is the
-  tag ID (e.g. `namespace:path/to/tag`).
+- **`TAG`** browses AEM tags under `rootPath` (default `/content/cq:tags`) through the AEM **`TagManager`**, so
+  moved/merged tags — which linger under `/content/cq:tags` as `cq:movedTo` redirect nodes — are hidden and titles
+  resolve correctly (a raw JCR read would offer those dead nodes). The submitted value is the tag ID
+  (e.g. `namespace:path/to/tag`), which `TagManager.resolve()` follows through redirects at runtime. The AEM code
+  lives in an AEM-gated `ReportTagService` (a mandatory reference to the AEM-only `JcrTagManagerFactory` service
+  keeps it inactive elsewhere) and the bundle's `com.day.cq.*` imports are **optional**, so on a plain Sling
+  instance the picker is simply empty rather than breaking the bundle.
 - **`DYNAMIC`** options come from an author-supplied Groovy script that returns `report.options()` of value/label
   pairs (the value is submitted, the label is shown):
 
