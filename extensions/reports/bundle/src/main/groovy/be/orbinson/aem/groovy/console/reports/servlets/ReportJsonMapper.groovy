@@ -27,7 +27,8 @@ class ReportJsonMapper {
         ]
     }
 
-    static Map definition(ReportDefinition definition, boolean canEdit, List<ReportExporter> exporters) {
+    static Map definition(ReportDefinition definition, boolean canEdit, boolean canEditScript,
+                          List<ReportExporter> exporters) {
         [
                 name          : definition.name,
                 title         : definition.title,
@@ -41,6 +42,9 @@ class ReportJsonMapper {
                 lastModified  : formatDate(definition.lastModified),
                 lastModifiedBy: definition.lastModifiedBy,
                 canEdit       : canEdit,
+                // whether the caller may edit the executable Groovy (report script + dynamic options scripts);
+                // metadata/parameter edits only need JCR write (canEdit), but scripts need console permission
+                canEditScript : canEditScript,
                 exportFormats : exporters.collect { exporter -> format(exporter) }
         ]
     }
@@ -52,9 +56,11 @@ class ReportJsonMapper {
                 type        : parameter.type.name(),
                 defaultValue: parameter.defaultValue,
                 required    : parameter.required,
+                multiple    : parameter.multiple,
                 options     : parameter.options,
                 pathType    : parameter.pathType,
                 rootPath    : parameter.rootPath,
+                optionsScript: parameter.optionsScript,
                 order       : parameter.order
         ]
     }

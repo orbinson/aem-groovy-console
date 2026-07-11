@@ -57,9 +57,7 @@ class ReportExecuteServlet extends AbstractReportsServlet {
             return
         }
 
-        def parameterValues = (body["parameters"] as Map ?: [:]).collectEntries { key, value ->
-            [(key as String): value == null ? null : value as String]
-        } as Map<String, String>
+        def parameterValues = AbstractReportsServlet.toParameterValues(body["parameters"] as Map)
 
         try {
             def execution = executionService.execute(definition, parameterValues, request.resourceResolver)

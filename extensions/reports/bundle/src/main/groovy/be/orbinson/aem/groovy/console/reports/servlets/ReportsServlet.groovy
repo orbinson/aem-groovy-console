@@ -7,6 +7,7 @@ import be.orbinson.aem.groovy.console.reports.ReportService
 import be.orbinson.aem.groovy.console.reports.model.ReportDefinition
 import be.orbinson.aem.groovy.console.reports.model.ReportParameter
 import be.orbinson.aem.groovy.console.reports.model.ReportParameterType
+import groovy.transform.PackageScope
 import groovy.util.logging.Slf4j
 import org.apache.sling.api.SlingHttpServletRequest
 import org.apache.sling.api.SlingHttpServletResponse
@@ -50,8 +51,9 @@ class ReportsServlet extends AbstractReportsServlet {
         def resolver = request.resourceResolver
         def name = request.getParameter(PARAMETER_NAME)
 
-        // authoring a report writes server-side executable Groovy, so it requires console permission in
-        // addition to JCR write access; reflect that in the capability flags the UI uses to show edit actions
+        // metadata/parameter edits need only JCR write access (canEdit); editing the executable Groovy (report
+        // script + dynamic options scripts) additionally requires console permission, and so does creating a
+        // report (which establishes a script). The UI uses these flags to gate edit actions and the script editor.
         def consolePermitted = configurationService.hasPermission(request)
 
         if (name) {
@@ -61,13 +63,14 @@ class ReportsServlet extends AbstractReportsServlet {
             if (!definition) {
                 writeError(response, SC_NOT_FOUND, "Report not found: $name")
             } else {
-                writeJsonResponse(response, ReportJsonMapper.definition(definition,
-                        consolePermitted && reportService.canEdit(resolver, name), exporterRegistry.exporters))
+                def canEdit = reportService.canEdit(resolver, name)
+
+                writeJsonResponse(response, ReportJsonMapper.definition(definition, canEdit,
+                        consolePermitted && canEdit, exporterRegistry.exporters))
             }
         } else {
             def reports = reportService.getReports(resolver).collect { definition ->
-                ReportJsonMapper.summary(definition,
-                        consolePermitted && reportService.canEdit(resolver, definition.name))
+                ReportJsonMapper.summary(definition, reportService.canEdit(resolver, definition.name))
             }
 
             writeJsonResponse(response,
@@ -78,14 +81,6 @@ class ReportsServlet extends AbstractReportsServlet {
     @Override
     protected void doPost(SlingHttpServletRequest request, SlingHttpServletResponse response)
             throws ServletException, IOException {
-        // saving a report writes server-side executable Groovy, so it requires console permission on top of
-        // the JCR write check inside saveReport
-        if (!configurationService.hasPermission(request)) {
-            writeError(response, SC_FORBIDDEN, "Not allowed to save reports.")
-
-            return
-        }
-
         def body = readJsonBody(request)
 
         if (!body || !body["name"]) {
@@ -96,19 +91,57 @@ class ReportsServlet extends AbstractReportsServlet {
 
         def resolver = request.resourceResolver
         def name = body["name"] as String
+        def submitted = fromBody(body)
 
-        // authorization is the JCR write check inside saveReport (PersistenceException -> 403)
+        // The report script and any dynamic-options scripts are executable Groovy, so writing them requires
+        // console permission; metadata/parameter edits need only JCR write access. Callers without console
+        // permission may edit an existing report's metadata but cannot introduce or change its scripts, and
+        // cannot create a report (which would establish a script).
+        def consolePermitted = configurationService.hasPermission(request)
+        def existing = reportService.getReport(resolver, name)
+
+        if (!consolePermitted) {
+            if (!existing) {
+                writeError(response, SC_FORBIDDEN,
+                        "Creating a report requires console permission (reports run Groovy scripts).")
+
+                return
+            }
+
+            preserveScripts(submitted, existing)
+        }
+
+        // JCR write access is enforced inside saveReport (PersistenceException -> ReportException -> 403)
         try {
-            def definition = reportService.saveReport(resolver, fromBody(body), resolver.userID)
+            def definition = reportService.saveReport(resolver, submitted, resolver.userID)
+            def canEdit = reportService.canEdit(resolver, name)
 
-            writeJsonResponse(response, ReportJsonMapper.definition(definition,
-                    reportService.canEdit(resolver, name), exporterRegistry.exporters))
+            writeJsonResponse(response, ReportJsonMapper.definition(definition, canEdit,
+                    consolePermitted && canEdit, exporterRegistry.exporters))
         } catch (IllegalArgumentException e) {
             writeError(response, SC_BAD_REQUEST, e.message)
         } catch (ReportException e) {
             LOG.warn("error saving report : {}", name, e)
 
             writeError(response, SC_FORBIDDEN, "Not allowed to save report (check repository permissions): $name")
+        }
+    }
+
+    /**
+     * Carry the existing (vetted) executable Groovy forward onto a submitted definition, ignoring any script
+     * changes in the request.  Used when the caller lacks console permission, so they can edit metadata and
+     * parameter configuration but never introduce or alter a runnable script.
+     */
+    @PackageScope
+    static void preserveScripts(ReportDefinition submitted, ReportDefinition existing) {
+        submitted.script = existing.script
+
+        def existingByName = existing.parameters.collectEntries { [(it.name): it] }
+
+        submitted.parameters.each { parameter ->
+            if (parameter.type == ReportParameterType.DYNAMIC) {
+                parameter.optionsScript = (existingByName[parameter.name] as ReportParameter)?.optionsScript
+            }
         }
     }
 
@@ -160,9 +193,11 @@ class ReportsServlet extends AbstractReportsServlet {
                 type: toParameterType(parameter["type"] as String),
                 defaultValue: parameter["defaultValue"] == null ? null : parameter["defaultValue"] as String,
                 required: Boolean.TRUE == parameter["required"],
+                multiple: Boolean.TRUE == parameter["multiple"],
                 options: (parameter["options"] as List ?: []).collect { it as String }.findAll(),
                 pathType: parameter["pathType"] ? parameter["pathType"] as String : "NODE",
                 rootPath: parameter["rootPath"] == null ? null : parameter["rootPath"] as String,
+                optionsScript: parameter["optionsScript"] == null ? null : parameter["optionsScript"] as String,
                 order: parameter["order"] != null ? (parameter["order"] as Integer) : index
         )
     }

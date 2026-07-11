@@ -85,7 +85,7 @@ class DefaultReportExecutionService implements ReportExecutionService {
     private ReportsConfigurationService reportsConfigurationService
 
     @Override
-    ReportExecution execute(ReportDefinition reportDefinition, Map<String, String> parameterValues,
+    ReportExecution execute(ReportDefinition reportDefinition, Map<String, Object> parameterValues,
                             ResourceResolver resourceResolver) {
         def coercedValues = ParameterCoercer.coerce(reportDefinition.parameters, parameterValues)
         def script = resolveScript(reportDefinition)
@@ -111,7 +111,7 @@ class DefaultReportExecutionService implements ReportExecutionService {
     }
 
     @Override
-    ReportPreview preview(ReportDefinition reportDefinition, Map<String, String> parameterValues,
+    ReportPreview preview(ReportDefinition reportDefinition, Map<String, Object> parameterValues,
                           ResourceResolver resourceResolver) {
         def coercedValues = ParameterCoercer.coerce(reportDefinition.parameters, parameterValues)
         def script = resolveScript(reportDefinition)
