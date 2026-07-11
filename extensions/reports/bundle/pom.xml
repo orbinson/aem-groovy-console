@@ -130,6 +130,11 @@
             <artifactId>junit-jupiter</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>io.wcm</groupId>
+            <artifactId>io.wcm.testing.aem-mock.junit5</artifactId>
+            <scope>test</scope>
+        </dependency>
 
         <dependency>
             <groupId>com.adobe.aem</groupId>
