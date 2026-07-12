@@ -422,6 +422,12 @@ body {
   min-width: 0;
 }
 
+/* the browse button keeps its full label ("Browse…") and never shrinks/truncates */
+.gcr-path-field sp-action-button {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
 /* ---- panels & forms ---- */
 
 .gcr-panel {
@@ -639,9 +645,11 @@ body {
 .gcr-parameter-row {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px 6px;
   padding: 6px 0;
-  flex-wrap: nowrap;
+  /* wrap to multiple lines when the viewport is too narrow instead of shrinking/overflowing the fixed-width
+     common fields, so rows stay responsive while keeping identical field widths on desktop */
+  flex-wrap: wrap;
 }
 
 /* allow Spectrum fields to shrink below their intrinsic width so the row stays on one line */
@@ -650,14 +658,15 @@ body {
   min-width: 0;
 }
 
-/* common fields have a fixed basis and do NOT grow, so name/label/type/default line up identically across
-   every parameter row regardless of the type-specific config fields; only the config area absorbs slack */
+/* common fields have a fixed width and neither grow nor shrink, so name/label/type/default line up identically
+   across every parameter row regardless of the type-specific config fields; only the config area (which does
+   grow AND shrink) absorbs the difference */
 .gcr-parameter-name {
-  flex: 0 1 150px;
+  flex: 0 0 150px;
 }
 
 .gcr-parameter-label {
-  flex: 0 1 160px;
+  flex: 0 0 160px;
 }
 
 .gcr-parameter-type {
@@ -665,13 +674,14 @@ body {
 }
 
 .gcr-parameter-default {
-  flex: 0 1 150px;
+  flex: 0 0 150px;
 }
 
 .gcr-parameter-options,
 .gcr-parameter-pathtype,
 .gcr-parameter-rootpath {
-  flex: 1 1 160px;
+  flex: 1 1 120px;
+  min-width: 0;
 }
 
 /* keep the trailing controls from shrinking/wrapping */
