@@ -1,9 +1,4 @@
-:root {
-  /* Adobe Clean is proprietary; use an open fallback stack with the Spectrum look. */
-  --spectrum-sans-font-family-stack: 'Source Sans 3', 'Source Sans Pro', system-ui, -apple-system, 'Segoe UI',
-    Roboto, Helvetica, Arial, sans-serif;
-  --spectrum-code-font-family-stack: 'Source Code Pro', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-}
+@import '@console/styles/tokens.css';
 
 html,
 body {
@@ -41,10 +36,20 @@ body {
 }
 
 .gcr-brand {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
   font-weight: 700;
   font-size: 16px;
   color: var(--spectrum-gray-800);
   text-decoration: none;
+}
+
+.gcr-brand-context,
+.gcr-brand-sep {
+  font-weight: 400;
+  font-size: 14px;
+  color: var(--spectrum-gray-600);
 }
 
 .gcr-app-bar-actions {
@@ -346,10 +351,18 @@ body {
 .gcr-browser-twisty {
   display: inline-flex;
   justify-content: center;
+  align-items: center;
   width: 14px;
   flex-shrink: 0;
   color: var(--spectrum-gray-600);
-  font-size: 11px;
+}
+
+.gcr-browser-twisty sp-icon-chevron-right {
+  transition: transform 130ms ease-out;
+}
+
+.gcr-browser-twisty.is-expanded sp-icon-chevron-right {
+  transform: rotate(90deg);
 }
 
 .gcr-browser-twisty:not(.is-leaf) {
@@ -382,7 +395,7 @@ body {
 }
 
 .gcr-browser-selected {
-  font-family: monospace;
+  font-family: var(--spectrum-code-font-family-stack);
   font-size: 12px;
   color: var(--spectrum-gray-700);
   overflow: hidden;

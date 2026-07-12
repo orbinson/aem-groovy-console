@@ -9,16 +9,22 @@ export class GcDrawer extends LitElement {
       display: contents;
     }
 
+    /* Overlay the workspace only: the app bar and the activity rail stay visible and
+       interactive, so panels can be switched directly from the rail. */
     .backdrop {
       position: fixed;
-      inset: 0;
+      top: var(--gc-drawer-top, 49px);
+      bottom: 0;
+      left: 48px;
+      right: 0;
       background: rgba(0, 0, 0, 0.35);
       z-index: 200;
+      animation: gc-drawer-fade 130ms ease-out;
     }
 
     .panel {
       position: fixed;
-      top: 0;
+      top: var(--gc-drawer-top, 49px);
       bottom: 0;
       left: 48px;
       width: min(960px, calc(100vw - 48px));
@@ -27,15 +33,43 @@ export class GcDrawer extends LitElement {
       background: var(--spectrum-gray-50);
       color: var(--spectrum-gray-800);
       border-right: 1px solid var(--spectrum-gray-300);
-      box-shadow: 4px 0 16px rgba(0, 0, 0, 0.25);
+      box-shadow: 8px 0 24px rgba(0, 0, 0, 0.12);
       z-index: 201;
+      animation: gc-drawer-slide 160ms ease-out;
+    }
+
+    @keyframes gc-drawer-slide {
+      from {
+        transform: translateX(-24px);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    @keyframes gc-drawer-fade {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .panel,
+      .backdrop {
+        animation: none;
+      }
     }
 
     .header {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 12px 16px;
+      padding: 10px 16px;
       border-bottom: 1px solid var(--spectrum-gray-300);
     }
 
@@ -47,6 +81,7 @@ export class GcDrawer extends LitElement {
     .body {
       flex: 1;
       overflow-y: auto;
+      overflow-x: auto;
       padding: 12px 16px;
     }
   `;
@@ -84,7 +119,9 @@ export class GcDrawer extends LitElement {
       <aside class="panel" role="dialog" aria-label=${this.heading}>
         <div class="header">
           <h3>${this.heading}</h3>
-          <sp-action-button size="s" quiet @click=${this.close} aria-label="Close">✕</sp-action-button>
+          <sp-action-button size="s" quiet @click=${this.close} aria-label="Close">
+            <sp-icon-close slot="icon"></sp-icon-close>
+          </sp-action-button>
         </div>
         <div class="body">
           <slot></slot>

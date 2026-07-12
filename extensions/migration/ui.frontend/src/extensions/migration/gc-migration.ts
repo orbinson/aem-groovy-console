@@ -184,7 +184,9 @@ export class GcMigration extends LitElement {
           ${this.triggering || this.running ? 'Running…' : 'Run migrations'}
         </sp-button>
         <span class="spacer"></span>
-        <sp-action-button size="s" quiet @click=${() => void this.refresh()} title="Refresh">↻</sp-action-button>
+        <sp-action-button size="s" quiet @click=${() => void this.refresh()} title="Refresh" aria-label="Refresh">
+          <sp-icon-refresh slot="icon"></sp-icon-refresh>
+        </sp-action-button>
         <sp-button size="s" variant="secondary" href=${migrationsPageUrl()} target="_blank">
           History
         </sp-button>

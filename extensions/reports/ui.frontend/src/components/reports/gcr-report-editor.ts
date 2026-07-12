@@ -361,7 +361,8 @@ export class GcrReportEditor extends LitElement {
         <div class="gcr-panel-header">
           <h3>Try it out</h3>
           <sp-button size="s" ?disabled=${this.previewing} @click=${() => void this.runPreview()}>
-            ${this.previewing ? 'Running…' : 'Run ▶'}
+            <sp-icon-play slot="icon"></sp-icon-play>
+            ${this.previewing ? 'Running…' : 'Run'}
           </sp-button>
         </div>
 
@@ -523,7 +524,7 @@ export class GcrReportEditor extends LitElement {
           Required
         </sp-checkbox>
         <sp-action-button size="s" quiet @click=${() => this.removeParameter(index)} aria-label="Remove parameter">
-          ✕
+          <sp-icon-close slot="icon"></sp-icon-close>
         </sp-action-button>
       </div>
     `;

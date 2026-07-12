@@ -193,7 +193,9 @@ export class GcHistory extends LitElement {
                         <td><code title=${record.script ?? ''}>${record.scriptPreview ?? ''}</code></td>
                         <td>
                           ${record.exception
-                            ? html`<sp-badge size="s" variant="negative">${record.exception}</sp-badge>`
+                            ? html`<sp-badge size="s" variant="negative" title=${record.exception}>
+                                ${record.exception.split('.').pop()}
+                              </sp-badge>`
                             : nothing}
                         </td>
                         <td class="gc-row-actions">

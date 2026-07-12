@@ -1,6 +1,8 @@
 import { html, LitElement, nothing } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
+import { config } from '@console/config';
 import { persistence } from '@console/state/local-storage';
+import '@console/components/gc-aem-nav';
 
 type View = { view: 'list' } | { view: 'run'; name: string } | { view: 'edit'; name: string | null };
 
@@ -48,14 +50,23 @@ export class GcrApp extends LitElement {
   private toggleColorScheme(): void {
     this.colorScheme = this.colorScheme === 'dark' ? 'light' : 'dark';
     persistence.saveColorScheme(this.colorScheme);
+    // tell the lazy-loaded Monaco editor (if present) to follow, without importing it here
+    window.dispatchEvent(
+      new CustomEvent('gc-color-scheme-changed', { detail: { colorScheme: this.colorScheme } }),
+    );
   }
 
   protected render() {
     return html`
       <sp-theme class="gcr-root-theme" system="spectrum" color=${this.colorScheme} scale="medium">
         <div class="gcr-frame">
+          ${config.aem ? html`<gc-aem-nav></gc-aem-nav>` : nothing}
           <header class="gcr-app-bar">
-            <a class="gcr-brand" href="#/">Reports</a>
+            <a class="gcr-brand" href="#/">
+              <span class="gcr-brand-context">Groovy Console</span>
+              <span class="gcr-brand-sep">/</span>
+              Reports
+            </a>
             <div class="gcr-app-bar-actions">
               <sp-switch
                 ?checked=${this.colorScheme === 'dark'}

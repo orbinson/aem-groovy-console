@@ -3,7 +3,7 @@ import { customElement } from 'lit/decorators.js';
 import type * as Monaco from 'monaco-editor';
 import { attachGroovyDiagnostics } from '../editor/groovy-diagnostics';
 import { GROOVY_LANGUAGE_ID } from '../editor/groovy-language';
-import { monaco, setupMonaco } from '../editor/monaco-setup';
+import { EDITOR_FONT_FAMILY, monaco, setupMonaco } from '../editor/monaco-setup';
 import { persistence } from '../state/local-storage';
 import { store } from '../state/store';
 
@@ -53,6 +53,7 @@ export class GcScriptEditor extends LitElement {
       minimap: { enabled: false },
       scrollBeyondLastLine: false,
       fontSize: 13,
+      fontFamily: EDITOR_FONT_FAMILY,
       fixedOverflowWidgets: true,
       tabSize: 4,
       // strings: service-name completion lives inside getService("...") string literals

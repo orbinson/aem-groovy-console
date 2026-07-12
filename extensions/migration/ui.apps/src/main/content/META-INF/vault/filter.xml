@@ -1,7 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <workspaceFilter version="1.0">
-    <!-- AEM Tools console entry so operators can reach the migration history UI (overlay; AEM-only) -->
-    <filter root="/apps/cq/core/content/nav/tools/groovyconsole" mode="merge"/>
+    <!-- AEM Tools > Deployment entry so operators can reach the migration history UI (overlay; AEM-only).
+         Fine-grained includes so other entries under the shared nav nodes are left untouched. -->
+    <filter root="/apps/cq/core/content/nav">
+        <include pattern="/apps/cq/core/content/nav"/>
+        <include pattern="/apps/cq/core/content/nav/tools"/>
+        <include pattern="/apps/cq/core/content/nav/tools/deployment"/>
+        <include pattern="/apps/cq/core/content/nav/tools/deployment/groovyconsole-migrations(.*)?"/>
+    </filter>
     <!-- the migration SPA assets (built by extensions/migration/ui.frontend), on a migration-owned path -->
     <filter root="/apps/groovyconsole-migration"/>
 </workspaceFilter>

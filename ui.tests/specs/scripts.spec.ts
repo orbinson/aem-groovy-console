@@ -38,4 +38,32 @@ test.describe.serial('script save and open', () => {
     await expectToast(page, 'Script loaded successfully.');
     expect(await getScriptContent(page)).toContain('playwright save test');
   });
+
+  test('saves a script into a subfolder and opens it back', async ({ page }) => {
+    await openModernUi(page);
+
+    await setScriptContent(page, SCRIPT_CONTENT);
+    await clickMenuItem(page, 'Save…');
+
+    const dialog = page.locator('gc-save-dialog sp-dialog-wrapper');
+    await expect(dialog).toBeVisible();
+
+    // a name with folder segments creates the folders below the scripts root
+    await dialog.locator('sp-textfield').click();
+    await page.keyboard.press('ControlOrMeta+a');
+    await page.keyboard.type(`pw-folder/${SCRIPT_NAME}-nested`);
+    await dialog.getByRole('button', { name: 'Save' }).click();
+
+    await expectToast(page, 'Script saved successfully.');
+
+    // the folder shows up in the script browser and the script opens from it
+    await clickMenuItem(page, 'Open…');
+    const openDialog = page.locator('gc-script-browser-dialog sp-dialog-wrapper');
+    await expect(openDialog).toBeVisible();
+    await openDialog.locator('.gc-browser-item', { hasText: 'pw-folder' }).click();
+    await openDialog.locator('.gc-browser-item', { hasText: `${SCRIPT_NAME}-nested.groovy` }).click();
+
+    await expectToast(page, 'Script loaded successfully.');
+    expect(await getScriptContent(page)).toContain('playwright save test');
+  });
 });

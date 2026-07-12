@@ -141,7 +141,7 @@ export class GcResult extends LitElement {
         <div class="gc-dock">
           <div class="gc-dock-header">
             <span class="gc-dock-title">Output</span>
-            <sp-badge size="s" variant="informative">● live</sp-badge>
+            <span class="gc-dock-live"><span class="gc-dock-live-dot"></span>Live</span>
           </div>
           <div class="gc-dock-body">
             ${liveOutput.length
@@ -192,7 +192,7 @@ export class GcResult extends LitElement {
             )}
           </div>
           ${response.runningTime?.length
-            ? html`<sp-badge size="s" variant="informative">⏱ ${response.runningTime}</sp-badge>`
+            ? html`<span class="gc-dock-time" title="Running time">${response.runningTime}</span>`
             : nothing}
           <span class="gc-status-spacer"></span>
           ${active

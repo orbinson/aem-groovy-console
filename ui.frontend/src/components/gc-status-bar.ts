@@ -45,7 +45,6 @@ export class GcStatusBar extends LitElement {
         <span class="gc-status-spacer"></span>
         <span class="gc-status-hint">${MOD}↵ Run</span>
         <span class="gc-status-hint">${MOD}S Save</span>
-        <span class="gc-status-hint">${MOD}K Commands</span>
       </footer>
     `;
   }

@@ -1,14 +1,6 @@
 import { html, LitElement, nothing } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
-import { getJson } from '../api/client';
-
-const SCRIPTS_FOLDER = '/conf/groovyconsole/scripts';
-const FOLDER_TYPES = ['sling:Folder', 'sling:OrderedFolder', 'nt:folder'];
-
-interface FolderListing {
-  folders: string[];
-  files: string[];
-}
+import { listScriptsFolder, SCRIPTS_FOLDER, type FolderListing } from '../api/console-api';
 
 /**
  * Folder-navigable script browser for opening saved scripts: breadcrumb + folder/file list
@@ -25,6 +17,25 @@ export class GcScriptBrowserDialog extends LitElement {
     return this;
   }
 
+  // sp-dialog-wrapper only handles Escape when opened through the Overlay system; rendered inline it
+  // does not, so close on Escape ourselves (same pattern as gc-drawer).
+  private keyListener = (event: KeyboardEvent): void => {
+    if (event.key === 'Escape' && this.open) {
+      this.open = false;
+    }
+  };
+
+  connectedCallback(): void {
+    super.connectedCallback();
+    // capture phase: the Spectrum dialog stops Escape from bubbling
+    window.addEventListener('keydown', this.keyListener, { capture: true });
+  }
+
+  disconnectedCallback(): void {
+    window.removeEventListener('keydown', this.keyListener, { capture: true });
+    super.disconnectedCallback();
+  }
+
   async show(): Promise<void> {
     this.open = true;
     await this.navigate(SCRIPTS_FOLDER);
@@ -35,26 +46,7 @@ export class GcScriptBrowserDialog extends LitElement {
     this.loading = true;
 
     try {
-      const folder = await getJson<Record<string, unknown>>(`${path}.1.json`);
-      const folders: string[] = [];
-      const files: string[] = [];
-
-      for (const [name, value] of Object.entries(folder)) {
-        if (typeof value !== 'object' || value === null) {
-          continue;
-        }
-        const primaryType = (value as Record<string, unknown>)['jcr:primaryType'] as string;
-
-        if (primaryType === 'nt:file') {
-          files.push(name);
-        } else if (FOLDER_TYPES.includes(primaryType)) {
-          folders.push(name);
-        }
-      }
-
-      folders.sort((a, b) => a.localeCompare(b));
-      files.sort((a, b) => a.localeCompare(b));
-      this.listing = { folders, files };
+      this.listing = await listScriptsFolder(path);
     } catch {
       this.listing = { folders: [], files: [] };
     } finally {
@@ -122,16 +114,16 @@ export class GcScriptBrowserDialog extends LitElement {
                 ${this.listing.folders.map(
                   (name) => html`
                     <button class="gc-browser-item" @click=${() => void this.navigate(`${this.currentPath}/${name}`)}>
-                      <span class="gc-browser-icon">📁</span>
+                      <sp-icon-folder class="gc-browser-icon" size="s"></sp-icon-folder>
                       <span class="gc-browser-name">${name}</span>
-                      <span class="gc-browser-chevron">›</span>
+                      <sp-icon-chevron-right class="gc-browser-chevron" size="xs"></sp-icon-chevron-right>
                     </button>
                   `,
                 )}
                 ${this.listing.files.map(
                   (name) => html`
                     <button class="gc-browser-item" @click=${() => this.select(name)}>
-                      <span class="gc-browser-icon">📄</span>
+                      <sp-icon-file-code class="gc-browser-icon" size="s"></sp-icon-file-code>
                       <span class="gc-browser-name">${name}</span>
                     </button>
                   `,

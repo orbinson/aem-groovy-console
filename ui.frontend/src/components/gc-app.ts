@@ -27,6 +27,11 @@ type EditorTab = 'script' | 'data';
 const MAX_LIVE_OUTPUT_CHARS = 512 * 1024;
 const LIVE_OUTPUT_TRUNCATION_NOTICE = '… (earlier output truncated; see the full result when the script finishes)\n';
 
+/** Extension modules load asynchronously; sort by title so the rail order is stable across page loads. */
+function sortedPanels(): ConsolePanelExtension[] {
+  return [...getPanels()].sort((a, b) => a.title.localeCompare(b.title));
+}
+
 @customElement('gc-app')
 export class GcApp extends LitElement {
   private store = new StoreController(this);
@@ -84,7 +89,7 @@ export class GcApp extends LitElement {
     this.addEventListener('gc-toast', ((event: CustomEvent<{ message: string; variant?: 'positive' | 'negative' }>) => {
       store.showToast(event.detail.message, event.detail.variant ?? 'positive');
     }) as EventListener);
-    this.unsubscribePanels = onPanelsChanged(() => (this.extensionPanels = [...getPanels()]));
+    this.unsubscribePanels = onPanelsChanged(() => (this.extensionPanels = sortedPanels()));
     this.addEventListener('gc-edit-job', ((event: CustomEvent<{ job: ScheduledJob }>) => {
       this.editScheduledJob(event.detail.job);
     }) as EventListener);
@@ -122,7 +127,7 @@ export class GcApp extends LitElement {
 
     // Load UI extension modules announced by the backend (ConsoleUiExtensionProvider services).
     initConsoleExtensions();
-    this.extensionPanels = [...getPanels()];
+    this.extensionPanels = sortedPanels();
 
     // Deep link from the history panel / classic UI (?userId=...&script=...)
     const auditRecord = config.auditRecord;
@@ -425,7 +430,8 @@ export class GcApp extends LitElement {
 
     return html`
       <sp-theme class="gc-root-theme" system="spectrum" color=${colorScheme} scale="medium">
-        <div class="gc-frame">
+        <div class="gc-frame ${config.aem ? 'gc-frame-aem' : ''}">
+          ${config.aem ? html`<gc-aem-nav></gc-aem-nav>` : nothing}
           <gc-app-bar></gc-app-bar>
 
           <div class="gc-workspace">
