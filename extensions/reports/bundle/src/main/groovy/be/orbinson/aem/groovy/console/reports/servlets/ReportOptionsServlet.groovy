@@ -35,6 +35,14 @@ import static javax.servlet.http.HttpServletResponse.*
 @Slf4j("LOG")
 class ReportOptionsServlet extends AbstractReportsServlet {
 
+    private static final String PARAM_NAME = "name"
+
+    private static final String PARAM_PARAMETER_NAME = "parameterName"
+
+    private static final String PARAM_SCRIPT = "script"
+
+    private static final String PARAM_PARAMETERS = "parameters"
+
     @Reference
     private ReportService reportService
 
@@ -63,7 +71,7 @@ class ReportOptionsServlet extends AbstractReportsServlet {
             return
         }
 
-        def parameterValues = AbstractReportsServlet.toParameterValues(body["parameters"] as Map)
+        def parameterValues = AbstractReportsServlet.toParameterValues(body[PARAM_PARAMETERS] as Map)
 
         try {
             def options = optionsService.resolveOptions(script, parameterValues, resolver)
@@ -81,19 +89,20 @@ class ReportOptionsServlet extends AbstractReportsServlet {
     private String resolveScript(SlingHttpServletRequest request, Map body, SlingHttpServletResponse response) {
         def resolver = request.resourceResolver
 
-        if (body["name"] && body["parameterName"]) {
-            def definition = reportService.getReport(resolver, body["name"] as String)
+        if (body[PARAM_NAME] && body[PARAM_PARAMETER_NAME]) {
+            def parameterName = body[PARAM_PARAMETER_NAME]
+            def definition = reportService.getReport(resolver, body[PARAM_NAME] as String)
 
             if (!definition) {
-                writeError(response, SC_NOT_FOUND, "Report not found: ${body["name"]}")
+                writeError(response, SC_NOT_FOUND, "Report not found: ${body[PARAM_NAME]}")
 
                 return null
             }
 
-            def parameter = definition.parameters.find { it.name == body["parameterName"] }
+            def parameter = definition.parameters.find { it.name == parameterName }
 
             if (!parameter || parameter.type != ReportParameterType.DYNAMIC) {
-                writeError(response, SC_BAD_REQUEST, "No dynamic parameter named: ${body["parameterName"]}")
+                writeError(response, SC_BAD_REQUEST, "No dynamic parameter named: $parameterName")
 
                 return null
             }
@@ -101,7 +110,7 @@ class ReportOptionsServlet extends AbstractReportsServlet {
             return parameter.optionsScript ?: ""
         }
 
-        if (body["script"]) {
+        if (body[PARAM_SCRIPT]) {
             // an inline script runs arbitrary Groovy as the user, so it needs console permission (like a preview)
             if (!configurationService.hasPermission(request)) {
                 writeError(response, SC_FORBIDDEN, "Not allowed to run dynamic options scripts.")
@@ -109,7 +118,7 @@ class ReportOptionsServlet extends AbstractReportsServlet {
                 return null
             }
 
-            return body["script"] as String
+            return body[PARAM_SCRIPT] as String
         }
 
         writeError(response, SC_BAD_REQUEST, "A 'script', or a 'name' and 'parameterName', is required.")
