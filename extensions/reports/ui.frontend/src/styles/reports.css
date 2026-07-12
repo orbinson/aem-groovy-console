@@ -416,8 +416,10 @@ body {
   align-items: center;
 }
 
-.gcr-path-field .gcr-path-input {
-  flex: 1;
+.gcr-path-field .gcr-path-input,
+.gcr-path-field > sp-textfield {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 /* ---- panels & forms ---- */
@@ -674,6 +676,91 @@ body {
 .gcr-parameter-row sp-checkbox,
 .gcr-parameter-row sp-action-button {
   flex: 0 0 auto;
+}
+
+/* trailing controls (Multiple / Required / remove) pinned right so they align across all rows,
+   regardless of the type-specific config fields in the middle */
+.gcr-parameter-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+  flex: 0 0 auto;
+}
+
+/* read-only parameter summary (shown to users without console permission) */
+.gcr-parameter-summary {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 6px 0;
+}
+
+/* dynamic-parameter options script editor */
+.gcr-options-script-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 4px 0 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--spectrum-gray-300);
+  border-radius: 6px;
+  background: var(--spectrum-gray-75);
+}
+
+.gcr-options-script-field .gcr-options-script-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.gcr-options-script {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 190px;
+  resize: vertical;
+  font-family: 'Source Code Pro', ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 13px;
+  line-height: 1.55;
+  padding: 10px 12px;
+  border: 1px solid var(--spectrum-gray-400);
+  border-radius: 4px;
+  background: var(--spectrum-gray-50);
+  color: var(--spectrum-gray-900);
+  tab-size: 4;
+}
+
+.gcr-options-script:focus-visible {
+  outline: none;
+  border-color: var(--spectrum-blue-500, #2680eb);
+  box-shadow: 0 0 0 1px var(--spectrum-blue-500, #2680eb);
+}
+
+/* ---- multifield: repeatable values with add / remove ---- */
+.gcr-multifield {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.gcr-multifield-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* the value control (textfield, path/tag field, picker…) takes the remaining width */
+.gcr-multifield-row > :first-child {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.gcr-multifield-remove {
+  flex: 0 0 auto;
+}
+
+.gcr-multifield-add {
+  align-self: flex-start;
+  margin-top: 2px;
 }
 
 /* ---- toast ---- */

@@ -393,16 +393,21 @@ export class GcrReportRun extends LitElement {
                   )}
                   <sp-action-button
                     quiet
+                    size="s"
+                    class="gcr-multifield-remove"
+                    label="Remove value"
                     title="Remove value"
+                    ?disabled=${entries.length === 1 && !entry}
                     @click=${() => this.removeValue(parameter.name, index)}
                   >
-                    ✕
+                    <sp-icon-close slot="icon"></sp-icon-close>
                   </sp-action-button>
                 </div>
               `,
             )}
           </div>
-          <sp-action-button quiet class="gcr-multifield-add" @click=${() => this.addValue(parameter.name)}>
+          <sp-action-button quiet size="s" class="gcr-multifield-add" @click=${() => this.addValue(parameter.name)}>
+            <sp-icon-add slot="icon"></sp-icon-add>
             Add value
           </sp-action-button>
           ${errorMessage}
