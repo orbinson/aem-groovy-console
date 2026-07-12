@@ -22,6 +22,7 @@ import type {
 } from '../../api/reports-types';
 import { toast } from './gcr-app';
 import { mutePlaceholders } from '@console/util/mute-placeholders';
+import { renderMultifield } from './multifield';
 import type { GcrPathBrowser } from './gcr-path-browser';
 import type { BrowseType } from '../../api/reports-types';
 import { formatDate, renderResultTable } from './result-cell';
@@ -375,41 +376,22 @@ export class GcrReportRun extends LitElement {
       : nothing;
 
     if (parameter.multiple) {
-      const entries = this.valueList(parameter.name);
-
       return html`
         <div class="gcr-field">
           ${label}
-          <div class="gcr-multifield">
-            ${entries.map(
-              (entry, index) => html`
-                <div class="gcr-multifield-row">
-                  ${this.renderControl(
-                    parameter,
-                    index === 0 ? `param-${parameter.name}` : `param-${parameter.name}-${index}`,
-                    entry,
-                    !!error,
-                    index,
-                  )}
-                  <sp-action-button
-                    quiet
-                    size="s"
-                    class="gcr-multifield-remove"
-                    label="Remove value"
-                    title="Remove value"
-                    ?disabled=${entries.length === 1 && !entry}
-                    @click=${() => this.removeValue(parameter.name, index)}
-                  >
-                    <sp-icon-close slot="icon"></sp-icon-close>
-                  </sp-action-button>
-                </div>
-              `,
-            )}
-          </div>
-          <sp-action-button quiet size="s" class="gcr-multifield-add" @click=${() => this.addValue(parameter.name)}>
-            <sp-icon-add slot="icon"></sp-icon-add>
-            Add value
-          </sp-action-button>
+          ${renderMultifield({
+            entries: this.valueList(parameter.name),
+            renderEntry: (entry, index) =>
+              this.renderControl(
+                parameter,
+                index === 0 ? `param-${parameter.name}` : `param-${parameter.name}-${index}`,
+                entry,
+                !!error,
+                index,
+              ),
+            onAdd: () => this.addValue(parameter.name),
+            onRemove: (index) => this.removeValue(parameter.name, index),
+          })}
           ${errorMessage}
         </div>
       `;

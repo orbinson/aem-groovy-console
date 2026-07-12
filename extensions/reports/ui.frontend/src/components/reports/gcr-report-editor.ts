@@ -23,6 +23,7 @@ import { toast } from './gcr-app';
 import type { GcrCodeEditor } from './gcr-code-editor';
 import type { GcrPathBrowser } from './gcr-path-browser';
 import { mutePlaceholders } from '@console/util/mute-placeholders';
+import { renderMultifield } from './multifield';
 import { renderResultTable } from './result-cell';
 import { validateRequired } from './validate-parameters';
 
@@ -605,31 +606,13 @@ export class GcrReportEditor extends LitElement {
 
     // mirror the run form: a `multiple` parameter uses a multifield (rows with add/remove), not one value per line
     const field = parameter.multiple
-      ? html`
-          <div class="gcr-multifield">
-            ${this.testValueList(parameter.name).map(
-              (entry, index) => html`
-                <div class="gcr-multifield-row">
-                  ${this.renderTestInput(parameter, `test-${parameter.name}-${index}`, entry, !!error, index)}
-                  <sp-action-button
-                    quiet
-                    size="s"
-                    class="gcr-multifield-remove"
-                    label="Remove value"
-                    title="Remove value"
-                    @click=${() => this.removeTestValue(parameter.name, index)}
-                  >
-                    <sp-icon-close slot="icon"></sp-icon-close>
-                  </sp-action-button>
-                </div>
-              `,
-            )}
-          </div>
-          <sp-action-button quiet size="s" class="gcr-multifield-add" @click=${() => this.addTestValue(parameter.name)}>
-            <sp-icon-add slot="icon"></sp-icon-add>
-            Add value
-          </sp-action-button>
-        `
+      ? renderMultifield({
+          entries: this.testValueList(parameter.name),
+          renderEntry: (entry, index) =>
+            this.renderTestInput(parameter, `test-${parameter.name}-${index}`, entry, !!error, index),
+          onAdd: () => this.addTestValue(parameter.name),
+          onRemove: (index) => this.removeTestValue(parameter.name, index),
+        })
       : this.renderTestInput(
           parameter,
           `test-${parameter.name}`,
