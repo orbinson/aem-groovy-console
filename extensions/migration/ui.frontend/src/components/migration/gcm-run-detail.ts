@@ -58,11 +58,13 @@ export class GcmRunDetail extends LitElement {
 
     return html`
       <div class="gcm-page">
-        <div class="gcm-breadcrumbs"><a href="#/">Run history</a> / ${run.runId}</div>
+        <div class="gcm-breadcrumbs">
+          <a href="#/">Run history</a> / <span title=${run.runId}>${run.runId.slice(0, 8)}</span>
+        </div>
 
         <div class="gcm-page-header">
           <h2>Migration run</h2>
-          <sp-badge size="m" variant=${statusVariant(run.status)}>${run.status}</sp-badge>
+          <sp-badge size="s" variant=${statusVariant(run.status)}>${run.status}</sp-badge>
         </div>
 
         <dl class="gcm-meta">

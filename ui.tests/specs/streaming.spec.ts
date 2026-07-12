@@ -11,7 +11,7 @@ test.describe('streaming output', () => {
     const dock = page.locator('.gc-dock');
 
     // partial output appears while the script is still running
-    await expect(dock.locator('sp-badge', { hasText: 'live' })).toBeVisible({ timeout: 10_000 });
+    await expect(dock.locator('.gc-dock-live', { hasText: 'Live' })).toBeVisible({ timeout: 10_000 });
     await expect(dock.locator('.gc-dock-pre')).toContainText('stream 0', { timeout: 10_000 });
     await expect(page.locator('.gc-status-bar')).toContainText('Running');
 

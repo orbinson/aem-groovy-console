@@ -35,8 +35,8 @@ export async function runScript(page: Page, script: string): Promise<void> {
 
 /** Open the app-bar File menu and click the given item. */
 export async function clickMenuItem(page: Page, item: string): Promise<void> {
-  await page.locator('.gc-overflow sp-action-button').click();
-  await page.locator('.gc-overflow-menu button', { hasText: item }).click();
+  await page.getByRole('button', { name: 'File actions' }).click();
+  await page.getByRole('menuitem', { name: item }).click();
 }
 
 /** Open an activity-rail drawer by its title. */

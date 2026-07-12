@@ -1,3 +1,11 @@
+// Bundled open fonts matching the Spectrum look (Adobe Clean is proprietary); the token
+// font stacks in styles/tokens.css list these families first.
+import '@fontsource/source-sans-3/400.css';
+import '@fontsource/source-sans-3/600.css';
+import '@fontsource/source-sans-3/700.css';
+import '@fontsource/source-code-pro/400.css';
+import '@fontsource/source-code-pro/600.css';
+
 // Spectrum Web Components — per-component imports only (bundle size)
 import '@spectrum-web-components/theme/sp-theme.js';
 import '@spectrum-web-components/theme/theme-light.js';
@@ -20,15 +28,22 @@ import '@spectrum-web-components/checkbox/sp-checkbox.js';
 import '@spectrum-web-components/picker/sp-picker.js';
 import '@spectrum-web-components/help-text/sp-help-text.js';
 import '@spectrum-web-components/badge/sp-badge.js';
+import '@spectrum-web-components/action-menu/sp-action-menu.js';
 import '@spectrum-web-components/icons-workflow/icons/sp-icon-history.js';
 import '@spectrum-web-components/icons-workflow/icons/sp-icon-clock.js';
 import '@spectrum-web-components/icons-workflow/icons/sp-icon-help.js';
+import '@spectrum-web-components/icons-workflow/icons/sp-icon-close.js';
+import '@spectrum-web-components/icons-workflow/icons/sp-icon-refresh.js';
+import '@spectrum-web-components/icons-workflow/icons/sp-icon-folder.js';
+import '@spectrum-web-components/icons-workflow/icons/sp-icon-file-code.js';
+import '@spectrum-web-components/icons-workflow/icons/sp-icon-chevron-right.js';
 
 // App styles
 import './styles/app.css';
 
 // Components
 import './components/gc-app';
+import './components/gc-aem-nav';
 import './components/gc-app-bar';
 import './components/gc-status-bar';
 import './components/gc-drawer';

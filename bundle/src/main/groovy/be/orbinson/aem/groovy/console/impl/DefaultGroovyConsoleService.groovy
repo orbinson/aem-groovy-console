@@ -108,9 +108,18 @@ class DefaultGroovyConsoleService implements GroovyConsoleService {
     SaveScriptResponse saveScript(ScriptData scriptData) {
         def resourceResolver = scriptData.resourceResolver
 
-        def folderResource = ResourceUtil.getOrCreateResource(resourceResolver, PATH_SCRIPTS_FOLDER, JcrResourceConstants.NT_SLING_FOLDER, JcrResourceConstants.NT_SLING_FOLDER, true);
+        // the file name may contain relative folder segments ("migration/test.groovy"); the file is
+        // saved into that folder below the scripts root, creating intermediate folders as needed
+        def segments = scriptData.fileName.tokenize('/')
 
-        def fileName = scriptData.fileName
+        if (!segments || segments.any { it == '.' || it == '..' }) {
+            throw new IllegalArgumentException("invalid script file name: ${scriptData.fileName}")
+        }
+
+        def fileName = segments[-1]
+        def folderPath = ([PATH_SCRIPTS_FOLDER] + segments[0..<segments.size() - 1]).join('/')
+
+        def folderResource = ResourceUtil.getOrCreateResource(resourceResolver, folderPath, JcrResourceConstants.NT_SLING_FOLDER, JcrResourceConstants.NT_SLING_FOLDER, true);
 
         if (folderResource.getChild(fileName)) {
             resourceResolver.delete(folderResource.getChild(fileName))
@@ -119,7 +128,7 @@ class DefaultGroovyConsoleService implements GroovyConsoleService {
 
         saveFile(resourceResolver, folderResource, scriptData.script, fileName, new Date(), "application/octet-stream")
 
-        new DefaultSaveScriptResponse(fileName)
+        new DefaultSaveScriptResponse(segments.join('/'))
     }
 
     @Override

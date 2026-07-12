@@ -194,6 +194,14 @@ export class GcrPathBrowser extends LitElement {
     }
   }
 
+  /** Double click selects and confirms in one gesture, like the Granite path pickers. */
+  private onRowDblClick(node: BrowseNode): void {
+    if (node.selectable) {
+      this.selected = node.path;
+      this.confirm();
+    }
+  }
+
   /** Nodes currently visible in the tree, in display order (root children + expanded descendants). */
   private visibleNodes(): BrowseNode[] {
     const out: BrowseNode[] = [];
@@ -300,7 +308,9 @@ export class GcrPathBrowser extends LitElement {
         >
           <header class="gcr-browser-header">
             <h2>${TITLE[this.pathType]}</h2>
-            <sp-action-button quiet label="Close" aria-label="Close" @click=${() => this.close()}>✕</sp-action-button>
+            <sp-action-button quiet label="Close" aria-label="Close" @click=${() => this.close()}>
+              <sp-icon-close slot="icon"></sp-icon-close>
+            </sp-action-button>
           </header>
 
           <div
@@ -353,9 +363,10 @@ export class GcrPathBrowser extends LitElement {
           aria-selected=${this.selected === node.path}
           aria-expanded=${node.hasChildren ? String(isExpanded) : nothing}
           @click=${() => this.onRowClick(node)}
+          @dblclick=${() => this.onRowDblClick(node)}
         >
           <span
-            class="gcr-browser-twisty ${node.hasChildren ? '' : 'is-leaf'}"
+            class="gcr-browser-twisty ${node.hasChildren ? '' : 'is-leaf'} ${isExpanded ? 'is-expanded' : ''}"
             aria-hidden="true"
             @click=${(event: Event) => {
               event.stopPropagation();
@@ -363,7 +374,7 @@ export class GcrPathBrowser extends LitElement {
                 void this.toggle(node);
               }
             }}
-            >${node.hasChildren ? (isExpanded ? '▾' : '▸') : ''}</span
+            >${node.hasChildren ? html`<sp-icon-chevron-right size="xs"></sp-icon-chevron-right>` : ''}</span
           >
           <span class="gcr-browser-name">${node.title || node.name}</span>
           ${node.title ? html`<span class="gcr-browser-subtle">${node.name}</span>` : nothing}

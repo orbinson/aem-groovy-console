@@ -42,3 +42,36 @@ export function saveScript(fileName: string, script: string): Promise<unknown> {
 export function loadScript(scriptPath: string): Promise<string> {
   return getText(`${scriptPath}/jcr:content/jcr:data`);
 }
+
+export const SCRIPTS_FOLDER = '/conf/groovyconsole/scripts';
+
+const FOLDER_TYPES = ['sling:Folder', 'sling:OrderedFolder', 'nt:folder'];
+
+export interface FolderListing {
+  folders: string[];
+  files: string[];
+}
+
+/** List the subfolders and script files of a folder below the scripts root (Sling default GET servlet). */
+export async function listScriptsFolder(path: string): Promise<FolderListing> {
+  const folder = await getJson<Record<string, unknown>>(`${path}.1.json`);
+  const folders: string[] = [];
+  const files: string[] = [];
+
+  for (const [name, value] of Object.entries(folder)) {
+    if (typeof value !== 'object' || value === null) {
+      continue;
+    }
+    const primaryType = (value as Record<string, unknown>)['jcr:primaryType'] as string;
+
+    if (primaryType === 'nt:file') {
+      files.push(name);
+    } else if (FOLDER_TYPES.includes(primaryType)) {
+      folders.push(name);
+    }
+  }
+
+  folders.sort((a, b) => a.localeCompare(b));
+  files.sort((a, b) => a.localeCompare(b));
+  return { folders, files };
+}

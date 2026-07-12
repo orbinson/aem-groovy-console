@@ -10,6 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@fontsource/source-code-pro": "^5.2.7",
+    "@fontsource/source-sans-3": "^5.2.9",
     "@spectrum-web-components/action-button": "^1.7.0",
     "@spectrum-web-components/badge": "^1.12.1",
     "@spectrum-web-components/button": "^1.7.0",

@@ -1,6 +1,8 @@
 import { html, LitElement, nothing } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
+import { config } from '@console/config';
 import { persistence } from '@console/state/local-storage';
+import '@console/components/gc-aem-nav';
 
 type View = { view: 'list' } | { view: 'run'; runId: string };
 
@@ -51,8 +53,13 @@ export class GcmApp extends LitElement {
     return html`
       <sp-theme class="gcm-root-theme" system="spectrum" color=${this.colorScheme} scale="medium">
         <div class="gcm-frame">
+          ${config.aem ? html`<gc-aem-nav></gc-aem-nav>` : nothing}
           <header class="gcm-app-bar">
-            <a class="gcm-brand" href="#/">Migrations</a>
+            <a class="gcm-brand" href="#/">
+              <span class="gcm-brand-context">Groovy Console</span>
+              <span class="gcm-brand-sep">/</span>
+              Migrations
+            </a>
             <div class="gcm-app-bar-actions">
               <sp-switch
                 ?checked=${this.colorScheme === 'dark'}

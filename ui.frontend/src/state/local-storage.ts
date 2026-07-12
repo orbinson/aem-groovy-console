@@ -37,7 +37,14 @@ export const persistence = {
 
   // The classic UI stores Ace theme ids ("ace/theme/..."); the modern UI stores
   // "light"/"dark" under its own key to avoid clobbering the classic preference.
-  getColorScheme: (): 'light' | 'dark' => (get(`${THEME}.modern`) === 'dark' ? 'dark' : 'light'),
+  // Without a stored preference, follow the OS color scheme.
+  getColorScheme: (): 'light' | 'dark' => {
+    const stored = get(`${THEME}.modern`);
+    if (stored === 'dark' || stored === 'light') {
+      return stored;
+    }
+    return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  },
   saveColorScheme: (value: 'light' | 'dark'): void => set(`${THEME}.modern`, value),
 
   getSplitterPosition: (): number | null => {
@@ -45,6 +52,10 @@ export const persistence = {
     return value ? Number(value) : null;
   },
   saveSplitterPosition: (value: number): void => set('groovyconsole.modern.splitter', String(value)),
+
+  /** Last folder a script was saved into, so consecutive saves land in the same place. */
+  getSaveFolder: (): string => get('groovyconsole.modern.save.folder'),
+  saveSaveFolder: (path: string): void => set('groovyconsole.modern.save.folder', path),
 
   getScriptName: (): string => get(SCRIPT_NAME),
   saveScriptName: (scriptPath: string): void => {

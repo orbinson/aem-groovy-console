@@ -3,6 +3,6 @@
           jcr:primaryType="nt:unstructured"
           jcr:title="Reports"
           jcr:description="Browse, run and export Groovy Console reports"
-          id="cq-tools-groovyconsole-reports"
+          id="granite-general-groovyconsole-reports"
           href="/apps/groovyconsole/reports.html"
-          icon="documentChart"/>
+          icon="graphBarVertical"/>
