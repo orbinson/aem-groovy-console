@@ -186,27 +186,60 @@ administrators and run by business users**, so access is split three ways:
   run/view/export, delete access to remove). None of these are gated by the console's allowed groups, so business
   users with read-only permissions can run reports; the report executes with their own session, seeing only what
   they are allowed to see.
-- **Editing metadata / parameter configuration** (title, description, category, page size, parameter definitions)
-  needs **JCR write** access to the report node — a business user may fix a description without any console rights.
-- **Creating a report, or editing the executable Groovy** (the report script or a `DYNAMIC` options script) — and
-  the editor's "try out" preview and inline "test options", which run arbitrary posted Groovy — additionally
-  require the **console permission** (admin or a member of the console's `allowedGroups`, via
-  `ConfigurationService.hasPermission`). The `/bin/groovyconsole/reports` save endpoint enforces this: a caller
-  without console permission may save metadata, but any script fields in the request are ignored and the stored,
-  vetted scripts are preserved.
+- **Editing metadata** (title, description, category, page size) needs only **`jcr:modifyProperties`** on the
+  report node — a business user may fix a description without any console rights. For a caller without the console
+  permission the `/bin/groovyconsole/reports` save endpoint performs a **metadata-only** update: it writes just
+  the report node's own properties and never touches the `.groovy` script nodes or the parameter definitions.
+- **Creating a report, editing the script, or editing the parameter definitions** (including a `DYNAMIC` options
+  script) — and the editor's "try out" preview and inline "test options", which run arbitrary posted Groovy —
+  additionally require the **console permission** (admin or a member of the console's `allowedGroups`, via
+  `ConfigurationService.hasPermission`). Parameter definitions are gated with the scripts because the full save
+  rewrites the `parameters` subtree, which carries the `DYNAMIC` option-script files.
 
 > ⚠️ **The console-permission gate protects the reports servlet, not the repository.** Because a report is just a
 > JCR node, anyone with **JCR write** on `/conf/groovyconsole/reports/<name>` can edit the `.groovy` child nodes
 > directly through the OOTB `SlingPostServlet` (or CRXDE, package install, etc.), bypassing the servlet entirely.
 > The application gate is therefore **defense-in-depth for the UI, not a security boundary on its own** — the
-> boundary is **JCR ACLs**. To prevent a group from planting executable Groovy, do **not** grant it blanket write
-> on the reports tree; grant write only to authors you trust to run code. For a true "business edits metadata but
-> not scripts" split, back it with JCR ACLs that allow the business group to modify the report node's properties
-> while **denying write on the `*.groovy` `nt:file` nodes** (and the `parameters` subtree that carries them).
+> boundary is **JCR ACLs**.
 
-To let a group author reports (scripts included), add it to the console's `allowedGroups` and grant it write on
-`/conf/groovyconsole/reports`. To let a group edit only metadata, grant it write on the report nodes but deny
-write on the `.groovy` script nodes. To let a group only run reports, grant read on the report nodes.
+### Recommended ACL setup
+
+The simplest safe model is **read-only for business, write for trusted authors** — read is the right to run, and
+only authors you trust to run code get write:
+
+```
+# Sling repoinit (e.g. an org.apache.sling.jcr.repoinit.RepositoryInitializer OSGi config)
+create group report-authors
+create group report-viewers
+
+set ACL for report-authors
+    allow jcr:read,rep:write on /conf/groovyconsole/reports
+end
+
+set ACL for report-viewers
+    allow jcr:read on /conf/groovyconsole/reports
+end
+```
+
+To additionally let business users **edit metadata but never the executable Groovy**, grant them
+`jcr:modifyProperties` and then **deny writes on the `.groovy` nodes** (the report script and every `DYNAMIC`
+options script). They are not granted `jcr:addChildNodes`/`jcr:removeNode`, so they cannot add or replace script
+files either — the deny closes the one remaining hole (editing an existing script's `jcr:data` directly):
+
+```
+set ACL for report-viewers
+    allow jcr:read on /conf/groovyconsole/reports
+    allow jcr:modifyProperties on /conf/groovyconsole/reports
+    # never let them change a script's bytes, wherever a .groovy file (and its jcr:content) lives in the tree
+    deny jcr:modifyProperties on /conf/groovyconsole/reports restriction(rep:glob,*.groovy*)
+end
+```
+
+This is the JCR backstop that makes the split real regardless of how the write arrives (reports servlet, the
+OOTB `SlingPostServlet`, CRXDE, a package install…). The `rep:glob` value `*.groovy*` matches any descendant
+whose path contains a `.groovy` file node — e.g. `…/my-report/my-report.groovy` and its
+`…/my-report.groovy/jcr:content`, and the same under `…/parameters/<name>/`. (Report and parameter names are
+restricted to letters, digits, `-` and `_`, so no other node can accidentally match.)
 
 ## User interfaces
 

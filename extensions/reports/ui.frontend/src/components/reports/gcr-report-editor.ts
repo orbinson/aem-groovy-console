@@ -410,11 +410,20 @@ export class GcrReportEditor extends LitElement {
         <section class="gcr-panel">
           <div class="gcr-panel-header">
             <h3>Parameters</h3>
-            <sp-action-button size="s" @click=${() => this.addParameter()}>Add parameter</sp-action-button>
+            ${this.canEditScript
+              ? html`<sp-action-button size="s" @click=${() => this.addParameter()}>Add parameter</sp-action-button>`
+              : nothing}
           </div>
           ${this.parameters.length === 0
             ? html`<div class="gcr-empty">No parameters. The report runs without input.</div>`
-            : this.parameters.map((parameter, index) => this.renderParameterRow(parameter, index))}
+            : this.canEditScript
+              ? this.parameters.map((parameter, index) => this.renderParameterRow(parameter, index))
+              : this.parameters.map((parameter) => this.renderParameterSummary(parameter))}
+          ${!this.canEditScript
+            ? html`<sp-help-text size="s" variant="neutral">
+                Parameters can only be changed with console permission. You can still update the report details.
+              </sp-help-text>`
+            : nothing}
         </section>
       </div>
     `;
@@ -521,6 +530,19 @@ export class GcrReportEditor extends LitElement {
       ${preview.columns.length
         ? renderResultTable(preview.columns, preview.rows)
         : html`<div class="gcr-empty">The report returned no rows.</div>`}
+    `;
+  }
+
+  /** Read-only one-line view of a parameter, shown when the user may not edit the definition (no console rights). */
+  private renderParameterSummary(parameter: ParameterRow) {
+    const flags = [parameter.type, parameter.multiple ? 'multiple' : '', parameter.required ? 'required' : '']
+      .filter(Boolean)
+      .join(' · ');
+    return html`
+      <div class="gcr-parameter-summary">
+        <strong>${parameter.label || parameter.name || '(unnamed)'}</strong>
+        <span class="gcr-browser-subtle">${parameter.name} — ${flags}</span>
+      </div>
     `;
   }
 

@@ -7,7 +7,6 @@ import be.orbinson.aem.groovy.console.reports.ReportService
 import be.orbinson.aem.groovy.console.reports.model.ReportDefinition
 import be.orbinson.aem.groovy.console.reports.model.ReportParameter
 import be.orbinson.aem.groovy.console.reports.model.ReportParameterType
-import groovy.transform.PackageScope
 import groovy.util.logging.Slf4j
 import org.apache.sling.api.SlingHttpServletRequest
 import org.apache.sling.api.SlingHttpServletResponse
@@ -94,26 +93,26 @@ class ReportsServlet extends AbstractReportsServlet {
         def submitted = fromBody(body)
 
         // The report script and any dynamic-options scripts are executable Groovy, so writing them requires
-        // console permission; metadata/parameter edits need only JCR write access. Callers without console
-        // permission may edit an existing report's metadata but cannot introduce or change its scripts, and
-        // cannot create a report (which would establish a script).
+        // console permission. A caller without it may only edit an existing report's metadata (a metadata-only
+        // write that never touches the .groovy script nodes or the parameter definitions), and cannot create a
+        // report (which would establish a script).
         def consolePermitted = configurationService.hasPermission(request)
-        def existing = reportService.getReport(resolver, name)
 
-        if (!consolePermitted) {
-            if (!existing) {
+        // JCR access is enforced inside the service (PersistenceException -> ReportException -> 403)
+        try {
+            def definition
+
+            if (consolePermitted) {
+                definition = reportService.saveReport(resolver, submitted, resolver.userID)
+            } else if (reportService.getReport(resolver, name)) {
+                definition = reportService.updateReportMetadata(resolver, submitted, resolver.userID)
+            } else {
                 writeError(response, SC_FORBIDDEN,
-                        "Creating a report requires console permission (reports run Groovy scripts).")
+                        "Creating a report, or editing its script, requires console permission (reports run Groovy).")
 
                 return
             }
 
-            preserveScripts(submitted, existing)
-        }
-
-        // JCR write access is enforced inside saveReport (PersistenceException -> ReportException -> 403)
-        try {
-            def definition = reportService.saveReport(resolver, submitted, resolver.userID)
             def canEdit = reportService.canEdit(resolver, name)
 
             writeJsonResponse(response, ReportJsonMapper.definition(definition, canEdit,
@@ -124,24 +123,6 @@ class ReportsServlet extends AbstractReportsServlet {
             LOG.warn("error saving report : {}", name, e)
 
             writeError(response, SC_FORBIDDEN, "Not allowed to save report (check repository permissions): $name")
-        }
-    }
-
-    /**
-     * Carry the existing (vetted) executable Groovy forward onto a submitted definition, ignoring any script
-     * changes in the request.  Used when the caller lacks console permission, so they can edit metadata and
-     * parameter configuration but never introduce or alter a runnable script.
-     */
-    @PackageScope
-    static void preserveScripts(ReportDefinition submitted, ReportDefinition existing) {
-        submitted.script = existing.script
-
-        def existingByName = existing.parameters.collectEntries { [(it.name): it] }
-
-        submitted.parameters.each { parameter ->
-            if (parameter.type == ReportParameterType.DYNAMIC) {
-                parameter.optionsScript = (existingByName[parameter.name] as ReportParameter)?.optionsScript
-            }
         }
     }
 

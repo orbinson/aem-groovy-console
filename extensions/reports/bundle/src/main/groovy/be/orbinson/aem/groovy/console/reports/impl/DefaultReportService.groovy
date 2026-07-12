@@ -116,6 +116,39 @@ class DefaultReportService implements ReportService {
     }
 
     @Override
+    ReportDefinition updateReportMetadata(ResourceResolver resourceResolver, ReportDefinition reportDefinition,
+                                          String userId) {
+        def resource = getReportResource(resourceResolver, reportDefinition.name)
+
+        if (!resource) {
+            throw new ReportException("Report not found: ${reportDefinition.name}")
+        }
+
+        try {
+            // only the report node's own properties are written — the .groovy script children and the parameters
+            // subtree are left untouched, so this succeeds without write access to the script nodes
+            def valueMap = resource.adaptTo(ModifiableValueMap)
+
+            valueMap.put(PROPERTY_TITLE, reportDefinition.title ?: reportDefinition.name)
+            putOrRemove(valueMap, PROPERTY_DESCRIPTION, reportDefinition.description)
+            putOrRemove(valueMap, PROPERTY_CATEGORY, reportDefinition.category)
+            putOrRemove(valueMap, PROPERTY_PAGE_SIZE, reportDefinition.pageSize)
+            valueMap.put(PROPERTY_LAST_MODIFIED, Calendar.instance)
+            valueMap.put(PROPERTY_LAST_MODIFIED_BY, userId)
+
+            resourceResolver.commit()
+
+            LOG.info("updated report metadata : {} by user : {}", reportDefinition.name, userId)
+
+            toReportDefinition(resource)
+        } catch (PersistenceException e) {
+            LOG.error("error updating report metadata : {}", reportDefinition.name, e)
+
+            throw new ReportException("Error updating report metadata: ${reportDefinition.name}", e)
+        }
+    }
+
+    @Override
     void deleteReport(ResourceResolver resourceResolver, String name) {
         def resource = getReportResource(resourceResolver, name)
 
