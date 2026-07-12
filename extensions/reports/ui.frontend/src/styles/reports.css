@@ -650,26 +650,28 @@ body {
   min-width: 0;
 }
 
+/* common fields have a fixed basis and do NOT grow, so name/label/type/default line up identically across
+   every parameter row regardless of the type-specific config fields; only the config area absorbs slack */
 .gcr-parameter-name {
-  flex: 1 1 110px;
+  flex: 0 1 150px;
 }
 
 .gcr-parameter-label {
-  flex: 1 1 120px;
+  flex: 0 1 160px;
 }
 
 .gcr-parameter-type {
-  flex: 0 1 110px;
+  flex: 0 0 120px;
 }
 
 .gcr-parameter-default {
-  flex: 1 1 110px;
+  flex: 0 1 150px;
 }
 
 .gcr-parameter-options,
 .gcr-parameter-pathtype,
 .gcr-parameter-rootpath {
-  flex: 1 1 120px;
+  flex: 1 1 160px;
 }
 
 /* keep the trailing controls from shrinking/wrapping */
@@ -713,26 +715,33 @@ body {
   justify-content: flex-end;
 }
 
-.gcr-options-script {
-  width: 100%;
-  box-sizing: border-box;
-  min-height: 190px;
-  resize: vertical;
-  font-family: 'Source Code Pro', ui-monospace, 'SF Mono', Menlo, monospace;
-  font-size: 13px;
-  line-height: 1.55;
-  padding: 10px 12px;
-  border: 1px solid var(--spectrum-gray-400);
-  border-radius: 4px;
-  background: var(--spectrum-gray-50);
-  color: var(--spectrum-gray-900);
-  tab-size: 4;
+/* the dynamic-options editor is a Monaco instance (Groovy highlighting + autocomplete), shorter than the main
+   report script editor */
+.gcr-options-editor .gcr-editor-container {
+  height: 220px;
 }
 
-.gcr-options-script:focus-visible {
-  outline: none;
-  border-color: var(--spectrum-blue-500, #2680eb);
-  box-shadow: 0 0 0 1px var(--spectrum-blue-500, #2680eb);
+/* wide modal for the "Test options" result / error so a full stack trace is readable */
+.gcr-test-modal {
+  width: min(900px, 92vw);
+}
+
+.gcr-test-modal-body {
+  padding: 16px 20px;
+  overflow: auto;
+}
+
+.gcr-options-preview {
+  margin: 8px 0 0;
+  padding-left: 18px;
+}
+
+.gcr-options-preview li {
+  margin: 2px 0;
+}
+
+.gcr-options-preview code {
+  font-family: var(--spectrum-code-font-family-stack);
 }
 
 /* ---- multifield: repeatable values with add / remove ---- */

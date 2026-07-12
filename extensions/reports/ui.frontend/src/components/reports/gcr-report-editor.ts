@@ -1,5 +1,6 @@
 import { html, LitElement, nothing } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
+import { repeat } from 'lit/directives/repeat.js';
 import { ApiError } from '@console/api/client';
 import {
   deleteReport,
@@ -10,6 +11,7 @@ import {
 } from '../../api/reports-api';
 import type {
   BrowseType,
+  DynamicOption,
   PathType,
   ReportParameter,
   ReportParameterType,
@@ -67,7 +69,11 @@ const DEFAULT_SCRIPT = [
 interface ParameterRow extends Omit<ReportParameter, 'options'> {
   /** Comma-separated in the editor form. */
   options: string;
+  /** Stable client-side identity so keyed rendering never reuses a row's Monaco editor for another row. */
+  _key: number;
 }
+
+let nextParameterKey = 0;
 
 /** Editor view: metadata, Groovy script (Monaco) and parameters. Access is governed by JCR ACLs. */
 @customElement('gcr-report-editor')
@@ -96,6 +102,8 @@ export class GcrReportEditor extends LitElement {
   @state() private previewing = false;
   /** Validation messages for required test values left empty, keyed by parameter name. */
   @state() private testErrors: Record<string, string> = {};
+  /** Result (or error) of the last "Test options" run, shown in a modal. */
+  @state() private optionsTest: { title: string; error?: string; options?: DynamicOption[] } | null = null;
 
   @query('gcr-code-editor') private codeEditor?: GcrCodeEditor;
   @query('gcr-path-browser') private rootBrowser?: GcrPathBrowser;
@@ -152,6 +160,7 @@ export class GcrReportEditor extends LitElement {
       this.parameters = definition.parameters.map((parameter) => ({
         ...parameter,
         options: parameter.options.join(', '),
+        _key: nextParameterKey++,
       }));
     } catch (error) {
       this.error = error instanceof ApiError ? error.message : 'Could not load report.';
@@ -175,6 +184,7 @@ export class GcrReportEditor extends LitElement {
         rootPath: '',
         optionsScript: '',
         order: this.parameters.length,
+        _key: nextParameterKey++,
       },
     ];
   }
@@ -351,14 +361,59 @@ export class GcrReportEditor extends LitElement {
     this.clearTestError(name);
   }
 
-  /** Resolve options for an unsaved DYNAMIC parameter and report the count (used by the editor's Test button). */
+  /** Resolve options for an unsaved DYNAMIC parameter and show the result (or the full error) in a modal. */
   private async testOptions(parameter: ParameterRow): Promise<void> {
+    const title = parameter.label || parameter.name || 'parameter';
     try {
       const options = await resolveDynamicOptionsForScript(parameter.optionsScript ?? '', this.testValuesForRun());
-      toast(this, `Options script returned ${options.length} option(s).`);
+      this.optionsTest = { title, options };
     } catch (error) {
-      toast(this, error instanceof ApiError ? error.message : 'Options script failed.', 'negative');
+      this.optionsTest = { title, error: error instanceof ApiError ? error.message : String(error) };
     }
+  }
+
+  private closeOptionsTest(): void {
+    this.optionsTest = null;
+  }
+
+  private renderOptionsTestModal() {
+    const test = this.optionsTest;
+    if (!test) {
+      return nothing;
+    }
+    return html`
+      <div
+        class="gcr-browser-overlay"
+        @click=${(event: Event) => event.target === event.currentTarget && this.closeOptionsTest()}
+      >
+        <div
+          class="gcr-browser gcr-test-modal"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Options test result"
+          @keydown=${(event: KeyboardEvent) => event.key === 'Escape' && this.closeOptionsTest()}
+        >
+          <header class="gcr-browser-header">
+            <h2>${test.error ? 'Options script failed' : 'Options'} — ${test.title}</h2>
+            <sp-action-button quiet label="Close" aria-label="Close" @click=${() => this.closeOptionsTest()}>
+              <sp-icon-close slot="icon"></sp-icon-close>
+            </sp-action-button>
+          </header>
+          <div class="gcr-test-modal-body">
+            ${test.error
+              ? html`<pre class="gcr-stacktrace">${test.error}</pre>`
+              : html`
+                  <p>${test.options?.length ?? 0} option(s) returned.</p>
+                  <ul class="gcr-options-preview">
+                    ${(test.options ?? []).map(
+                      (option) => html`<li><code>${option.value}</code> — ${option.label}</li>`,
+                    )}
+                  </ul>
+                `}
+          </div>
+        </div>
+      </div>
+    `;
   }
 
   private async removeReport(): Promise<void> {
@@ -394,6 +449,7 @@ export class GcrReportEditor extends LitElement {
           this.onRootSelected(event)}
       >
         <gcr-path-browser></gcr-path-browser>
+        ${this.renderOptionsTestModal()}
         <div class="gcr-breadcrumbs">
           <a href="#/">Reports</a> /
           ${this.isNew
@@ -501,7 +557,11 @@ export class GcrReportEditor extends LitElement {
           ${this.parameters.length === 0
             ? html`<div class="gcr-empty">No parameters. The report runs without input.</div>`
             : this.canEditScript
-              ? this.parameters.map((parameter, index) => this.renderParameterRow(parameter, index))
+              ? repeat(
+                  this.parameters,
+                  (parameter) => parameter._key,
+                  (parameter, index) => this.renderParameterRow(parameter, index),
+                )
               : this.parameters.map((parameter) => this.renderParameterSummary(parameter))}
           ${!this.canEditScript
             ? html`<sp-help-text size="s" variant="neutral">
@@ -760,18 +820,14 @@ export class GcrReportEditor extends LitElement {
           Options script for <strong>${parameter.label || parameter.name || 'this parameter'}</strong> — return
           <code>report.options()</code> of value/label pairs
         </sp-field-label>
-        <textarea
-          id="options-script-${index}"
-          class="gcr-options-script"
-          spellcheck="false"
-          autocomplete="off"
-          autocapitalize="off"
-          aria-label="Dynamic options Groovy script"
-          ?disabled=${!this.canEditScript}
-          .value=${parameter.optionsScript || DEFAULT_OPTIONS_SCRIPT}
-          @input=${(event: Event) =>
-            this.updateParameter(index, { optionsScript: (event.target as HTMLTextAreaElement).value })}
-        ></textarea>
+        <div class="gcr-editor-frame gcr-options-editor">
+          <gcr-code-editor
+            .initialValue=${parameter.optionsScript || DEFAULT_OPTIONS_SCRIPT}
+            ?readOnly=${!this.canEditScript}
+            @gcr-code-changed=${(event: Event) =>
+              this.updateParameter(index, { optionsScript: (event.target as GcrCodeEditor).value })}
+          ></gcr-code-editor>
+        </div>
         ${this.canEditScript
           ? html`<div class="gcr-options-script-actions">
               <sp-button variant="secondary" size="s" @click=${() => void this.testOptions(parameter)}>
