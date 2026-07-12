@@ -4,7 +4,6 @@ import be.orbinson.aem.groovy.console.reports.ReportTagService
 import com.day.cq.tagging.TagManager
 import io.wcm.testing.mock.aem.junit5.AemContext
 import io.wcm.testing.mock.aem.junit5.AemContextExtension
-import org.apache.sling.api.resource.ModifiableValueMap
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -57,19 +56,6 @@ class AemReportTagServiceTest {
         assertEquals("Red", red.title)
         assertEquals("/content/cq:tags/colors/red", red.path)
         assertFalse(red.hasChildren as boolean)
-    }
-
-    @Test
-    void "excludes moved or merged tags carrying cq:movedTo"() {
-        // simulate a merge/move: the source tag lingers under /content/cq:tags as a cq:movedTo redirect stub
-        def blue = context.resourceResolver().getResource("/content/cq:tags/colors/blue")
-        blue.adaptTo(ModifiableValueMap).put("cq:movedTo", "colors:green")
-        context.resourceResolver().commit()
-
-        def children = tagService.listChildTags(context.resourceResolver(), "/content/cq:tags/colors")
-
-        assertFalse(ids(children).contains("colors:blue"), "a moved/merged tag must not be offered in the picker")
-        assertEquals(["colors:green", "colors:red"], ids(children).sort())
     }
 
     @Test

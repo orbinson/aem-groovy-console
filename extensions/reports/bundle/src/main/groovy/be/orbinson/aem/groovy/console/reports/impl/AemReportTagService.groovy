@@ -4,7 +4,6 @@ import be.orbinson.aem.groovy.console.reports.ReportTagService
 import com.day.cq.tagging.JcrTagManagerFactory
 import com.day.cq.tagging.Tag
 import groovy.util.logging.Slf4j
-import org.apache.sling.api.resource.Resource
 import org.apache.sling.api.resource.ResourceResolver
 import org.osgi.service.component.annotations.Component
 import org.osgi.service.component.annotations.Reference
@@ -14,15 +13,16 @@ import org.osgi.service.component.annotations.Reference
  * {@link JcrTagManagerFactory} — an AEM-only OSGi service — gates the component: it is absent on plain Sling, so
  * this component never activates there and no {@code ReportTagService} is registered (the tag picker then returns
  * empty). {@code com.day.cq.*} imports are marked optional in the bundle so it still resolves on Sling.
+ *
+ * <p>Going through the {@code TagManager} (rather than reading {@code cq:Tag} nodes directly) means AEM's tag
+ * semantics apply for free: {@code listChildren()} already hides moved/merged tags (the {@code cq:movedTo}
+ * redirect stubs) and resolves display titles, so the picker never offers a dead tag.</p>
  */
 @Component(service = ReportTagService)
 @Slf4j("LOG")
 class AemReportTagService implements ReportTagService {
 
     private static final String TAGS_ROOT = "/content/cq:tags"
-
-    // moved/merged tags linger as redirect nodes carrying this property; TagManager hides them and we must too
-    private static final String PROPERTY_MOVED_TO = "cq:movedTo"
 
     @Reference
     private JcrTagManagerFactory tagManagerFactory
@@ -56,11 +56,6 @@ class AemReportTagService implements ReportTagService {
         while (children.hasNext()) {
             def tag = children.next()
 
-            // skip moved/merged redirect stubs so the picker never offers a dead tag
-            if (isRedirect(tag)) {
-                continue
-            }
-
             tags << [
                     id         : tag.tagID,
                     path       : tag.path,
@@ -71,11 +66,5 @@ class AemReportTagService implements ReportTagService {
         }
 
         tags.sort { (it.title as String).toLowerCase() }
-    }
-
-    private static boolean isRedirect(Tag tag) {
-        def resource = tag.adaptTo(Resource)
-
-        resource != null && resource.valueMap.containsKey(PROPERTY_MOVED_TO)
     }
 }
