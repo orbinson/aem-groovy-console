@@ -1,0 +1,41 @@
+# ACL setup for the Groovy Console reports extension used by these integration tests (see
+# extensions/reports/README.md, "Access control" / "Recommended ACL setup"), split three ways so the tests can
+# validate each tier independently:
+#
+#  - report-viewers:  may only run/view/export reports (jcr:read). No write access at all, so they can never
+#                      edit metadata, parameters or scripts.
+#  - report-authors:  may edit report metadata (title, description, category, page size) via jcr:modifyProperties,
+#                      but are denied changing a report's or a DYNAMIC parameter's executable Groovy - the deny ACE
+#                      below blocks writes to any .groovy file (and its jcr:content) wherever it lives in the tree.
+#                      They are NOT part of the console's allowedGroups, so the reports servlet's script-editing
+#                      endpoints reject them too (defense-in-depth on top of the JCR backstop).
+#  - report-admins:   trusted authors who may create reports and edit the executable Groovy (rep:write), and ARE
+#                      part of the console's allowedGroups (see groovyconsole-reports-acl.json), so the reports
+#                      servlet's script-editing endpoints accept them as well.
+
+create group report-viewers
+create group report-authors
+create group report-admins
+
+create user it-report-viewer with password it-report-viewer
+create user it-report-author with password it-report-author
+create user it-report-admin with password it-report-admin
+
+add it-report-viewer to group report-viewers
+add it-report-author to group report-authors
+add it-report-admin to group report-admins
+
+set ACL for report-viewers
+    allow jcr:read on /conf/groovyconsole/reports
+end
+
+set ACL for report-authors
+    allow jcr:read on /conf/groovyconsole/reports
+    allow jcr:modifyProperties on /conf/groovyconsole/reports
+    # never let them change a script's bytes, wherever a .groovy file (and its jcr:content) lives in the tree
+    deny jcr:modifyProperties on /conf/groovyconsole/reports restriction(rep:glob,*.groovy*)
+end
+
+set ACL for report-admins
+    allow jcr:read,rep:write on /conf/groovyconsole/reports
+end
