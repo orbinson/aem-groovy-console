@@ -4,5 +4,6 @@
         <include pattern="/conf/groovyconsole"/>
         <include pattern="/conf/groovyconsole/reports"/>
         <include pattern="/conf/groovyconsole/reports/sample-content-listing(/.*)?"/>
+        <include pattern="/conf/groovyconsole/reports/sample-advanced-parameters(/.*)?"/>
     </filter>
 </workspaceFilter>

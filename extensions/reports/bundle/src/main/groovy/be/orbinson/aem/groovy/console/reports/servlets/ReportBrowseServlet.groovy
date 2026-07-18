@@ -1,17 +1,21 @@
 package be.orbinson.aem.groovy.console.reports.servlets
 
+import be.orbinson.aem.groovy.console.reports.ReportTagService
 import groovy.util.logging.Slf4j
 import org.apache.jackrabbit.JcrConstants
 import org.apache.sling.api.SlingHttpServletRequest
 import org.apache.sling.api.SlingHttpServletResponse
 import org.apache.sling.api.resource.Resource
 import org.osgi.service.component.annotations.Component
+import org.osgi.service.component.annotations.Reference
+import org.osgi.service.component.annotations.ReferenceCardinality
+import org.osgi.service.component.annotations.ReferencePolicy
 
 import javax.servlet.Servlet
 import javax.servlet.ServletException
 
 /**
- * Repository browser backing the reports UI path picker.
+ * Repository browser backing the reports UI path/tag picker.
  *
  * <code>GET /bin/groovyconsole/reports/browse.json?path=&amp;type=</code>
  *
@@ -21,6 +25,9 @@ import javax.servlet.ServletException
  *     <li><code>NODE</code> — any JCR node (default)</li>
  *     <li><code>PAGE</code> — AEM pages ({@code cq:Page}); folders are shown for navigation</li>
  *     <li><code>ASSET</code> — DAM assets ({@code dam:Asset}); folders are shown for navigation</li>
+ *     <li><code>TAG</code> — AEM tags, delegated to the AEM-only {@link ReportTagService} (backed by the
+ *         {@code TagManager}, so moved/merged redirect tags are hidden). Each entry carries its tag
+ *         <code>id</code>. On plain Sling no {@code ReportTagService} is registered, so the tag tree is empty.</li>
  * </ul>
  */
 @Component(service = Servlet, immediate = true, property = [
@@ -43,10 +50,19 @@ class ReportBrowseServlet extends AbstractReportsServlet {
 
     private static final String TYPE_ASSET = "ASSET"
 
-    // AEM primary node types matched per filter
+    private static final String TYPE_TAG = "TAG"
+
+    private static final String TAGS_ROOT = "/content/cq:tags"
+
+    // AEM primary node types matched per filter (matched by string so the PATH/PAGE/ASSET browse imports no AEM
+    // API and stays resolvable on plain Sling — where these nodes simply do not exist and browsing returns empty)
     private static final String PRIMARY_TYPE_PAGE = "cq:Page"
 
     private static final String PRIMARY_TYPE_ASSET = "dam:Asset"
+
+    // AEM-only; absent on Sling, where the TAG picker then returns empty
+    @Reference(cardinality = ReferenceCardinality.OPTIONAL, policy = ReferencePolicy.DYNAMIC)
+    private volatile ReportTagService tagService
 
     @Override
     protected void doGet(SlingHttpServletRequest request, SlingHttpServletResponse response)
@@ -61,6 +77,12 @@ class ReportBrowseServlet extends AbstractReportsServlet {
 
         def type = (request.getParameter("type") ?: "NODE").toUpperCase()
         def path = request.getParameter("path") ?: "/"
+
+        if (type == TYPE_TAG) {
+            browseTags(response, resolver, path)
+
+            return
+        }
 
         def resource = resolver.getResource(path)
 
@@ -104,6 +126,33 @@ class ReportBrowseServlet extends AbstractReportsServlet {
     }
 
     // internals
+
+    // Tag browsing is delegated to the AEM-only ReportTagService (TagManager-backed). Absent on Sling -> empty.
+    private void browseTags(SlingHttpServletResponse response, resolver, String path) {
+        def service = tagService
+
+        if (!service) {
+            writeJsonResponse(response, [path: path, children: []])
+
+            return
+        }
+
+        // "/" is the picker's generic default; for tags the taxonomy root means "list the namespaces"
+        def tagPath = (!path || path == "/") ? TAGS_ROOT : path
+
+        def children = service.listChildTags(resolver, tagPath).collect { tag ->
+            [
+                    name       : tag.name,
+                    path       : tag.path,
+                    title      : tag.title,
+                    id         : tag.id,
+                    hasChildren: tag.hasChildren,
+                    selectable : true
+            ]
+        }
+
+        writeJsonResponse(response, [path: path, children: children])
+    }
 
     private static String primaryType(Resource resource) {
         resource.valueMap.get(JcrConstants.JCR_PRIMARYTYPE, String)

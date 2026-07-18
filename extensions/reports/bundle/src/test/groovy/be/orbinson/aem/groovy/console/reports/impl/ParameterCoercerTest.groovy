@@ -17,6 +17,7 @@ class ParameterCoercerTest {
                 name: name,
                 type: type,
                 required: opts.required ?: false,
+                multiple: opts.multiple ?: false,
                 defaultValue: opts.defaultValue as String,
                 options: (opts.options ?: []) as List<String>)
     }
@@ -68,6 +69,50 @@ class ParameterCoercerTest {
 
         assertThrows(IllegalArgumentException) {
             ParameterCoercer.coerce([param("r", ReportParameterType.STRING, [required: true])], [:])
+        }
+    }
+
+    @Test
+    void "TAG passes the raw tag id through"() {
+        assertEquals("marketing:regions/emea", ParameterCoercer.coerce(
+                [param("t", ReportParameterType.TAG)], [t: "marketing:regions/emea"]).t)
+    }
+
+    @Test
+    void "multiple coerces each element and drops blanks"() {
+        def result = ParameterCoercer.coerce([param("n", ReportParameterType.NUMBER, [multiple: true])],
+                [n: ["1", "", "2"]]).n
+
+        assertEquals([new BigDecimal("1"), new BigDecimal("2")], result)
+    }
+
+    @Test
+    void "multiple wraps a lone scalar into a list"() {
+        assertEquals(["a"], ParameterCoercer.coerce([param("m", ReportParameterType.STRING, [multiple: true])],
+                [m: "a"]).m)
+    }
+
+    @Test
+    void "multiple yields an empty list when optional and empty, falls back to default, enforces required"() {
+        assertEquals([], ParameterCoercer.coerce([param("m", ReportParameterType.STRING, [multiple: true])], [:]).m)
+
+        assertEquals(["fallback"], ParameterCoercer.coerce(
+                [param("m", ReportParameterType.STRING, [multiple: true, defaultValue: "fallback"])], [:]).m)
+
+        assertThrows(IllegalArgumentException) {
+            ParameterCoercer.coerce([param("m", ReportParameterType.STRING, [multiple: true, required: true])],
+                    [m: []])
+        }
+    }
+
+    @Test
+    void "multiple SELECT validates every element against options"() {
+        def parameter = param("s", ReportParameterType.SELECT, [multiple: true, options: ["a", "b"]])
+
+        assertEquals(["a", "b"], ParameterCoercer.coerce([parameter], [s: ["a", "b"]]).s)
+
+        assertThrows(IllegalArgumentException) {
+            ParameterCoercer.coerce([parameter], [s: ["a", "c"]])
         }
     }
 }

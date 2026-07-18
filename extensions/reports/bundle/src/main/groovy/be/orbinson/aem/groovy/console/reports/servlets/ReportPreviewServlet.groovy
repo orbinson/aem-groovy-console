@@ -70,9 +70,7 @@ class ReportPreviewServlet extends AbstractReportsServlet {
             return
         }
 
-        def values = (body["values"] as Map ?: [:]).collectEntries { key, value ->
-            [(key as String): value == null ? null : value as String]
-        } as Map<String, String>
+        def values = AbstractReportsServlet.toParameterValues(body["values"] as Map)
 
         try {
             def preview = executionService.preview(definition, values, request.resourceResolver)

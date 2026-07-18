@@ -1,0 +1,10 @@
+{
+  "repoinit:TEXT|true": "@file",
+  "configurations": {
+    "be.orbinson.aem.groovy.console.configuration.impl.DefaultConfigurationService": {
+      "allowedGroups": [
+        "report-admins"
+      ]
+    }
+  }
+}
