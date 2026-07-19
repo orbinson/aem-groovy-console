@@ -1,7 +1,7 @@
 package be.orbinson.aem.groovy.console.reports.servlets
 
 import be.orbinson.aem.groovy.console.configuration.ConfigurationService
-import be.orbinson.aem.groovy.console.reports.ReportExecutionService
+import be.orbinson.aem.groovy.console.reports.ReportQueryAuditService
 import be.orbinson.aem.groovy.console.reports.ReportService
 import groovy.util.logging.Slf4j
 import org.apache.sling.api.SlingHttpServletRequest
@@ -38,7 +38,7 @@ class ReportQueryAuditServlet extends AbstractReportsServlet {
     private ReportService reportService
 
     @Reference
-    private ReportExecutionService executionService
+    private ReportQueryAuditService queryAuditService
 
     @Reference
     private ConfigurationService configurationService
@@ -52,7 +52,7 @@ class ReportQueryAuditServlet extends AbstractReportsServlet {
             return
         }
 
-        writeJsonResponse(response, [available: executionService.queryAuditAvailable])
+        writeJsonResponse(response, [available: queryAuditService.available])
     }
 
     @Override
@@ -92,7 +92,7 @@ class ReportQueryAuditServlet extends AbstractReportsServlet {
         } as Map<String, String>
 
         try {
-            def audit = executionService.auditQueries(definition, values, resolver)
+            def audit = queryAuditService.audit(definition, values, resolver)
 
             writeJsonResponse(response, ReportJsonMapper.queryAudit(audit))
         } catch (IllegalArgumentException e) {

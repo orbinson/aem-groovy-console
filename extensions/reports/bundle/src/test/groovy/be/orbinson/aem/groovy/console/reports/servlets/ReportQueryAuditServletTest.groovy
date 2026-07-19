@@ -1,7 +1,7 @@
 package be.orbinson.aem.groovy.console.reports.servlets
 
 import be.orbinson.aem.groovy.console.configuration.ConfigurationService
-import be.orbinson.aem.groovy.console.reports.ReportExecutionService
+import be.orbinson.aem.groovy.console.reports.ReportQueryAuditService
 import be.orbinson.aem.groovy.console.reports.ReportService
 import be.orbinson.aem.groovy.console.reports.model.ReportExecutionStatus
 import be.orbinson.aem.groovy.console.reports.model.ReportQueryAudit
@@ -30,18 +30,18 @@ class ReportQueryAuditServletTest {
 
     ReportService reportService
 
-    ReportExecutionService executionService
+    ReportQueryAuditService queryAuditService
 
     ConfigurationService configurationService
 
     @BeforeEach
     void beforeEach() {
         reportService = mock(ReportService)
-        executionService = mock(ReportExecutionService)
+        queryAuditService = mock(ReportQueryAuditService)
         configurationService = mock(ConfigurationService)
 
         context.registerService(ReportService, reportService)
-        context.registerService(ReportExecutionService, executionService)
+        context.registerService(ReportQueryAuditService, queryAuditService)
         context.registerService(ConfigurationService, configurationService)
 
         servlet = context.registerInjectActivateService(new ReportQueryAuditServlet())
@@ -59,7 +59,7 @@ class ReportQueryAuditServletTest {
     @Test
     void getReportsAvailability() {
         when(configurationService.hasPermission(any())).thenReturn(true)
-        when(executionService.isQueryAuditAvailable()).thenReturn(true)
+        when(queryAuditService.isAvailable()).thenReturn(true)
 
         servlet.doGet(context.request(), context.response())
 
@@ -103,7 +103,7 @@ class ReportQueryAuditServletTest {
         when(configurationService.hasPermission(any())).thenReturn(true)
         when(reportService.getReport(any(), anyString())).thenReturn(null)
         when(reportService.canCreate(any())).thenReturn(true)
-        when(executionService.auditQueries(any(), any(), any())).thenReturn(new ReportQueryAudit(
+        when(queryAuditService.audit(any(), any(), any())).thenReturn(new ReportQueryAudit(
                 status: ReportExecutionStatus.SUCCESS,
                 queries: [
                         new ReportQueryPlan(statement: "SELECT * FROM [cq:Page]", language: "JCR-SQL2",

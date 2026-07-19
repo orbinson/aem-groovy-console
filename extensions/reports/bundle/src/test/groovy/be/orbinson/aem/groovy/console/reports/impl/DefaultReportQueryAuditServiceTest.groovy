@@ -1,12 +1,10 @@
 package be.orbinson.aem.groovy.console.reports.impl
 
 import be.orbinson.aem.groovy.console.GroovyConsoleService
-import be.orbinson.aem.groovy.console.reports.ReportResultStore
 import be.orbinson.aem.groovy.console.reports.model.ReportDefinition
 import be.orbinson.aem.groovy.console.reports.model.ReportExecutionStatus
 import be.orbinson.aem.groovy.console.reports.model.ReportQueryPlan
 import be.orbinson.aem.groovy.console.response.RunScriptResponse
-import be.orbinson.aem.groovy.console.streaming.ExecutionRegistry
 import io.wcm.testing.mock.aem.junit5.AemContext
 import io.wcm.testing.mock.aem.junit5.AemContextExtension
 import org.junit.jupiter.api.Test
@@ -22,29 +20,22 @@ import static org.mockito.Mockito.spy
 import static org.mockito.Mockito.when
 
 @ExtendWith(AemContextExtension.class)
-class DefaultReportExecutionServiceAuditTest {
+class DefaultReportQueryAuditServiceTest {
 
     private final AemContext context = new AemContext()
 
     private GroovyConsoleService groovyConsoleService = mock(GroovyConsoleService)
 
-    private void registerMandatoryServices() {
-        context.registerService(GroovyConsoleService, groovyConsoleService)
-        context.registerService(ExecutionRegistry, mock(ExecutionRegistry))
-        context.registerService(ReportResultStore, mock(ReportResultStore))
-        context.registerService(ReportsConfigurationService, mock(ReportsConfigurationService))
-    }
-
     @Test
     void "query audit is unavailable and returns an empty result when the extension is not installed"() {
-        registerMandatoryServices()
+        context.registerService(GroovyConsoleService, groovyConsoleService)
 
         // no ReportScriptIndexAuditor registered -> query-audit extension absent
-        def service = context.registerInjectActivateService(new DefaultReportExecutionService())
+        def service = context.registerInjectActivateService(new DefaultReportQueryAuditService())
 
-        assertFalse(service.queryAuditAvailable)
+        assertFalse(service.available)
 
-        def audit = service.auditQueries(new ReportDefinition(name: "r", script: "def x = 1"), [:],
+        def audit = service.audit(new ReportDefinition(name: "r", script: "def x = 1"), [:],
                 context.resourceResolver())
 
         assertEquals(ReportExecutionStatus.SUCCESS, audit.status)
@@ -52,8 +43,8 @@ class DefaultReportExecutionServiceAuditTest {
     }
 
     @Test
-    void "auditQueries runs the script through the auditor and maps the reported plans"() {
-        registerMandatoryServices()
+    void "audit runs the script through the auditor and maps the reported plans"() {
+        context.registerService(GroovyConsoleService, groovyConsoleService)
 
         def response = mock(RunScriptResponse)
         when(response.output).thenReturn("done")
@@ -73,15 +64,15 @@ class DefaultReportExecutionServiceAuditTest {
         } as ReportScriptIndexAuditor
         context.registerService(ReportScriptIndexAuditor, auditor)
 
-        def service = context.registerInjectActivateService(new DefaultReportExecutionService())
+        def service = context.registerInjectActivateService(new DefaultReportQueryAuditService())
 
-        assertTrue(service.queryAuditAvailable)
+        assertTrue(service.available)
 
-        // the mock resolver does not support clone(null); make it return itself so auditQueries can run
+        // the mock resolver does not support clone(null); make it return itself so audit() can run
         def resolver = spy(context.resourceResolver())
         doReturn(resolver).when(resolver).clone(null)
 
-        def audit = service.auditQueries(new ReportDefinition(name: "r", script: "def x = 1"), [:], resolver)
+        def audit = service.audit(new ReportDefinition(name: "r", script: "def x = 1"), [:], resolver)
 
         assertEquals(ReportExecutionStatus.SUCCESS, audit.status)
         assertEquals("done", audit.output)
