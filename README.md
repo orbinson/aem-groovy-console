@@ -322,8 +322,9 @@ Two rules make this work:
   removing an extension's package removes its code paths entirely.
 * **Extensions integrate only through the console's public APIs** — the script-execution SPIs listed above, plus
   the `be.orbinson.aem.groovy.console.api.ConsoleUiExtensionProvider` SPI, which lets an extension contribute
-  panels to the modern UI's activity rail. The console announces the registered module URLs to its SPA, which
-  loads them dynamically and exposes a small registration API (`window.GroovyConsole.registerPanel(...)`).
+  to the modern UI: activity-rail panels, entries in the Run button's options menu, and result tabs in the
+  output dock. The console announces the registered module URLs to its SPA, which loads them dynamically and
+  exposes a small registration API (`window.GroovyConsole.registerPanel/registerRunAction/registerRunResultTab`).
   Extensions interact with the shell only through this API and DOM events, never through compile-time coupling.
 
 To use an extension, install the console first, then deploy the extension's content package.

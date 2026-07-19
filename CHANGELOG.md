@@ -45,6 +45,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Script unit-testing support** — a new `aem-groovy-console-test-support` module: a JUnit 5 / AEM Mocks harness to
   unit-test Groovy Console scripts in a few lines (add a context plugin, run a script, assert on the result). A
   JCR-backed mock is only needed for scripts that actually touch the repository.
+- **Query-audit extension** — an optional debugging tool that reports, for every JCR query a Groovy script runs,
+  whether the live Oak instance has an index that covers it, so you can catch un-indexed queries in migration/report
+  scripts before shipping. Callable via `POST /bin/groovyconsole/query-audit` or, in the modern console, via
+  **Run with query audit** in the Run button's options menu — the per-query verdicts (with the Oak plan) appear in a
+  **Query audit** tab in the output dock. The `AuditQueryIndexes` sample script demonstrates it with an indexed and an
+  un-indexed query. When installed alongside the migration extension, a migration run started with
+  `measureIndexUsage=true` reports per-script index usage (handy for validating migrations in CI). Ships as its own
+  bundle, outside the core `all` package.
+- The modern console's UI extension contract now supports run actions (`GroovyConsole.registerRunAction`, shown in a
+  split-button menu next to Run) and output-dock result tabs (`GroovyConsole.registerRunResultTab`), in addition to
+  activity-rail panels.
 
 ### Changed
 

@@ -26,6 +26,9 @@ class DefaultMigrationScriptResult implements MigrationScriptResult {
 
     String error
 
+    /** Per-query index audit (statement/plan/needsIndex maps); empty unless index usage was measured. */
+    List<Map<String, Object>> queryAudit = []
+
     static DefaultMigrationScriptResult fromResource(Resource resource) {
         def properties = resource.valueMap
 

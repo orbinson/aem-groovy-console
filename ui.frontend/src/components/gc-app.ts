@@ -15,7 +15,7 @@ import type { GcSaveDialog } from './gc-save-dialog';
 import type { GcScheduler } from './gc-scheduler';
 import type { GcScriptBrowserDialog } from './gc-script-browser-dialog';
 import type { GcScriptEditor } from './gc-script-editor';
-import { getPanels, initConsoleExtensions, onPanelsChanged } from '../extensions/registry';
+import { getPanels, getRunActions, initConsoleExtensions, onExtensionsChanged, setActiveScriptProvider } from '../extensions/registry';
 import type { ConsolePanelExtension } from '../extensions/registry';
 
 /** Built-in drawers use 'history' | 'jobs' | 'help'; extension panels use their registered panel id. */
@@ -89,7 +89,10 @@ export class GcApp extends LitElement {
     this.addEventListener('gc-toast', ((event: CustomEvent<{ message: string; variant?: 'positive' | 'negative' }>) => {
       store.showToast(event.detail.message, event.detail.variant ?? 'positive');
     }) as EventListener);
-    this.unsubscribePanels = onPanelsChanged(() => (this.extensionPanels = sortedPanels()));
+    this.addEventListener('gc-run-action', ((event: CustomEvent<{ actionId: string }>) => {
+      void this.executeRunAction(event.detail.actionId);
+    }) as EventListener);
+    this.unsubscribePanels = onExtensionsChanged(() => (this.extensionPanels = sortedPanels()));
     this.addEventListener('gc-edit-job', ((event: CustomEvent<{ job: ScheduledJob }>) => {
       this.editScheduledJob(event.detail.job);
     }) as EventListener);
@@ -124,6 +127,9 @@ export class GcApp extends LitElement {
 
   protected firstUpdated(): void {
     prefetchAssistData();
+
+    // Let extensions read the editor's current script (e.g. the query-audit panel).
+    setActiveScriptProvider(() => this.scriptEditor?.value ?? '');
 
     // Load UI extension modules announced by the backend (ConsoleUiExtensionProvider services).
     initConsoleExtensions();
@@ -229,6 +235,33 @@ export class GcApp extends LitElement {
           'negative',
         );
       }
+    } finally {
+      this.setRunning(false);
+      window.dispatchEvent(new CustomEvent('gc-refresh-audit'));
+    }
+  }
+
+  /** Execute an extension-registered run action ("Run with query audit" etc.) with the usual run lifecycle. */
+  private async executeRunAction(actionId: string): Promise<void> {
+    const action = getRunActions().find((candidate) => candidate.id === actionId);
+    if (!action || this.store.state.running) {
+      return;
+    }
+
+    const script = this.scriptEditor.value;
+    if (!script.length) {
+      store.showToast('Script is empty.', 'negative');
+      return;
+    }
+
+    store.setState({ result: null });
+    this.setRunning(true);
+
+    try {
+      const result = await action.run({ script, data: this.dataEditor.value });
+      store.setState({ result });
+    } catch {
+      store.showToast(`${action.label} failed. Check error.log file.`, 'negative');
     } finally {
       this.setRunning(false);
       window.dispatchEvent(new CustomEvent('gc-refresh-audit'));
