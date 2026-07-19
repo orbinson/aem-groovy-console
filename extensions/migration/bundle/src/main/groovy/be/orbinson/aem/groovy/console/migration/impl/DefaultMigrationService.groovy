@@ -60,7 +60,7 @@ class DefaultMigrationService implements MigrationService {
     @Reference
     private SlingSettingsService slingSettingsService
 
-    private String scriptsBasePath
+    private List<String> scriptsBasePaths
 
     private Set<String> allowedMigrationGroups
 
@@ -75,7 +75,7 @@ class DefaultMigrationService implements MigrationService {
     @Activate
     @Synchronized
     void activate(MigrationServiceProperties properties) {
-        scriptsBasePath = properties.scriptsBasePath()
+        scriptsBasePaths = ((properties.scriptsBasePaths() ?: []).findAll() ?: DEFAULT_SCRIPTS_BASE_PATHS) as List
         allowedMigrationGroups = (properties.allowedMigrationGroups() ?: []).findAll() as Set
         staleLockMillis = properties.staleLockMillis()
         maxRunHistory = properties.maxRunHistory()
@@ -96,8 +96,8 @@ class DefaultMigrationService implements MigrationService {
                     isPendingScript(resourceResolver, script)
                 }
 
-                LOG.info("found {} pending migration script(s) below path : {}", pendingScripts.size(),
-                        options.path ?: scriptsBasePath)
+                LOG.info("found {} pending migration script(s) below path(s) : {}", pendingScripts.size(),
+                        options.path ?: scriptsBasePaths.join(", "))
 
                 def results
                 def status
@@ -287,15 +287,19 @@ class DefaultMigrationService implements MigrationService {
     private List<Map> findScripts(ResourceResolver resourceResolver, String overridePath = null) {
         def scripts = []
 
-        def rootPath = overridePath ?: scriptsBasePath
-        def rootResource = resourceResolver.getResource(rootPath)
+        def rootPaths = overridePath ? [overridePath] : scriptsBasePaths
 
-        if (rootResource) {
-            collectScripts(rootResource, scripts)
-        } else {
-            LOG.debug("migration scripts path not found : {}", rootPath)
+        rootPaths.each { rootPath ->
+            def rootResource = resourceResolver.getResource(rootPath)
+
+            if (rootResource) {
+                collectScripts(rootResource, scripts)
+            } else {
+                LOG.debug("migration scripts path not found : {}", rootPath)
+            }
         }
 
+        // deterministic alphanumeric path order across all base paths (/apps sorts before /conf)
         scripts.sort { script -> script.path }
     }
 

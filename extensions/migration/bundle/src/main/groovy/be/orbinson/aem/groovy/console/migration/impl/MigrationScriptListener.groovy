@@ -23,10 +23,14 @@ import static be.orbinson.aem.groovy.console.migration.MigrationConstants.TRIGGE
  * Optionally enqueues a migration run when migration scripts are added or changed, e.g. by a content package
  * installation.  Bursts of change events are debounced into a single asynchronous run.  Disabled by default.
  *
- * <p>Note: when overriding the migration scripts base path, the <code>resource.paths</code> property of this
- * component must be overridden accordingly via OSGi configuration.</p>
+ * <p>Watches both the immutable <code>/apps</code> and mutable <code>/conf</code> default script paths.  On AEM as a
+ * Cloud Service immutable <code>/apps</code> changes are applied by a container swap rather than at runtime, so they
+ * do not fire resource events -- the {@link MigrationStartupHook} covers auto-run there instead.  When overriding the
+ * migration scripts base paths, the <code>resource.paths</code> property of this component must be overridden
+ * accordingly via OSGi configuration.</p>
  */
 @Component(property = [
+        "resource.paths=glob:/apps/groovyconsole-migration-scripts/**",
         "resource.paths=glob:/conf/groovyconsole/scripts/migration/**",
         "resource.change.types=ADDED",
         "resource.change.types=CHANGED"
