@@ -1,11 +1,14 @@
 package be.orbinson.aem.groovy.console.reports.servlets
 
+import be.orbinson.aem.groovy.console.reports.ReportDistributor
 import be.orbinson.aem.groovy.console.reports.ReportExporter
 import be.orbinson.aem.groovy.console.reports.model.ReportDefinition
+import be.orbinson.aem.groovy.console.reports.model.ReportDistributionTarget
 import be.orbinson.aem.groovy.console.reports.model.ReportExecution
 import be.orbinson.aem.groovy.console.reports.model.ReportParameter
 import be.orbinson.aem.groovy.console.reports.model.ReportPreview
 import be.orbinson.aem.groovy.console.reports.model.ReportResultPage
+import be.orbinson.aem.groovy.console.reports.model.ReportSchedule
 
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
@@ -36,12 +39,43 @@ class ReportJsonMapper {
                 script        : definition.script,
                 pageSize      : definition.pageSize,
                 parameters    : definition.parameters.collect { reportParameter -> parameter(reportParameter) },
+                schedule      : schedule(definition.schedule),
+                distributions : definition.distributions.collect { target -> distributionTarget(target) },
                 created       : formatDate(definition.created),
                 createdBy     : definition.createdBy,
                 lastModified  : formatDate(definition.lastModified),
                 lastModifiedBy: definition.lastModifiedBy,
                 canEdit       : canEdit,
                 exportFormats : exporters.collect { exporter -> format(exporter) }
+        ]
+    }
+
+    static Map schedule(ReportSchedule schedule) {
+        if (schedule == null) {
+            return null
+        }
+
+        [
+                enabled        : schedule.enabled,
+                cronExpression : schedule.cronExpression,
+                runAs          : schedule.runAs,
+                scheduledBy    : schedule.scheduledBy,
+                parameterValues: schedule.parameterValues
+        ]
+    }
+
+    static Map distributionTarget(ReportDistributionTarget target) {
+        [
+                distributorId: target.distributorId,
+                format       : target.format,
+                config       : target.config
+        ]
+    }
+
+    static Map distributor(ReportDistributor distributor) {
+        [
+                id  : distributor.id,
+                name: distributor.name
         ]
     }
 
@@ -73,7 +107,8 @@ class ReportJsonMapper {
                 columnCount        : execution.columnCount,
                 parameterValues    : execution.parameterValues,
                 output             : execution.output,
-                exceptionStackTrace: execution.exceptionStackTrace
+                exceptionStackTrace: execution.exceptionStackTrace,
+                distributionErrors : execution.distributionErrors
         ]
     }
 

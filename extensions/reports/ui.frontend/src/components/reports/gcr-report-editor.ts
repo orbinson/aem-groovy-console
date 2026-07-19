@@ -1,12 +1,16 @@
 import { html, LitElement, nothing } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
 import { ApiError } from '@console/api/client';
-import { deleteReport, getReport, previewReport, saveReport } from '../../api/reports-api';
+import { deleteReport, getReport, listDistributors, previewReport, saveReport } from '../../api/reports-api';
 import type {
+  DistributionTarget,
+  Distributor,
+  ExportFormat,
   PathType,
   ReportParameter,
   ReportParameterType,
   ReportPreviewResponse,
+  ReportSchedule,
   SaveReportRequest,
 } from '../../api/reports-types';
 import { toast } from './gcr-app';
@@ -57,6 +61,17 @@ export class GcrReportEditor extends LitElement {
   @state() private script = DEFAULT_SCRIPT;
   @state() private parameters: ParameterRow[] = [];
 
+  // schedule state
+  @state() private scheduleEnabled = false;
+  @state() private cronExpression = '';
+  @state() private scheduledBy: string | null = null;
+  @state() private scheduleValues: Record<string, string> = {};
+
+  // distribution state
+  @state() private distributions: DistributionTarget[] = [];
+  @state() private distributors: Distributor[] = [];
+  @state() private distributionFormats: ExportFormat[] = [];
+
   // "try out" run state
   @state() private testValues: Record<string, string> = {};
   @state() private preview: ReportPreviewResponse | null = null;
@@ -79,6 +94,19 @@ export class GcrReportEditor extends LitElement {
     // Lazy-load the Monaco-based editor component (and Monaco itself) only when the editor view
     // is actually opened; the list and run views stay lightweight.
     void import('./gcr-code-editor');
+    void this.loadDistributors();
+  }
+
+  private async loadDistributors(): Promise<void> {
+    try {
+      const response = await listDistributors();
+      this.distributors = response.distributors;
+      this.distributionFormats = response.formats;
+    } catch {
+      // distribution is optional; leave the pickers empty if the endpoint is unavailable
+      this.distributors = [];
+      this.distributionFormats = [];
+    }
   }
 
   protected willUpdate(changed: Map<string, unknown>): void {
@@ -114,6 +142,14 @@ export class GcrReportEditor extends LitElement {
       this.parameters = definition.parameters.map((parameter) => ({
         ...parameter,
         options: parameter.options.join(', '),
+      }));
+      this.scheduleEnabled = definition.schedule?.enabled ?? false;
+      this.cronExpression = definition.schedule?.cronExpression ?? '';
+      this.scheduledBy = definition.schedule?.scheduledBy ?? null;
+      this.scheduleValues = { ...(definition.schedule?.parameterValues ?? {}) };
+      this.distributions = (definition.distributions ?? []).map((target) => ({
+        ...target,
+        config: { ...target.config },
       }));
     } catch (error) {
       this.error = error instanceof ApiError ? error.message : 'Could not load report.';
@@ -196,6 +232,24 @@ export class GcrReportEditor extends LitElement {
         rootPath: parameter.type === 'PATH' ? parameter.rootPath || undefined : undefined,
         order: index,
       })),
+      schedule: this.buildSchedule(),
+      distributions: this.distributions.filter((target) => target.distributorId && target.format),
+    };
+  }
+
+  /** Build the schedule payload, or null to remove any existing schedule. runAs and scheduledBy are set
+   *  server-side (a UI schedule always runs as its author), so they are not sent from here. */
+  private buildSchedule(): ReportSchedule | null {
+    const cron = this.cronExpression.trim();
+
+    if (!this.scheduleEnabled && !cron && Object.keys(this.scheduleValues).length === 0) {
+      return null;
+    }
+
+    return {
+      enabled: this.scheduleEnabled,
+      cronExpression: cron || null,
+      parameterValues: this.scheduleValues,
     };
   }
 
@@ -351,8 +405,201 @@ export class GcrReportEditor extends LitElement {
             ? html`<div class="gcr-empty">No parameters. The report runs without input.</div>`
             : this.parameters.map((parameter, index) => this.renderParameterRow(parameter, index))}
         </section>
+
+        ${this.renderSchedule()} ${this.renderDistribution()}
       </div>
     `;
+  }
+
+  private renderSchedule() {
+    return html`
+      <section class="gcr-panel">
+        <div class="gcr-panel-header">
+          <h3>Schedule</h3>
+          <sp-switch
+            ?checked=${this.scheduleEnabled}
+            @change=${(event: Event) => (this.scheduleEnabled = (event.target as HTMLInputElement).checked)}
+          >
+            Run on a schedule
+          </sp-switch>
+        </div>
+
+        ${this.scheduleEnabled
+          ? html`
+              <div class="gcr-form-grid">
+                <div class="gcr-field">
+                  <sp-field-label for="schedule-cron" required>Cron expression</sp-field-label>
+                  <sp-textfield
+                    id="schedule-cron"
+                    value=${this.cronExpression}
+                    placeholder="0 0 6 * * ?"
+                    @input=${(event: Event) => (this.cronExpression = (event.target as HTMLInputElement).value)}
+                  ></sp-textfield>
+                  <sp-help-text size="s">Quartz-style cron (seconds minutes hours day month weekday).</sp-help-text>
+                </div>
+              </div>
+              <sp-help-text size="s">
+                The scheduled report runs as you — with your permissions — so it sees exactly what you can see.
+                ${this.scheduledBy
+                  ? html`Currently scheduled by <code>${this.scheduledBy}</code>.`
+                  : nothing}
+              </sp-help-text>
+              ${this.parameters.length
+                ? html`
+                    <h4 class="gcr-subhead">Scheduled parameter values</h4>
+                    <div class="gcr-form-grid">
+                      ${this.parameters.map((parameter) => this.renderScheduleValue(parameter))}
+                    </div>
+                  `
+                : nothing}
+            `
+          : html`<sp-help-text size="s">The report only runs on demand.</sp-help-text>`}
+      </section>
+    `;
+  }
+
+  private renderScheduleValue(parameter: ParameterRow) {
+    const label = parameter.label || parameter.name || '(unnamed)';
+    const current = this.scheduleValues[parameter.name] ?? parameter.defaultValue ?? '';
+    const onInput = (event: Event) => {
+      this.scheduleValues = { ...this.scheduleValues, [parameter.name]: (event.target as HTMLInputElement).value };
+    };
+    return html`
+      <div class="gcr-field">
+        <sp-field-label for="schedule-value-${parameter.name}" ?required=${parameter.required}>${label}</sp-field-label>
+        <sp-textfield
+          id="schedule-value-${parameter.name}"
+          type=${parameter.type === 'NUMBER' ? 'number' : 'text'}
+          value=${current}
+          @input=${onInput}
+        ></sp-textfield>
+      </div>
+    `;
+  }
+
+  private renderDistribution() {
+    return html`
+      <section class="gcr-panel">
+        <div class="gcr-panel-header">
+          <h3>Distribution</h3>
+          <sp-action-button
+            size="s"
+            ?disabled=${this.distributors.length === 0}
+            @click=${() => this.addDistribution()}
+          >
+            Add distribution
+          </sp-action-button>
+        </div>
+
+        ${this.distributors.length === 0
+          ? html`<sp-help-text size="s">No distributors are installed.</sp-help-text>`
+          : this.distributions.length === 0
+            ? html`<div class="gcr-empty">
+                No distributions. The result is only stored and available for download.
+              </div>`
+            : this.distributions.map((target, index) => this.renderDistributionRow(target, index))}
+      </section>
+    `;
+  }
+
+  private renderDistributionRow(target: DistributionTarget, index: number) {
+    return html`
+      <div class="gcr-parameter-row" role="group" aria-label="Distribution ${index + 1}">
+        <sp-picker
+          aria-label="Distributor"
+          value=${target.distributorId}
+          @change=${(event: Event) =>
+            this.updateDistribution(index, { distributorId: (event.target as HTMLInputElement).value })}
+        >
+          ${this.distributors.map((distributor) => html`<sp-menu-item value=${distributor.id}>${distributor.name}</sp-menu-item>`)}
+        </sp-picker>
+        <sp-picker
+          aria-label="Export format"
+          value=${target.format}
+          @change=${(event: Event) =>
+            this.updateDistribution(index, { format: (event.target as HTMLInputElement).value })}
+        >
+          ${this.distributionFormats.map(
+            (format) => html`<sp-menu-item value=${format.format}>${format.format.toUpperCase()}</sp-menu-item>`,
+          )}
+        </sp-picker>
+        ${this.renderDistributionConfig(target, index)}
+        <sp-action-button
+          size="s"
+          quiet
+          @click=${() => this.removeDistribution(index)}
+          aria-label="Remove distribution"
+        >
+          <sp-icon-close slot="icon"></sp-icon-close>
+        </sp-action-button>
+      </div>
+    `;
+  }
+
+  private renderDistributionConfig(target: DistributionTarget, index: number) {
+    const setConfig = (key: string) => (event: Event) =>
+      this.updateDistributionConfig(index, key, (event.target as HTMLInputElement).value);
+    const value = (key: string) => (target.config[key] as string) ?? '';
+
+    if (target.distributorId === 'email') {
+      return html`
+        <sp-textfield
+          class="gcr-parameter-label"
+          aria-label="Recipients"
+          value=${value('recipients')}
+          placeholder="a@example.com, b@example.com"
+          @input=${setConfig('recipients')}
+        ></sp-textfield>
+        <sp-textfield
+          class="gcr-parameter-default"
+          aria-label="Subject"
+          value=${value('subject')}
+          placeholder="Subject (optional)"
+          @input=${setConfig('subject')}
+        ></sp-textfield>
+      `;
+    }
+
+    if (target.distributorId === 'filesystem') {
+      return html`
+        <sp-textfield
+          class="gcr-parameter-label"
+          aria-label="Directory"
+          value=${value('directory')}
+          placeholder="/var/reports"
+          @input=${setConfig('directory')}
+        ></sp-textfield>
+        <sp-textfield
+          class="gcr-parameter-default"
+          aria-label="File name"
+          value=${value('filename')}
+          placeholder="File name (optional)"
+          @input=${setConfig('filename')}
+        ></sp-textfield>
+      `;
+    }
+
+    return nothing;
+  }
+
+  private addDistribution(): void {
+    const distributorId = this.distributors[0]?.id ?? '';
+    const format = this.distributionFormats[0]?.format ?? '';
+    this.distributions = [...this.distributions, { distributorId, format, config: {} }];
+  }
+
+  private updateDistribution(index: number, patch: Partial<DistributionTarget>): void {
+    this.distributions = this.distributions.map((target, i) => (i === index ? { ...target, ...patch } : target));
+  }
+
+  private updateDistributionConfig(index: number, key: string, value: string): void {
+    this.distributions = this.distributions.map((target, i) =>
+      i === index ? { ...target, config: { ...target.config, [key]: value } } : target,
+    );
+  }
+
+  private removeDistribution(index: number): void {
+    this.distributions = this.distributions.filter((_, i) => i !== index);
   }
 
   private renderTryOut() {

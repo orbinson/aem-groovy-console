@@ -2,6 +2,8 @@ import { config } from '@console/config';
 import { delJson, getJson, getJsonWithError, postJson } from '@console/api/client';
 import type {
   BrowseResponse,
+  DistributionTarget,
+  DistributorsResponse,
   PathType,
   ReportDefinition,
   ReportExecution,
@@ -40,6 +42,19 @@ export function previewReport(
 
 export function executeReport(name: string, parameters: Record<string, string>): Promise<ReportExecution> {
   return postJson<ReportExecution>(`${BASE}/execute`, { name, parameters });
+}
+
+/** Available distributors and export formats, for the report editor's distribution section. */
+export function listDistributors(): Promise<DistributorsResponse> {
+  return getJsonWithError<DistributorsResponse>(`${BASE}/distributors.json`);
+}
+
+/** Distribute an already-completed successful execution on demand. */
+export function distributeExecution(
+  executionId: string,
+  targets: DistributionTarget[],
+): Promise<ReportExecution> {
+  return postJson<ReportExecution>(`${BASE}/distribute`, { executionId, targets });
 }
 
 export function getExecutions(name: string): Promise<ReportExecutionsResponse> {

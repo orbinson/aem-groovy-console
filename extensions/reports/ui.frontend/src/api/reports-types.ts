@@ -62,11 +62,42 @@ export interface ReportParameter {
   order: number;
 }
 
+/** Cron schedule for unattended report runs. */
+export interface ReportSchedule {
+  enabled: boolean;
+  cronExpression?: string | null;
+  /** Optional user to run as; blank runs as the reports service user. */
+  runAs?: string | null;
+  /** Set server-side to the user that saved the schedule; read-only in the UI. */
+  scheduledBy?: string | null;
+  /** Fixed parameter values used for scheduled runs. */
+  parameterValues: Record<string, string>;
+}
+
+/** A configured distribution target: which distributor, which export format, and its config. */
+export interface DistributionTarget {
+  distributorId: string;
+  format: string;
+  config: Record<string, unknown>;
+}
+
+export interface Distributor {
+  id: string;
+  name: string;
+}
+
+export interface DistributorsResponse {
+  distributors: Distributor[];
+  formats: ExportFormat[];
+}
+
 export interface ReportDefinition extends ReportSummary {
   /** Inline Groovy script. */
   script?: string | null;
   pageSize?: number | null;
   parameters: ReportParameter[];
+  schedule?: ReportSchedule | null;
+  distributions: DistributionTarget[];
   created?: string | null;
   createdBy?: string | null;
   lastModified?: string | null;
@@ -83,6 +114,8 @@ export interface SaveReportRequest {
   script?: string;
   pageSize?: number;
   parameters?: Array<Omit<ReportParameter, 'order'> & { order?: number }>;
+  schedule?: ReportSchedule | null;
+  distributions?: DistributionTarget[];
 }
 
 export interface ReportExecution {
@@ -99,6 +132,8 @@ export interface ReportExecution {
   parameterValues: Record<string, unknown>;
   output?: string | null;
   exceptionStackTrace?: string | null;
+  /** Distribution failures recorded after a successful run (empty when all succeeded). */
+  distributionErrors?: string[] | null;
 }
 
 export interface ReportExecutionsResponse {

@@ -476,7 +476,187 @@ class GroovyConsoleReportsIT {
         doGet("/bin/groovyconsole/reports.json?name=it-delete-report", 404);
     }
 
+    @Test
+    void testDistributorsListed() throws Exception {
+        JsonObject result = doGet("/bin/groovyconsole/reports/distributors.json", 200);
+
+        JsonArray distributors = result.getAsJsonArray("distributors");
+        // the filesystem distributor is always available; the email distributor is AEM-only (it binds
+        // com.day.cq.mailer.MailService, which is absent on plain Sling), so it is not asserted here
+        assertTrue(containsId(distributors, "filesystem"), "Expected the filesystem distributor");
+
+        // the endpoint also surfaces the available export formats used to render a distribution
+        assertTrue(containsFormat(result.getAsJsonArray("formats"), "csv"), "Expected csv format");
+    }
+
+    @Test
+    void testScheduleAndDistributionRoundTripThenRemoval() throws Exception {
+        String name = "it-scheduled";
+
+        JsonObject schedule = new JsonObject();
+        schedule.addProperty("enabled", true);
+        schedule.addProperty("cronExpression", "0 0 6 * * ?");
+        // blank runAs => the report runs as the reports service user; a client-supplied scheduledBy is ignored
+        schedule.addProperty("runAs", "");
+        schedule.addProperty("scheduledBy", "attacker");
+        JsonObject scheduleValues = new JsonObject();
+        scheduleValues.addProperty("greeting", "scheduled");
+        schedule.add("parameterValues", scheduleValues);
+
+        JsonObject config = new JsonObject();
+        config.addProperty("directory", "out");
+        JsonObject target = new JsonObject();
+        target.addProperty("distributorId", "filesystem");
+        target.addProperty("format", "csv");
+        target.add("config", config);
+        JsonArray distributions = new JsonArray();
+        distributions.add(target);
+
+        JsonObject definition = new JsonObject();
+        definition.addProperty("name", name);
+        definition.addProperty("title", "IT Scheduled");
+        definition.addProperty("script", "def d = report.data(); d.column('A'); d.row('x'); d");
+        definition.add("parameters", new JsonArray());
+        definition.add("schedule", schedule);
+        definition.add("distributions", distributions);
+
+        try (CloseableHttpResponse response = doPostJson("/bin/groovyconsole/reports", definition.toString())) {
+            assertEquals(200, response.getStatusLine().getStatusCode(),
+                    "Could not save scheduled report: " + response.getStatusLine());
+        }
+
+        JsonObject saved = doGet("/bin/groovyconsole/reports.json?name=" + name, 200);
+
+        JsonObject savedSchedule = saved.getAsJsonObject("schedule");
+        assertTrue(savedSchedule.get("enabled").getAsBoolean());
+        assertEquals("0 0 6 * * ?", savedSchedule.get("cronExpression").getAsString());
+        // scheduledBy is set server-side to the requesting user, never the client-supplied value
+        assertEquals("admin", savedSchedule.get("scheduledBy").getAsString());
+        assertEquals("scheduled", savedSchedule.getAsJsonObject("parameterValues").get("greeting").getAsString());
+
+        JsonArray savedDistributions = saved.getAsJsonArray("distributions");
+        assertEquals(1, savedDistributions.size());
+        assertEquals("filesystem", savedDistributions.get(0).getAsJsonObject().get("distributorId").getAsString());
+        assertEquals("csv", savedDistributions.get(0).getAsJsonObject().get("format").getAsString());
+        assertEquals("out", savedDistributions.get(0).getAsJsonObject().getAsJsonObject("config")
+                .get("directory").getAsString());
+
+        // re-save without a schedule/distributions: both must be removed (and the cron job unscheduled)
+        JsonObject withoutSchedule = new JsonObject();
+        withoutSchedule.addProperty("name", name);
+        withoutSchedule.addProperty("title", "IT Scheduled");
+        withoutSchedule.addProperty("script", "def d = report.data(); d.column('A'); d.row('x'); d");
+        withoutSchedule.add("parameters", new JsonArray());
+
+        try (CloseableHttpResponse response = doPostJson("/bin/groovyconsole/reports", withoutSchedule.toString())) {
+            assertEquals(200, response.getStatusLine().getStatusCode());
+        }
+
+        JsonObject cleared = doGet("/bin/groovyconsole/reports.json?name=" + name, 200);
+        assertTrue(cleared.get("schedule").isJsonNull(), "schedule must be removed when omitted");
+        assertEquals(0, cleared.getAsJsonArray("distributions").size(), "distributions must be removed when omitted");
+    }
+
+    @Test
+    void testScheduleWithInvalidCronRejected() throws Exception {
+        String name = "it-bad-cron";
+
+        JsonObject schedule = new JsonObject();
+        schedule.addProperty("enabled", true);
+        // sub-minute schedule: rejected before anything is persisted
+        schedule.addProperty("cronExpression", "* * * * * ?");
+
+        JsonObject definition = new JsonObject();
+        definition.addProperty("name", name);
+        definition.addProperty("title", "Bad Cron");
+        definition.addProperty("script", "report.data()");
+        definition.add("parameters", new JsonArray());
+        definition.add("schedule", schedule);
+
+        try (CloseableHttpResponse response = doPostJson("/bin/groovyconsole/reports", definition.toString())) {
+            assertEquals(400, response.getStatusLine().getStatusCode(),
+                    "sub-minute cron must be rejected: " + response.getStatusLine());
+        }
+
+        // nothing should have been created
+        doGet("/bin/groovyconsole/reports.json?name=" + name, 404);
+    }
+
+    @Test
+    void testManualDistributeToDisabledFilesystemRecordsError() throws Exception {
+        createReport("it-distribute", "def d = report.data(); d.column('A'); d.row('x'); d");
+        String id = execute("it-distribute", new JsonObject()).get("executionId").getAsString();
+
+        JsonObject config = new JsonObject();
+        config.addProperty("directory", "out");
+        JsonObject target = new JsonObject();
+        target.addProperty("distributorId", "filesystem");
+        target.addProperty("format", "csv");
+        target.add("config", config);
+        JsonArray targets = new JsonArray();
+        targets.add(target);
+
+        JsonObject body = new JsonObject();
+        body.addProperty("executionId", id);
+        body.add("targets", targets);
+
+        // the filesystem distributor is disabled by default, so distribution fails but the run itself does not:
+        // the endpoint returns 200 and records the failure on the execution
+        try (CloseableHttpResponse response = doPostJson("/bin/groovyconsole/reports/distribute", body.toString())) {
+            assertEquals(200, response.getStatusLine().getStatusCode());
+
+            JsonObject execution = parse(EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8));
+            JsonArray errors = execution.getAsJsonArray("distributionErrors");
+
+            assertNotNull(errors, "Expected distribution errors to be recorded");
+            assertFalse(errors.isEmpty(), "Expected a recorded distribution failure");
+            assertTrue(errors.get(0).getAsString().toLowerCase().contains("disabled"),
+                    "Expected the disabled-distributor error: " + errors);
+        }
+    }
+
+    @Test
+    void testManualDistributeUnknownExecutionReturns404() throws Exception {
+        JsonObject target = new JsonObject();
+        target.addProperty("distributorId", "filesystem");
+        target.addProperty("format", "csv");
+        target.add("config", new JsonObject());
+        JsonArray targets = new JsonArray();
+        targets.add(target);
+
+        JsonObject body = new JsonObject();
+        body.addProperty("executionId", "does-not-exist");
+        body.add("targets", targets);
+
+        try (CloseableHttpResponse response = doPostJson("/bin/groovyconsole/reports/distribute", body.toString())) {
+            assertEquals(404, response.getStatusLine().getStatusCode());
+        }
+    }
+
+    @Test
+    void testManualDistributeWithoutTargetsReturns400() throws Exception {
+        String id = ensureExecuted();
+
+        JsonObject body = new JsonObject();
+        body.addProperty("executionId", id);
+        body.add("targets", new JsonArray());
+
+        try (CloseableHttpResponse response = doPostJson("/bin/groovyconsole/reports/distribute", body.toString())) {
+            assertEquals(400, response.getStatusLine().getStatusCode());
+        }
+    }
+
     // internals
+
+    private static boolean containsId(JsonArray items, String id) {
+        for (int i = 0; i < items.size(); i++) {
+            if (id.equals(items.get(i).getAsJsonObject().get("id").getAsString())) {
+                return true;
+            }
+        }
+
+        return false;
+    }
 
     private static boolean isReportsApiReady() {
         try {
