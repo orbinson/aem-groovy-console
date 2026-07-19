@@ -3,6 +3,7 @@ package be.orbinson.aem.groovy.console.reports
 import be.orbinson.aem.groovy.console.reports.model.ReportDefinition
 import be.orbinson.aem.groovy.console.reports.model.ReportExecution
 import be.orbinson.aem.groovy.console.reports.model.ReportPreview
+import be.orbinson.aem.groovy.console.reports.model.ReportQueryAudit
 import org.apache.sling.api.resource.ResourceResolver
 import org.osgi.annotation.versioning.ProviderType
 
@@ -43,6 +44,30 @@ interface ReportExecutionService {
      */
     ReportPreview preview(ReportDefinition reportDefinition, Map<String, String> parameterValues,
                           ResourceResolver resourceResolver)
+
+    /**
+     * Whether query auditing is available — i.e. the optional query-audit extension is installed. Query capture
+     * relies on logback manipulation, so the extension is intended for local / on-prem (non-Cloud) use; where it is
+     * absent {@link #auditQueries} cannot run and callers should not offer it.
+     *
+     * @return true when {@link #auditQueries} can be used
+     */
+    boolean isQueryAuditAvailable()
+
+    /**
+     * Run a report script once — like {@link #preview} (detached resolver, nothing persisted) — but instead of the
+     * typed result, report per JCR query the script executed whether the live Oak repository has a covering index.
+     * Lets report editors verify that a report (an often-run query) is index-backed.
+     *
+     * @param reportDefinition the (possibly unsaved) report to run
+     * @param parameterValues raw (string) test values, validated and coerced against the declared parameters
+     * @param resourceResolver resolver of the requesting user
+     * @return the audit result (status SUCCESS or FAILED, plus the per-query plans); an empty audit when query
+     *         auditing is not available (see {@link #isQueryAuditAvailable})
+     * @throws IllegalArgumentException when parameter validation fails
+     */
+    ReportQueryAudit auditQueries(ReportDefinition reportDefinition, Map<String, String> parameterValues,
+                                  ResourceResolver resourceResolver)
 
     /**
      * Get all executions of a report, newest first.

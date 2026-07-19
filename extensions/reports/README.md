@@ -38,6 +38,7 @@ works without this package; installing it adds the reports feature.
 - [Parameters](#parameters)
 - [Writing the script](#writing-the-script)
 - [Column types](#column-types)
+- [Query performance audit](#query-performance-audit)
 - [Execution model](#execution-model)
 - [Exports](#exports)
 - [Access control](#access-control)
@@ -118,6 +119,23 @@ data.row([text: asset.name, href: '/assets.html' + asset.path])
 
 If you used `STRING` instead you would only get the raw text — the path would not be clickable and you could not
 show a friendly label distinct from the URL.
+
+## Query performance audit
+
+A report is, in practice, a query that runs often, so it matters that its JCR queries are backed by an Oak index
+rather than falling back to a full-repository traversal. When the optional
+[query-audit extension](../query-audit) (`aem-groovy-console-query-audit`) is installed, the report editor's
+**try it out** panel shows an **Audit queries** button next to **Run**. It runs the current (unsaved) script with
+the test values — exactly like the preview, on a detached resolver, persisting nothing — and reports, per JCR query
+the script executed, the Oak plan chosen on this instance and whether that plan needed an index. Queries flagged
+**NEEDS INDEX** traversed with no covering index and should be given one (or narrowed) before the report ships.
+
+The button appears only where the query-audit extension is present. It relies on capturing Oak's query logs via
+logback, so it is intended for local / on-prem (non-Cloud) use; on AEM as a Cloud Service the extension is absent
+and the button is not shown. The reports bundle depends on query-audit only through a local bridge
+(`ReportScriptIndexAuditor`), so reports load and work whether or not the extension is installed. Auditing follows
+the same access control as the preview (see [Access control](#access-control)): it runs arbitrary posted Groovy, so
+it requires console permission plus JCR write to the report.
 
 ## Execution model
 

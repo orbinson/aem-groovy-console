@@ -8,6 +8,7 @@ import type {
   ReportExecutionsResponse,
   ReportListResponse,
   ReportPreviewResponse,
+  ReportQueryAuditResponse,
   ResultPage,
   SaveReportRequest,
 } from './reports-types';
@@ -36,6 +37,24 @@ export function previewReport(
   values: Record<string, string>,
 ): Promise<ReportPreviewResponse> {
   return postJson<ReportPreviewResponse>(`${BASE}/preview`, { ...definition, values });
+}
+
+/** Whether the optional query-audit extension is installed (so the editor can offer the "Audit queries" action). */
+export async function isQueryAuditAvailable(): Promise<boolean> {
+  try {
+    const { available } = await getJson<{ available: boolean }>(`${BASE}/query-audit.json`);
+    return available;
+  } catch {
+    return false;
+  }
+}
+
+/** Run the (unsaved) report script with test values and report, per JCR query, whether Oak has a covering index. */
+export function auditReportQueries(
+  definition: SaveReportRequest,
+  values: Record<string, string>,
+): Promise<ReportQueryAuditResponse> {
+  return postJson<ReportQueryAuditResponse>(`${BASE}/query-audit`, { ...definition, values });
 }
 
 export function executeReport(name: string, parameters: Record<string, string>): Promise<ReportExecution> {

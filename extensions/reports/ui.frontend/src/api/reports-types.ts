@@ -123,6 +123,24 @@ export interface ReportPreviewResponse {
   runningTime?: string | null;
 }
 
+/** A single JCR query a report script executed, with its Oak plan. */
+export interface AuditedQuery {
+  statement: string;
+  language?: string | null;
+  plan: string;
+  /** True when Oak found no covering index and fell back to a traversal. */
+  needsIndex: boolean;
+}
+
+/** Result of a report "query audit" run: per-query Oak index usage (not persisted). */
+export interface ReportQueryAuditResponse {
+  status: ReportExecutionStatus;
+  queries: AuditedQuery[];
+  output?: string | null;
+  exceptionStackTrace?: string | null;
+  runningTime?: string | null;
+}
+
 export type ResultLinkCell = { text: string; href: string };
 
 export type ResultCell = string | number | boolean | ResultLinkCell | null;

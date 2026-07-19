@@ -48,8 +48,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   **Run with query audit** in the Run button's options menu — the per-query verdicts (with the Oak plan) appear in a
   **Query audit** tab in the output dock. The `AuditQueryIndexes` sample script demonstrates it with an indexed and an
   un-indexed query. When installed alongside the migration extension, a migration run started with
-  `measureIndexUsage=true` reports per-script index usage (handy for validating migrations in CI). Ships as its own
-  bundle, outside the core `all` package.
+  `measureIndexUsage=true` reports per-script index usage (handy for validating migrations in CI). When installed
+  alongside the reports extension, the report editor's *Try it out* panel gains an **Audit queries** button that
+  flags any of the report's JCR queries that need an index (a report is, in practice, an often-run query). Both
+  consumers reference query-audit only through a local bridge, so they load and work with or without it installed.
+  Ships as its own bundle, outside the core `all` package.
 - The modern console's UI extension contract now supports run actions (`GroovyConsole.registerRunAction`, shown in a
   split-button menu next to Run) and output-dock result tabs (`GroovyConsole.registerRunResultTab`), in addition to
   activity-rail panels.

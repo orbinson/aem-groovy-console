@@ -1,12 +1,20 @@
 import { html, LitElement, nothing } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
 import { ApiError } from '@console/api/client';
-import { deleteReport, getReport, previewReport, saveReport } from '../../api/reports-api';
+import {
+  auditReportQueries,
+  deleteReport,
+  getReport,
+  isQueryAuditAvailable,
+  previewReport,
+  saveReport,
+} from '../../api/reports-api';
 import type {
   PathType,
   ReportParameter,
   ReportParameterType,
   ReportPreviewResponse,
+  ReportQueryAuditResponse,
   SaveReportRequest,
 } from '../../api/reports-types';
 import { toast } from './gcr-app';
@@ -64,6 +72,11 @@ export class GcrReportEditor extends LitElement {
   /** Validation messages for required test values left empty, keyed by parameter name. */
   @state() private testErrors: Record<string, string> = {};
 
+  // query-audit state (only offered when the optional query-audit extension is installed)
+  @state() private queryAuditAvailable = false;
+  @state() private queryAudit: ReportQueryAuditResponse | null = null;
+  @state() private auditing = false;
+
   @query('gcr-code-editor') private codeEditor?: GcrCodeEditor;
 
   createRenderRoot(): this {
@@ -79,6 +92,10 @@ export class GcrReportEditor extends LitElement {
     // Lazy-load the Monaco-based editor component (and Monaco itself) only when the editor view
     // is actually opened; the list and run views stay lightweight.
     void import('./gcr-code-editor');
+    // Offer the "Audit queries" action only where the optional query-audit extension is installed.
+    void isQueryAuditAvailable().then((available) => {
+      this.queryAuditAvailable = available;
+    });
   }
 
   protected willUpdate(changed: Map<string, unknown>): void {
@@ -223,6 +240,33 @@ export class GcrReportEditor extends LitElement {
     }
   }
 
+  /** Run the current (unsaved) script with the test values and report per-query Oak index usage. */
+  private async runAudit(): Promise<void> {
+    if (this.auditing) {
+      return;
+    }
+
+    const errors = validateRequired(this.parameters, this.testValues);
+    this.testErrors = errors;
+    if (Object.keys(errors).length) {
+      return;
+    }
+
+    this.auditing = true;
+    this.queryAudit = null;
+
+    try {
+      this.queryAudit = await auditReportQueries(
+        this.buildDefinition(this.reportName.trim() || 'preview'),
+        this.testValues,
+      );
+    } catch (error) {
+      toast(this, error instanceof ApiError ? error.message : 'Could not audit the report queries.', 'negative');
+    } finally {
+      this.auditing = false;
+    }
+  }
+
   private async removeReport(): Promise<void> {
     if (!this.name || !window.confirm(`Delete report "${this.reportTitle || this.name}"? This cannot be undone.`)) {
       return;
@@ -360,9 +404,22 @@ export class GcrReportEditor extends LitElement {
       <section class="gcr-panel">
         <div class="gcr-panel-header">
           <h3>Try it out</h3>
-          <sp-button size="s" ?disabled=${this.previewing} @click=${() => void this.runPreview()}>
-            ${this.previewing ? 'Running…' : 'Run ▶'}
-          </sp-button>
+          <div class="gcr-tryout-actions">
+            ${this.queryAuditAvailable
+              ? html`<sp-button
+                  size="s"
+                  variant="secondary"
+                  treatment="outline"
+                  ?disabled=${this.auditing}
+                  @click=${() => void this.runAudit()}
+                >
+                  ${this.auditing ? 'Auditing…' : 'Audit queries'}
+                </sp-button>`
+              : nothing}
+            <sp-button size="s" ?disabled=${this.previewing} @click=${() => void this.runPreview()}>
+              ${this.previewing ? 'Running…' : 'Run ▶'}
+            </sp-button>
+          </div>
         </div>
 
         ${this.parameters.length
@@ -376,7 +433,61 @@ export class GcrReportEditor extends LitElement {
             </div>`
           : nothing}
         ${this.preview ? this.renderPreviewResult(this.preview) : nothing}
+
+        ${this.auditing
+          ? html`<div class="gcr-loading" role="status">
+              <sp-progress-circle indeterminate size="m"></sp-progress-circle>
+              <span class="gcr-visually-hidden">Auditing queries…</span>
+            </div>`
+          : nothing}
+        ${this.queryAudit ? this.renderQueryAudit(this.queryAudit) : nothing}
       </section>
+    `;
+  }
+
+  private renderQueryAudit(audit: ReportQueryAuditResponse) {
+    if (audit.status === 'FAILED') {
+      return html`
+        <div class="gcr-error-panel" role="alert">
+          <h4>Query audit failed</h4>
+          <pre class="gcr-stacktrace">${audit.exceptionStackTrace}</pre>
+        </div>
+      `;
+    }
+
+    if (!audit.queries.length) {
+      return html`<div class="gcr-empty">The script executed no JCR queries.</div>`;
+    }
+
+    const needsIndex = audit.queries.filter((query) => query.needsIndex).length;
+
+    return html`
+      <div class="gcr-audit" role="status" aria-live="polite">
+        <div class="gcr-audit-summary">
+          ${audit.queries.length} ${audit.queries.length === 1 ? 'query' : 'queries'}
+          ${needsIndex
+            ? html` · <span class="gcr-audit-flag">${needsIndex} need${needsIndex === 1 ? 's' : ''} an index</span>`
+            : html` · <span class="gcr-audit-ok">all index-backed</span>`}
+        </div>
+        <ul class="gcr-audit-list">
+          ${audit.queries.map(
+            (query) => html`
+              <li class="gcr-audit-item ${query.needsIndex ? 'gcr-audit-item--warn' : ''}">
+                <div class="gcr-audit-item-head">
+                  ${query.needsIndex
+                    ? html`<span class="gcr-badge gcr-badge--warn">NEEDS INDEX</span>`
+                    : html`<span class="gcr-badge gcr-badge--ok">INDEXED</span>`}
+                  <code class="gcr-audit-statement">${query.statement}</code>
+                </div>
+                <details class="gcr-audit-plan-details">
+                  <summary>Oak plan</summary>
+                  <pre class="gcr-audit-plan">${query.plan}</pre>
+                </details>
+              </li>
+            `,
+          )}
+        </ul>
+      </div>
     `;
   }
 

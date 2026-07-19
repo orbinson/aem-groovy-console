@@ -5,6 +5,7 @@ import be.orbinson.aem.groovy.console.reports.model.ReportDefinition
 import be.orbinson.aem.groovy.console.reports.model.ReportExecution
 import be.orbinson.aem.groovy.console.reports.model.ReportParameter
 import be.orbinson.aem.groovy.console.reports.model.ReportPreview
+import be.orbinson.aem.groovy.console.reports.model.ReportQueryAudit
 import be.orbinson.aem.groovy.console.reports.model.ReportResultPage
 
 import java.time.ZoneOffset
@@ -103,6 +104,19 @@ class ReportJsonMapper {
                 output             : preview.output,
                 exceptionStackTrace: preview.exceptionStackTrace,
                 runningTime        : preview.runningTime
+        ]
+    }
+
+    static Map queryAudit(ReportQueryAudit audit) {
+        [
+                status             : audit.status?.name(),
+                queries            : (audit.queries ?: []).collect { query ->
+                    [statement: query.statement, language: query.language, plan: query.plan,
+                     needsIndex: query.needsIndex]
+                },
+                output             : audit.output,
+                exceptionStackTrace: audit.exceptionStackTrace,
+                runningTime        : audit.runningTime
         ]
     }
 

@@ -9,6 +9,7 @@ import be.orbinson.aem.groovy.console.reports.model.ReportDefinition
 import be.orbinson.aem.groovy.console.reports.model.ReportExecution
 import be.orbinson.aem.groovy.console.reports.model.ReportExecutionStatus
 import be.orbinson.aem.groovy.console.reports.model.ReportPreview
+import be.orbinson.aem.groovy.console.reports.model.ReportQueryAudit
 import be.orbinson.aem.groovy.console.response.RunScriptResponse
 import be.orbinson.aem.groovy.console.streaming.ExecutionCallback
 import be.orbinson.aem.groovy.console.streaming.ExecutionRegistry
@@ -25,7 +26,10 @@ import org.apache.sling.api.resource.ResourceUtil
 import org.apache.sling.jcr.resource.api.JcrResourceConstants
 import org.osgi.service.component.annotations.Component
 import org.osgi.service.component.annotations.Reference
+import org.osgi.service.component.annotations.ReferenceCardinality
+import org.osgi.service.component.annotations.ReferencePolicy
 
+import javax.jcr.Session
 import java.util.regex.Pattern
 
 import static be.orbinson.aem.groovy.console.reports.constants.ReportsConstants.*
@@ -84,6 +88,15 @@ class DefaultReportExecutionService implements ReportExecutionService {
     @Reference
     private ReportsConfigurationService reportsConfigurationService
 
+    /**
+     * Optional bridge to the query-audit extension, used by {@link #auditQueries}. Present (non-null) only when the
+     * query-audit bundle is installed — DS registers a {@link ReportScriptIndexAuditor} then; absent otherwise (e.g.
+     * on AEM as a Cloud Service). This service references only the {@link ReportScriptIndexAuditor} interface (never
+     * the query-audit types), so it always loads and activates whether or not query-audit is installed.
+     */
+    @Reference(cardinality = ReferenceCardinality.OPTIONAL, policy = ReferencePolicy.DYNAMIC)
+    private volatile ReportScriptIndexAuditor scriptIndexAuditor
+
     @Override
     ReportExecution execute(ReportDefinition reportDefinition, Map<String, String> parameterValues,
                             ResourceResolver resourceResolver) {
@@ -141,6 +154,49 @@ class DefaultReportExecutionService implements ReportExecutionService {
                 data: reportData,
                 output: output,
                 runningTime: response.runningTime)
+    }
+
+    @Override
+    boolean isQueryAuditAvailable() {
+        scriptIndexAuditor != null
+    }
+
+    @Override
+    ReportQueryAudit auditQueries(ReportDefinition reportDefinition, Map<String, String> parameterValues,
+                                  ResourceResolver resourceResolver) {
+        def auditor = scriptIndexAuditor
+
+        if (!auditor) {
+            LOG.warn("query audit requested but the query-audit extension is not installed; skipping")
+
+            return new ReportQueryAudit(status: ReportExecutionStatus.SUCCESS)
+        }
+
+        def coercedValues = ParameterCoercer.coerce(reportDefinition.parameters, parameterValues)
+        def script = resolveScript(reportDefinition)
+        def userId = resourceResolver.userID
+
+        LOG.info("auditing queries for report : {} as user : {}", reportDefinition.name, userId)
+
+        // run on a clone so a script that makes (then fails to commit) transient JCR changes cannot leave them
+        // pending on the request-scoped resolver — runScript does not revert on failure (mirrors preview)
+        resourceResolver.clone(null).withCloseable { auditResolver ->
+            def scriptContext = buildReportContext(reportDefinition.name, coercedValues, script, userId, auditResolver)
+            def session = auditResolver.adaptTo(Session)
+            def responseHolder = new RunScriptResponse[1]
+
+            def plans = auditor.audit(session,
+                    { responseHolder[0] = groovyConsoleService.runScript(scriptContext) } as Runnable)
+
+            def response = responseHolder[0]
+
+            new ReportQueryAudit(
+                    status: response.exceptionStackTrace ? ReportExecutionStatus.FAILED : ReportExecutionStatus.SUCCESS,
+                    queries: plans,
+                    output: response.output ?: null,
+                    exceptionStackTrace: response.exceptionStackTrace,
+                    runningTime: response.runningTime)
+        }
     }
 
     // synchronous run used by preview() (the try-out); execute() runs asynchronously via the registry
