@@ -8,9 +8,24 @@ class MigrationConstants {
 
     public static final String PATH_MIGRATION_RUNS = "$PATH_MIGRATION_ROOT/runs"
 
+    /** Immutable scripts path: ships with the code image (reaches publish, tamper-proof) -- preferred on AEMaaCS. */
+    public static final String DEFAULT_SCRIPTS_BASE_PATH_APPS = "/apps/groovyconsole-migration-scripts"
+
+    /** Mutable scripts path: authored/ad-hoc scripts, deployed as mutable content (author only on AEMaaCS). */
     public static final String DEFAULT_SCRIPTS_BASE_PATH = "/conf/groovyconsole/scripts/migration"
 
+    /**
+     * Default scripts base paths, searched in order. Missing paths are skipped, so a deployment can use the
+     * immutable {@code /apps} path, the mutable {@code /conf} path, or both.
+     */
+    public static final List<String> DEFAULT_SCRIPTS_BASE_PATHS =
+            [DEFAULT_SCRIPTS_BASE_PATH_APPS, DEFAULT_SCRIPTS_BASE_PATH].asImmutable()
+
     public static final String MIGRATION_JOB_TOPIC = "groovyconsole/migration"
+
+    // startup / trigger
+
+    public static final String TRIGGER_STARTUP = "STARTUP"
 
     // request parameters
 
@@ -35,6 +50,8 @@ class MigrationConstants {
     public static final String TRIGGER_API = "API"
 
     public static final String TRIGGER_LISTENER = "LISTENER"
+
+    public static final String TRIGGER_JMX = "JMX"
 
     // resource node names
 

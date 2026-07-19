@@ -20,7 +20,7 @@ test.describe('console', () => {
     const dock = page.locator('.gc-dock');
     await expect(dock.locator('.gc-dock-tab.is-active')).toHaveText('Log', { timeout: 30_000 });
     await expect(dock.locator('.gc-dock-pre')).toContainText('hello from playwright');
-    await expect(dock.locator('sp-badge')).toBeVisible();
+    await expect(dock.locator('.gc-dock-time')).toBeVisible();
   });
 
   test('shows result for returned values', async ({ page }) => {

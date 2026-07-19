@@ -11,13 +11,11 @@ export class GcAppBar extends LitElement {
   private store = new StoreController(this);
   private unsubscribeExtensions?: () => void;
 
-  @state() private menuOpen = false;
   @state() private runMenuOpen = false;
   @state() private runActions: readonly ConsoleRunActionExtension[] = getRunActions();
 
   private outsideClickListener = (event: MouseEvent): void => {
-    if ((this.menuOpen || this.runMenuOpen) && !this.contains(event.target as Node)) {
-      this.menuOpen = false;
+    if (this.runMenuOpen && !this.contains(event.target as Node)) {
       this.runMenuOpen = false;
     }
   };
@@ -39,13 +37,21 @@ export class GcAppBar extends LitElement {
   }
 
   private emit(name: string): void {
-    this.menuOpen = false;
     this.dispatchEvent(new CustomEvent(name, { bubbles: true, composed: true }));
   }
 
   private emitRunAction(actionId: string): void {
     this.runMenuOpen = false;
     this.dispatchEvent(new CustomEvent('gc-run-action', { detail: { actionId }, bubbles: true, composed: true }));
+  }
+
+  private onMenuChange(event: Event): void {
+    const menu = event.target as HTMLElement & { value: string };
+    const action = menu.value;
+    menu.value = '';
+    if (action) {
+      this.emit(action);
+    }
   }
 
   protected render() {
@@ -109,30 +115,14 @@ export class GcAppBar extends LitElement {
               `
             : nothing}
 
-          <div class="gc-overflow">
-            <sp-action-button
-              quiet
-              aria-label="File actions"
-              aria-haspopup="true"
-              aria-expanded=${this.menuOpen}
-              @click=${(event: Event) => {
-                event.stopPropagation();
-                this.menuOpen = !this.menuOpen;
-              }}
-            >
-              File ▾
-            </sp-action-button>
-            ${this.menuOpen
-              ? html`
-                  <div class="gc-overflow-menu" role="menu">
-                    <button role="menuitem" @click=${() => this.emit('gc-new')}>New</button>
-                    <button role="menuitem" @click=${() => this.emit('gc-open')}>Open…</button>
-                    <button role="menuitem" @click=${() => this.emit('gc-save')}>Save…</button>
-                    <button role="menuitem" @click=${() => this.emit('gc-download')}>Download</button>
-                  </div>
-                `
-              : nothing}
-          </div>
+          <sp-action-menu quiet label="File actions" value="" @change=${this.onMenuChange}>
+            <span slot="label-only">File</span>
+            <sp-menu-item value="gc-new">New</sp-menu-item>
+            <sp-menu-item value="gc-open">Open…</sp-menu-item>
+            <sp-menu-item value="gc-save">Save…</sp-menu-item>
+            <sp-menu-divider></sp-menu-divider>
+            <sp-menu-item value="gc-download">Download</sp-menu-item>
+          </sp-action-menu>
 
           <sp-switch ?checked=${colorScheme === 'dark'} @change=${() => this.emit('gc-toggle-theme')}>
             Dark

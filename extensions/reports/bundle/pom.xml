@@ -24,6 +24,22 @@
             <plugin>
                 <groupId>biz.aQute.bnd</groupId>
                 <artifactId>bnd-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>bnd-process</id>
+                        <goals>
+                            <goal>bnd-process</goal>
+                        </goals>
+                        <configuration>
+                            <!-- The tag picker uses the AEM TagManager (com.day.cq.tagging) only through an
+                                 AEM-gated component; mark the AEM packages optional so the bundle still resolves
+                                 on plain Sling, where that component simply never activates. -->
+                            <bnd><![CDATA[
+                                Import-Package: com.day.cq.*;resolution:=optional,*
+                                ]]></bnd>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -112,6 +128,11 @@
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.wcm</groupId>
+            <artifactId>io.wcm.testing.aem-mock.junit5</artifactId>
             <scope>test</scope>
         </dependency>
 

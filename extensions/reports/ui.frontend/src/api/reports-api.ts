@@ -2,11 +2,13 @@ import { config } from '@console/config';
 import { delJson, getJson, getJsonWithError, postJson } from '@console/api/client';
 import type {
   BrowseResponse,
-  PathType,
+  BrowseType,
+  DynamicOption,
   ReportDefinition,
   ReportExecution,
   ReportExecutionsResponse,
   ReportListResponse,
+  ReportParameterValue,
   ReportPreviewResponse,
   ResultPage,
   SaveReportRequest,
@@ -33,13 +35,37 @@ export function deleteReport(name: string): Promise<void> {
 /** Ephemeral "try out" run of an (unsaved) report definition with test values — nothing is persisted. */
 export function previewReport(
   definition: SaveReportRequest,
-  values: Record<string, string>,
+  values: Record<string, ReportParameterValue>,
 ): Promise<ReportPreviewResponse> {
   return postJson<ReportPreviewResponse>(`${BASE}/preview`, { ...definition, values });
 }
 
-export function executeReport(name: string, parameters: Record<string, string>): Promise<ReportExecution> {
+export function executeReport(
+  name: string,
+  parameters: Record<string, ReportParameterValue>,
+): Promise<ReportExecution> {
   return postJson<ReportExecution>(`${BASE}/execute`, { name, parameters });
+}
+
+/** Resolve the options of a saved DYNAMIC parameter, passing the already-entered values it may depend on. */
+export function resolveDynamicOptions(
+  name: string,
+  parameterName: string,
+  parameters: Record<string, ReportParameterValue>,
+): Promise<DynamicOption[]> {
+  return postJson<{ options: DynamicOption[] }>(`${BASE}/options`, { name, parameterName, parameters }).then(
+    (response) => response.options ?? [],
+  );
+}
+
+/** Resolve options from an inline (unsaved) DYNAMIC script — used by the editor's "test" action. */
+export function resolveDynamicOptionsForScript(
+  script: string,
+  parameters: Record<string, ReportParameterValue> = {},
+): Promise<DynamicOption[]> {
+  return postJson<{ options: DynamicOption[] }>(`${BASE}/options`, { script, parameters }).then(
+    (response) => response.options ?? [],
+  );
 }
 
 export function getExecutions(name: string): Promise<ReportExecutionsResponse> {
@@ -73,9 +99,9 @@ export function reportsPageUrl(hash = ''): string {
   return `${config.contextPath}/apps/groovyconsole/reports.html${hash}`;
 }
 
-/** Browse the children of a repository path for the PATH parameter picker, filtered by pathType. */
-export function browsePath(path: string, pathType: PathType = 'NODE'): Promise<BrowseResponse> {
-  return getJsonWithError<BrowseResponse>(`${BASE}/browse.json`, { path, type: pathType });
+/** Browse the children of a repository path for the PATH/TAG picker, filtered by browse type. */
+export function browsePath(path: string, browseType: BrowseType = 'NODE'): Promise<BrowseResponse> {
+  return getJsonWithError<BrowseResponse>(`${BASE}/browse.json`, { path, type: browseType });
 }
 
 /** List immediate child node paths under a repository path, for PATH parameter autocomplete.

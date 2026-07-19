@@ -1,28 +1,31 @@
 import { html, LitElement, nothing } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { browsePath } from '../../api/reports-api';
-import type { BrowseNode, PathType } from '../../api/reports-types';
+import type { BrowseNode, BrowseType } from '../../api/reports-types';
 
-const DEFAULT_ROOT: Record<PathType, string> = {
+const DEFAULT_ROOT: Record<BrowseType, string> = {
   NODE: '/',
   PAGE: '/content',
   ASSET: '/content/dam',
+  TAG: '/content/cq:tags',
 };
 
-const TITLE: Record<PathType, string> = {
+const TITLE: Record<BrowseType, string> = {
   NODE: 'Select a path',
   PAGE: 'Select a page',
   ASSET: 'Select an asset',
+  TAG: 'Select a tag',
 };
 
 /**
- * AEM Granite-style path browser modal: a lazily-loaded JCR tree, scoped by pathType (any node, AEM page or
- * DAM asset).  Opened via openBrowser(); emits `gcr-path-selected` { path } on confirm.  Self-contained and
- * rendered in light DOM so the reports stylesheet applies.
+ * AEM Granite-style path browser modal: a lazily-loaded JCR tree, scoped by browseType (any node, AEM page,
+ * DAM asset or cq:tags taxonomy).  Opened via openBrowser(); emits `gcr-path-selected` { path, id } on
+ * confirm (id is the tag ID for TAG browsing).  Self-contained and rendered in light DOM so the reports
+ * stylesheet applies.
  */
 @customElement('gcr-path-browser')
 export class GcrPathBrowser extends LitElement {
-  @property() pathType: PathType = 'NODE';
+  @property() browseType: BrowseType = 'NODE';
   @property() rootPath = '';
 
   @state() private open = false;
@@ -90,7 +93,7 @@ export class GcrPathBrowser extends LitElement {
   /** Open the browser, rooted at the configured rootPath (or the type default), revealing the current value. */
   async openBrowser(currentValue: string): Promise<void> {
     this.previousActiveElement = (document.activeElement as HTMLElement) ?? null;
-    this.root = (this.rootPath || DEFAULT_ROOT[this.pathType] || '/').replace(/\/$/, '') || '/';
+    this.root = (this.rootPath || DEFAULT_ROOT[this.browseType] || '/').replace(/\/$/, '') || '/';
     this.selected = currentValue || '';
     this.focused = '';
     this.expanded = new Set();
@@ -122,10 +125,25 @@ export class GcrPathBrowser extends LitElement {
       return;
     }
     this.dispatchEvent(
-      new CustomEvent('gcr-path-selected', { detail: { path: this.selected }, bubbles: true, composed: true }),
+      new CustomEvent('gcr-path-selected', {
+        detail: { path: this.selected, id: this.selectedNode()?.id ?? null },
+        bubbles: true,
+        composed: true,
+      }),
     );
     this.open = false;
     this.previousActiveElement?.focus();
+  }
+
+  /** The loaded node matching the current selection (used for the tag ID on confirm). */
+  private selectedNode(): BrowseNode | undefined {
+    for (const children of Object.values(this.childrenByPath)) {
+      const match = children.find((node) => node.path === this.selected);
+      if (match) {
+        return match;
+      }
+    }
+    return undefined;
   }
 
   private async loadChildren(path: string): Promise<void> {
@@ -134,7 +152,7 @@ export class GcrPathBrowser extends LitElement {
     }
     this.loading = new Set(this.loading).add(path);
     try {
-      const response = await browsePath(path, this.pathType);
+      const response = await browsePath(path, this.browseType);
       this.childrenByPath = { ...this.childrenByPath, [path]: response.children };
       this.truncatedByPath = { ...this.truncatedByPath, [path]: Boolean(response.truncated) };
     } catch {
@@ -191,6 +209,14 @@ export class GcrPathBrowser extends LitElement {
     // clicking the row also expands/collapses, so you don't have to aim for the small twisty
     if (node.hasChildren) {
       void this.toggle(node);
+    }
+  }
+
+  /** Double click selects and confirms in one gesture, like the Granite path pickers. */
+  private onRowDblClick(node: BrowseNode): void {
+    if (node.selectable) {
+      this.selected = node.path;
+      this.confirm();
     }
   }
 
@@ -287,7 +313,7 @@ export class GcrPathBrowser extends LitElement {
           class="gcr-browser"
           role="dialog"
           aria-modal="true"
-          aria-label=${TITLE[this.pathType]}
+          aria-label=${TITLE[this.browseType]}
           tabindex="-1"
           @keydown=${(event: KeyboardEvent) => {
             if (event.key === 'Escape') {
@@ -299,14 +325,16 @@ export class GcrPathBrowser extends LitElement {
           }}
         >
           <header class="gcr-browser-header">
-            <h2>${TITLE[this.pathType]}</h2>
-            <sp-action-button quiet label="Close" aria-label="Close" @click=${() => this.close()}>✕</sp-action-button>
+            <h2>${TITLE[this.browseType]}</h2>
+            <sp-action-button quiet label="Close" aria-label="Close" @click=${() => this.close()}>
+              <sp-icon-close slot="icon"></sp-icon-close>
+            </sp-action-button>
           </header>
 
           <div
             class="gcr-browser-tree"
             role="tree"
-            aria-label=${TITLE[this.pathType]}
+            aria-label=${TITLE[this.browseType]}
             @keydown=${(event: KeyboardEvent) => this.onTreeKeydown(event)}
           >
             ${this.renderChildren(this.root, 0)}
@@ -353,9 +381,10 @@ export class GcrPathBrowser extends LitElement {
           aria-selected=${this.selected === node.path}
           aria-expanded=${node.hasChildren ? String(isExpanded) : nothing}
           @click=${() => this.onRowClick(node)}
+          @dblclick=${() => this.onRowDblClick(node)}
         >
           <span
-            class="gcr-browser-twisty ${node.hasChildren ? '' : 'is-leaf'}"
+            class="gcr-browser-twisty ${node.hasChildren ? '' : 'is-leaf'} ${isExpanded ? 'is-expanded' : ''}"
             aria-hidden="true"
             @click=${(event: Event) => {
               event.stopPropagation();
@@ -363,7 +392,7 @@ export class GcrPathBrowser extends LitElement {
                 void this.toggle(node);
               }
             }}
-            >${node.hasChildren ? (isExpanded ? '▾' : '▸') : ''}</span
+            >${node.hasChildren ? html`<sp-icon-chevron-right size="xs"></sp-icon-chevron-right>` : ''}</span
           >
           <span class="gcr-browser-name">${node.title || node.name}</span>
           ${node.title ? html`<span class="gcr-browser-subtle">${node.name}</span>` : nothing}

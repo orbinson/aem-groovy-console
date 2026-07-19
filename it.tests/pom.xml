@@ -15,6 +15,7 @@
     <properties>
         <maven.deploy.skip>true</maven.deploy.skip>
         <http.port>8080</http.port>
+        <jmx.port>7199</jmx.port>
     </properties>
 
     <build>
@@ -115,6 +116,17 @@
                                     <frameworkProperties>
                                         <org.osgi.service.http.port>${http.port}</org.osgi.service.http.port>
                                     </frameworkProperties>
+                                    <!-- Expose the launched instance's platform MBeanServer over local, unauthenticated
+                                         RMI so IT tests can exercise MBeans (e.g. the migration JMX bean) via a real
+                                         JMX connection instead of only through HTTP/unit-test mocks. -->
+                                    <vmOptions>
+                                        <vmOption>-Dcom.sun.management.jmxremote</vmOption>
+                                        <vmOption>-Dcom.sun.management.jmxremote.port=${jmx.port}</vmOption>
+                                        <vmOption>-Dcom.sun.management.jmxremote.rmi.port=${jmx.port}</vmOption>
+                                        <vmOption>-Dcom.sun.management.jmxremote.authenticate=false</vmOption>
+                                        <vmOption>-Dcom.sun.management.jmxremote.ssl=false</vmOption>
+                                        <vmOption>-Djava.rmi.server.hostname=localhost</vmOption>
+                                    </vmOptions>
                                 </launcherArguments>
                                 <startTimeoutSeconds>180</startTimeoutSeconds>
                             </launch>
@@ -163,6 +175,7 @@
                                 <configuration>
                                     <portNames>
                                         <portName>http.port</portName>
+                                        <portName>jmx.port</portName>
                                     </portNames>
                                 </configuration>
                             </execution>
@@ -197,6 +210,7 @@
                         <configuration>
                             <systemPropertyVariables>
                                 <HTTP_PORT>${http.port}</HTTP_PORT>
+                                <JMX_PORT>${jmx.port}</JMX_PORT>
                             </systemPropertyVariables>
                         </configuration>
                         <executions>

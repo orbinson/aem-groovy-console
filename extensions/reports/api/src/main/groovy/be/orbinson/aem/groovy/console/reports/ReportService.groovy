@@ -41,6 +41,21 @@ interface ReportService {
     ReportDefinition saveReport(ResourceResolver resourceResolver, ReportDefinition reportDefinition, String userId)
 
     /**
+     * Update only the metadata of an existing report — title, description, category and page size — leaving the
+     * executable Groovy (report script and any dynamic-options scripts) and the parameter definitions untouched.
+     * Because it writes only the report node's own properties, it succeeds for a user who has
+     * {@code jcr:modifyProperties} on the report node but is denied write on the {@code .groovy} script nodes.
+     * Used to let non–console-permitted users edit report metadata without being able to change runnable code.
+     *
+     * @param resourceResolver requesting user's resolver
+     * @param reportDefinition definition carrying the new metadata (only name + metadata fields are read)
+     * @param userId user performing the change (recorded as last modified by)
+     * @return the updated definition
+     */
+    ReportDefinition updateReportMetadata(ResourceResolver resourceResolver, ReportDefinition reportDefinition,
+                                          String userId)
+
+    /**
      * Delete a report definition with the given resolver.
      *
      * @param resourceResolver requesting user's resolver

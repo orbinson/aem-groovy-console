@@ -17,6 +17,7 @@ import org.osgi.service.component.annotations.Component
 
 import javax.jcr.Session
 
+import static be.orbinson.aem.groovy.console.reports.constants.ReportsConstants.CHARSET
 import static be.orbinson.aem.groovy.console.reports.constants.ReportsConstants.PARAMETERS_NODE_NAME
 import static be.orbinson.aem.groovy.console.reports.constants.ReportsConstants.PATH_REPORTS_FOLDER
 import static be.orbinson.aem.groovy.console.reports.constants.ReportsConstants.RESOURCE_TYPE_DEFINITION
@@ -38,7 +39,9 @@ class DefaultReportService implements ReportService {
 
     private static final String PROPERTY_CATEGORY = "category"
 
-    private static final String PROPERTY_SCRIPT = "script"
+    private static final String SCRIPT_FILE_SUFFIX = ".groovy"
+
+    private static final String SCRIPT_MIME_TYPE = "application/x-groovy"
 
     private static final String PROPERTY_PAGE_SIZE = "pageSize"
 
@@ -93,11 +96,11 @@ class DefaultReportService implements ReportService {
             valueMap.put(PROPERTY_TITLE, reportDefinition.title ?: reportDefinition.name)
             putOrRemove(valueMap, PROPERTY_DESCRIPTION, reportDefinition.description)
             putOrRemove(valueMap, PROPERTY_CATEGORY, reportDefinition.category)
-            putOrRemove(valueMap, PROPERTY_SCRIPT, reportDefinition.script)
             putOrRemove(valueMap, PROPERTY_PAGE_SIZE, reportDefinition.pageSize)
             valueMap.put(PROPERTY_LAST_MODIFIED, Calendar.instance)
             valueMap.put(PROPERTY_LAST_MODIFIED_BY, userId)
 
+            saveScript(resourceResolver, resource, resource.name, reportDefinition.script)
             saveParameters(resourceResolver, resource, reportDefinition.parameters)
 
             resourceResolver.commit()
@@ -109,6 +112,39 @@ class DefaultReportService implements ReportService {
             LOG.error("error saving report definition : {}", reportDefinition.name, e)
 
             throw new ReportException("Error saving report definition: ${reportDefinition.name}", e)
+        }
+    }
+
+    @Override
+    ReportDefinition updateReportMetadata(ResourceResolver resourceResolver, ReportDefinition reportDefinition,
+                                          String userId) {
+        def resource = getReportResource(resourceResolver, reportDefinition.name)
+
+        if (!resource) {
+            throw new ReportException("Report not found: ${reportDefinition.name}")
+        }
+
+        try {
+            // only the report node's own properties are written — the .groovy script children and the parameters
+            // subtree are left untouched, so this succeeds without write access to the script nodes
+            def valueMap = resource.adaptTo(ModifiableValueMap)
+
+            valueMap.put(PROPERTY_TITLE, reportDefinition.title ?: reportDefinition.name)
+            putOrRemove(valueMap, PROPERTY_DESCRIPTION, reportDefinition.description)
+            putOrRemove(valueMap, PROPERTY_CATEGORY, reportDefinition.category)
+            putOrRemove(valueMap, PROPERTY_PAGE_SIZE, reportDefinition.pageSize)
+            valueMap.put(PROPERTY_LAST_MODIFIED, Calendar.instance)
+            valueMap.put(PROPERTY_LAST_MODIFIED_BY, userId)
+
+            resourceResolver.commit()
+
+            LOG.info("updated report metadata : {} by user : {}", reportDefinition.name, userId)
+
+            toReportDefinition(resource)
+        } catch (PersistenceException e) {
+            LOG.error("error updating report metadata : {}", reportDefinition.name, e)
+
+            throw new ReportException("Error updating report metadata: ${reportDefinition.name}", e)
         }
     }
 
@@ -202,6 +238,34 @@ class DefaultReportService implements ReportService {
         }
     }
 
+    /**
+     * Write {@code script} as a {@code .groovy} {@code nt:file} child of {@code parentResource}, named after
+     * {@code baseName}.  Used for both the report script (under the report node) and a dynamic parameter's
+     * options script (under the parameter node), so the script is a real editable/ACL-able repository file.
+     */
+    private static void saveScript(ResourceResolver resourceResolver, Resource parentResource, String baseName,
+                                   String script) {
+        // replace any existing script file (defensive; the file name tracks the parent node name)
+        parentResource.listChildren().findAll { child -> isScriptFile(child) }.each { child ->
+            resourceResolver.delete(child)
+        }
+
+        if (!script?.trim()) {
+            return
+        }
+
+        def fileResource = resourceResolver.create(parentResource, "${baseName}$SCRIPT_FILE_SUFFIX",
+                [(JcrConstants.JCR_PRIMARYTYPE): JcrConstants.NT_FILE] as Map<String, Object>)
+
+        resourceResolver.create(fileResource, JcrConstants.JCR_CONTENT, [
+                (JcrConstants.JCR_PRIMARYTYPE) : JcrConstants.NT_RESOURCE,
+                (JcrConstants.JCR_MIMETYPE)    : SCRIPT_MIME_TYPE,
+                (JcrConstants.JCR_ENCODING)    : CHARSET,
+                (JcrConstants.JCR_LASTMODIFIED): Calendar.instance,
+                (JcrConstants.JCR_DATA)        : new ByteArrayInputStream(script.getBytes(CHARSET))
+        ] as Map<String, Object>)
+    }
+
     private static void saveParameters(ResourceResolver resourceResolver, Resource reportResource,
                                        List<ReportParameter> parameters) {
         def parametersResource = reportResource.getChild(PARAMETERS_NODE_NAME)
@@ -221,6 +285,7 @@ class DefaultReportService implements ReportService {
                         "label"                       : parameter.label ?: parameter.name,
                         "type"                        : (parameter.type ?: ReportParameterType.STRING).name(),
                         "required"                    : parameter.required,
+                        "multiple"                    : parameter.multiple,
                         "order"                       : parameter.order ?: index
                 ] as Map<String, Object>
 
@@ -234,20 +299,40 @@ class DefaultReportService implements ReportService {
 
                 if (parameter.type == ReportParameterType.PATH) {
                     properties["pathType"] = parameter.pathType ?: "NODE"
-
-                    if (parameter.rootPath) {
-                        properties["rootPath"] = parameter.rootPath
-                    }
                 }
 
-                resourceResolver.create(parametersResource, parameter.name, properties)
+                // rootPath scopes both the PATH browser and the TAG taxonomy root
+                if (parameter.rootPath && parameter.type in [ReportParameterType.PATH, ReportParameterType.TAG]) {
+                    properties["rootPath"] = parameter.rootPath
+                }
+
+                def parameterResource = resourceResolver.create(parametersResource, parameter.name, properties)
+
+                // a dynamic parameter's options script is stored as a real .groovy file subnode (editable,
+                // ACL-able and unit-testable like the report script itself)
+                if (parameter.type == ReportParameterType.DYNAMIC) {
+                    saveScript(resourceResolver, parameterResource, parameter.name, parameter.optionsScript)
+                }
             }
         }
     }
 
     private static boolean isReportDefinition(Resource resource) {
-        resource.name != "rep:policy" && (resource.isResourceType(RESOURCE_TYPE_DEFINITION)
-                || resource.valueMap.containsKey(PROPERTY_SCRIPT))
+        resource.isResourceType(RESOURCE_TYPE_DEFINITION)
+    }
+
+    private static boolean isScriptFile(Resource resource) {
+        resource.name.endsWith(SCRIPT_FILE_SUFFIX)
+    }
+
+    private static String readScript(Resource reportResource) {
+        def scriptFile = reportResource.listChildren().find { child -> isScriptFile(child) }
+
+        def stream = scriptFile?.getChild(JcrConstants.JCR_CONTENT)
+                ?.valueMap
+                ?.get(JcrConstants.JCR_DATA, InputStream)
+
+        stream?.withCloseable { it.getText(CHARSET) }
     }
 
     private static Resource getReportResource(ResourceResolver resourceResolver, String name) {
@@ -268,7 +353,7 @@ class DefaultReportService implements ReportService {
                 title: properties.get(PROPERTY_TITLE, resource.name),
                 description: properties.get(PROPERTY_DESCRIPTION, String),
                 category: properties.get(PROPERTY_CATEGORY, String),
-                script: properties.get(PROPERTY_SCRIPT, String),
+                script: readScript(resource),
                 pageSize: properties.get(PROPERTY_PAGE_SIZE, Integer),
                 parameters: toParameters(resource),
                 created: properties.get(JcrConstants.JCR_CREATED, Calendar),
@@ -287,16 +372,19 @@ class DefaultReportService implements ReportService {
 
         parametersResource.listChildren().collect { resource ->
             def properties = resource.valueMap
+            def type = toParameterType(properties.get("type", String))
 
             new ReportParameter(
                     name: properties.get("name", resource.name),
                     label: properties.get("label", resource.name),
-                    type: toParameterType(properties.get("type", String)),
+                    type: type,
                     defaultValue: properties.get("defaultValue", String),
                     required: properties.get("required", false),
+                    multiple: properties.get("multiple", false),
                     options: (properties.get("options", new String[0]) as List).findAll(),
                     pathType: properties.get("pathType", "NODE"),
                     rootPath: properties.get("rootPath", String),
+                    optionsScript: type == ReportParameterType.DYNAMIC ? readScript(resource) : null,
                     order: properties.get("order", 0)
             )
         }.sort { parameter -> parameter.order }

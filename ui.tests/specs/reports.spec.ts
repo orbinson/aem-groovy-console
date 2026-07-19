@@ -33,6 +33,41 @@ test.describe('reports', () => {
     await expect(page.locator('.gcr-result-actions')).toContainText('Download CSV');
   });
 
+  test('prefills a parameter from the URL, overriding its default', async ({ page }) => {
+    // the sample report's PATH parameter defaults to /content; a URL prefill must win over that default
+    await page.goto(`${REPORTS_URL}#/report/sample-content-listing?path=${encodeURIComponent('/apps')}`);
+
+    await expect(page.getByRole('heading', { name: SAMPLE_TITLE })).toBeVisible({ timeout: 30_000 });
+    await expect(page.locator('.gcr-path-input')).toHaveValue('/apps');
+
+    // prefill alone must not execute the report — no result table until the user runs it
+    await expect(page.locator('table.gcr-table')).toHaveCount(0);
+  });
+
+  test('autoruns the report when the URL requests it', async ({ page }) => {
+    // autorun=true executes the prefilled report on load, without the user clicking "Run report"
+    await page.goto(
+      `${REPORTS_URL}#/report/sample-content-listing?path=${encodeURIComponent('/content')}&autorun=true`,
+    );
+
+    const table = page.locator('table.gcr-table');
+    await expect(table).toBeVisible({ timeout: 30_000 });
+    await expect(table.locator('tbody tr').first()).toBeVisible();
+  });
+
+  test('seeds a multi-value parameter from repeated URL keys', async ({ page }) => {
+    // sample-advanced-parameters echoes its submitted params; "names" is a multiple STRING parameter.
+    // Repeating the key must submit both values as a list, which the echo report joins with ", ".
+    await page.goto(
+      `${REPORTS_URL}#/report/sample-advanced-parameters?names=alpha&names=beta&autorun=true`,
+    );
+
+    const table = page.locator('table.gcr-table');
+    await expect(table).toBeVisible({ timeout: 30_000 });
+    const namesRow = table.locator('tbody tr', { hasText: 'names' }).first();
+    await expect(namesRow).toContainText('alpha, beta');
+  });
+
   test('registers a Reports panel in the modern console', async ({ page }) => {
     await page.goto(MODERN_URL);
 

@@ -3,7 +3,8 @@ import { customElement, property } from 'lit/decorators.js';
 import type * as Monaco from 'monaco-editor';
 import { attachGroovyDiagnostics } from '@console/editor/groovy-diagnostics';
 import { GROOVY_LANGUAGE_ID } from '@console/editor/groovy-language';
-import { monaco, setupMonaco } from '@console/editor/monaco-setup';
+import { EDITOR_FONT_FAMILY, monaco, setupMonaco, syncMonacoTheme } from '@console/editor/monaco-setup';
+import { persistence } from '@console/state/local-storage';
 
 /**
  * Standalone Monaco Groovy editor for the reports editor view.  Unlike gc-script-editor it has no
@@ -16,6 +17,7 @@ export class GcrCodeEditor extends LitElement {
   private disposeDiagnostics?: () => void;
 
   @property() initialValue = '';
+  @property({ type: Boolean }) readOnly = false;
 
   // Render in light DOM so Monaco's document-level styles apply.
   createRenderRoot(): this {
@@ -32,6 +34,7 @@ export class GcrCodeEditor extends LitElement {
 
   protected firstUpdated(): void {
     setupMonaco();
+    syncMonacoTheme(persistence.getColorScheme());
 
     const container = this.querySelector<HTMLDivElement>('.gcr-editor-container')!;
 
@@ -42,8 +45,10 @@ export class GcrCodeEditor extends LitElement {
       minimap: { enabled: false },
       scrollBeyondLastLine: false,
       fontSize: 13,
+      fontFamily: EDITOR_FONT_FAMILY,
       fixedOverflowWidgets: true,
       tabSize: 4,
+      readOnly: this.readOnly,
       quickSuggestions: { other: true, comments: false, strings: true },
     });
 
@@ -52,6 +57,12 @@ export class GcrCodeEditor extends LitElement {
     });
 
     this.disposeDiagnostics = attachGroovyDiagnostics(monaco, this.editor);
+  }
+
+  protected updated(changed: Map<string, unknown>): void {
+    if (changed.has('readOnly')) {
+      this.editor?.updateOptions({ readOnly: this.readOnly });
+    }
   }
 
   disconnectedCallback(): void {
