@@ -42,6 +42,14 @@ const POLL_MAX_MS = 30 * 60 * 1000;
 @customElement('gcr-report-run')
 export class GcrReportRun extends LitElement {
   @property() name = '';
+  /** Parameter values parsed from the URL, prefilled over each parameter's default when the report loads.
+   *  Each key holds every occurrence of that query parameter, so a `multiple` field can be seeded with a list. */
+  @property({ attribute: false }) prefill: Record<string, string[]> = {};
+  /** When true, the report is executed automatically once loaded and prefilled (if required params are satisfied). */
+  @property({ type: Boolean }) autorun = false;
+
+  /** Set when a load was started for an autorun request, so run() fires exactly once after that load finishes. */
+  private autorunPending = false;
 
   @state() private definition: ReportDefinition | null = null;
   @state() private loaded = false;
@@ -95,6 +103,7 @@ export class GcrReportRun extends LitElement {
 
   protected willUpdate(changed: Map<string, unknown>): void {
     if (changed.has('name') && this.name) {
+      this.autorunPending = this.autorun;
       void this.load();
     }
   }
@@ -119,8 +128,14 @@ export class GcrReportRun extends LitElement {
 
       const defaults: Record<string, ReportParameterValue> = {};
       for (const parameter of definition.parameters) {
+        // a URL prefill for a known parameter overrides its default; for a scalar field the last value wins
+        const prefilled = this.prefill[parameter.name];
         const fallback = parameter.defaultValue ?? '';
-        defaults[parameter.name] = parameter.multiple ? (fallback ? [fallback] : []) : fallback;
+        if (parameter.multiple) {
+          defaults[parameter.name] = prefilled?.length ? prefilled : fallback ? [fallback] : [];
+        } else {
+          defaults[parameter.name] = prefilled?.length ? prefilled[prefilled.length - 1] : fallback;
+        }
       }
       this.values = defaults;
       this.dynamicOptions = {};
@@ -141,6 +156,10 @@ export class GcrReportRun extends LitElement {
     } finally {
       if (!this.stale(token)) {
         this.loaded = true;
+        if (this.autorunPending && !this.error) {
+          this.autorunPending = false;
+          void this.run();
+        }
       }
     }
   }
