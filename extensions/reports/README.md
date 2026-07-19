@@ -252,6 +252,24 @@ build that shares console infrastructure (API client, the Monaco/Groovy editor s
   view with the parameter form, paginated result table, exports and execution history; and an editor view (Monaco
   Groovy editor + parameters) for users with write access. The page shell is served by a servlet in the reports
   bundle, so it exists only when the extension is installed.
+
+  **Deep links & prefilled parameters.** The run view accepts a query string on its route hash so a report can be
+  opened with its form already filled in — and, optionally, run automatically:
+
+  ```
+  /apps/groovyconsole/reports.html#/report/<name>?<param>=<value>&<param>=<value>[&autorun=true]
+  ```
+
+  Each query key that matches a parameter `name` prefills that field (overriding the parameter's default);
+  unknown keys are ignored. Repeating a key (`?tag=a&tag=b`) seeds a `multiple` parameter with several values;
+  for a scalar parameter the last occurrence wins. The reserved `autorun` key requests immediate execution once
+  the form is prefilled (`autorun`, `autorun=1` or `autorun=true` enable it; `autorun=0`/`autorun=false` disable
+  it) — it is optional and off by default. If a required parameter is left unsatisfied, autorun is skipped and the
+  field is flagged instead. Values must be URL-encoded (`%2F` for `/` in a path). Example:
+
+  ```
+  #/report/expired-pages?path=%2Fcontent%2Fmysite&status=expired&tag=marketing&tag=news&autorun=true
+  ```
 - **Developer panel** — a Reports drawer in the modern console's left rail, contributed through the
   `ConsoleUiExtensionProvider` mechanism. The console dynamically imports the panel module the provider announces;
   without the extension installed the console carries no reports code paths at all.
