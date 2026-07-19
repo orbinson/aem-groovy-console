@@ -13,10 +13,9 @@ class ReportsConstants {
     public static final String PATH_REPORTS_FOLDER = "/conf/groovyconsole/reports"
 
     /**
-     * Immutable drop-zone for report definitions deployed in code (content packages).  Definitions found here are
-     * auto-discovered and scheduled; because the location is under <code>/apps</code> it cannot be written at
-     * runtime through the SlingPostServlet, so its definitions are trusted to run under the executor service user.
-     * A sibling of <code>/apps/groovyconsole-reports</code> so the reports package's replace filter never wipes it.
+     * Immutable location for report definitions deployed in code (content packages).  Definitions here are
+     * auto-discovered, scheduled and run under the executor service user.  A dedicated sibling of
+     * <code>/apps/groovyconsole-reports</code>, so installing either package leaves the other untouched.
      */
     public static final String PATH_APPS_REPORTS_FOLDER = "/apps/groovyconsole-reports-definitions"
 
