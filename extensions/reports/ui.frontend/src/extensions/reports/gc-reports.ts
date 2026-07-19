@@ -155,7 +155,7 @@ export class GcReports extends LitElement {
           @submit=${(event: Event) => event.preventDefault()}
         ></sp-search>
         <sp-action-button size="s" quiet @click=${() => void this.refresh()} title="Refresh" aria-label="Refresh">
-          ↻
+          <sp-icon-refresh slot="icon"></sp-icon-refresh>
         </sp-action-button>
         ${this.canManage
           ? html`

@@ -96,7 +96,9 @@ export class GcmRunList extends LitElement {
         <div class="gcm-page-header">
           <h2>Run history</h2>
           <div class="gcm-page-actions">
-            <sp-action-button size="s" quiet @click=${() => void this.refresh()} title="Refresh">↻</sp-action-button>
+            <sp-action-button size="s" quiet @click=${() => void this.refresh()} title="Refresh" aria-label="Refresh">
+              <sp-icon-refresh slot="icon"></sp-icon-refresh>
+            </sp-action-button>
             <sp-button
               size="s"
               variant="primary"

@@ -1,7 +1,7 @@
 import { html, LitElement } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import type * as Monaco from 'monaco-editor';
-import { monaco, setupMonaco } from '../editor/monaco-setup';
+import { EDITOR_FONT_FAMILY, monaco, setupMonaco } from '../editor/monaco-setup';
 import { persistence } from '../state/local-storage';
 
 @customElement('gc-data-editor')
@@ -42,6 +42,7 @@ export class GcDataEditor extends LitElement {
       minimap: { enabled: false },
       scrollBeyondLastLine: false,
       fontSize: 13,
+      fontFamily: EDITOR_FONT_FAMILY,
       fixedOverflowWidgets: true,
       tabSize: 2,
     });

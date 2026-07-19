@@ -31,9 +31,14 @@
                     <validatorsSettings>
                         <jackrabbit-filter>
                             <options>
-                                <validRoots>/apps,/apps/cq/core/content/nav/tools</validRoots>
+                                <validRoots>/apps,/apps/cq/core/content</validRoots>
                             </options>
                         </jackrabbit-filter>
+                        <jackrabbit-packagetype>
+                            <options>
+                                <allowComplexFilterRulesInApplicationPackages>true</allowComplexFilterRulesInApplicationPackages>
+                            </options>
+                        </jackrabbit-packagetype>
                     </validatorsSettings>
                 </configuration>
             </plugin>

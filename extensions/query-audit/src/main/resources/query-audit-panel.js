@@ -31,11 +31,18 @@
       }
 
       const needing = queries.filter((query) => query.needsIndex).length;
-      const summary = !queries.length
-        ? 'The script executed no JCR queries.'
-        : needing
-          ? `${queries.length} ${plural(queries.length, 'query', 'queries')} — ${needing} not covered by an Oak index`
-          : `All ${queries.length} ${plural(queries.length, 'query is', 'queries are')} covered by an Oak index`;
+
+      let summary;
+      let summaryClass = '';
+      if (!queries.length) {
+        summary = 'The script executed no JCR queries.';
+      } else if (needing) {
+        summary = `${queries.length} ${plural(queries.length, 'query', 'queries')} — ${needing} not covered by an Oak index`;
+        summaryClass = 'qa-warn';
+      } else {
+        summary = `All ${queries.length} ${plural(queries.length, 'query is', 'queries are')} covered by an Oak index`;
+        summaryClass = 'qa-good';
+      }
 
       const rows = queries
         .map(
@@ -101,7 +108,7 @@
             color: var(--spectrum-negative-content-color-default, #d7373f);
           }
         </style>
-        <div class="qa-summary ${!queries.length ? '' : needing ? 'qa-warn' : 'qa-good'}">${summary}</div>
+        <div class="qa-summary ${summaryClass}">${summary}</div>
         ${rows}`;
     }
   }

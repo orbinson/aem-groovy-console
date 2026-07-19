@@ -27,8 +27,9 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Integration tests for asynchronous (streaming) script execution.
  */
-// Thread.sleep is intentional here: these tests poll a remote endpoint and assert on partial
-// output observed over time, matching the readiness polling in GroovyConsoleServiceIT.
+// Thread.sleep is intentional here: testAsyncExecutionStreamsOutput polls a remote endpoint and
+// accumulates partial output observed over time as the script executes asynchronously, which needs
+// stateful accumulation (received output, offset) rather than a simple boolean predicate.
 @SuppressWarnings("java:S2925")
 class StreamingIT {
 
@@ -41,7 +42,13 @@ class StreamingIT {
     @BeforeAll
     static void setUp() {
         httpClient = HttpClients.createDefault();
-        waitForStableReadiness(300, 15);
+
+        // All bundles/content are pre-converted into the launch feature (cp-converter), so there is no
+        // post-startup content-package install cascade to wait out here -- a single successful check
+        // against the actual servlet is sufficient (see GroovyConsoleReportsIT).
+        await().atMost(180, TimeUnit.SECONDS)
+                .pollInterval(5, TimeUnit.SECONDS)
+                .untilAsserted(() -> assertTrue(isGroovyConsoleReady(), "Groovy Console not ready"));
     }
 
     @AfterAll
@@ -137,37 +144,6 @@ class StreamingIT {
             assertEquals(404, response.getStatusLine().getStatusCode());
             EntityUtils.consume(response.getEntity());
         }
-    }
-
-    /**
-     * Wait until the Groovy Console servlet answers successfully for a continuous window, matching
-     * the readiness strategy used by the other integration tests. Tolerates transient connection
-     * failures during startup.
-     */
-    private static void waitForStableReadiness(long overallTimeoutSec, long stabilityWindowSec) {
-        long deadline = System.currentTimeMillis() + overallTimeoutSec * 1000;
-        long stableSince = -1;
-        while (System.currentTimeMillis() < deadline) {
-            boolean ready = isGroovyConsoleReady();
-            long now = System.currentTimeMillis();
-            if (ready) {
-                if (stableSince < 0) {
-                    stableSince = now;
-                } else if (now - stableSince >= stabilityWindowSec * 1000) {
-                    return;
-                }
-            } else {
-                stableSince = -1;
-            }
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                fail("Interrupted while waiting for Groovy Console readiness");
-            }
-        }
-        fail("Groovy Console did not become stable within " + overallTimeoutSec
-                + "s (need " + stabilityWindowSec + "s of continuous OK)");
     }
 
     private static boolean isGroovyConsoleReady() {

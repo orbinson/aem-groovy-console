@@ -1,0 +1,16 @@
+/* Shared design tokens for the console and extension UIs (imported via the @console alias). */
+/* The font overrides must also target sp-theme itself: the theme declares its own
+   --spectrum-*-font-family-stack (adobe-clean, …) on :host, which shadows a plain :root
+   declaration for everything inside the theme. Outer-document rules on the host win. */
+:root,
+sp-theme {
+  /* Adobe Clean is proprietary; ship Source Sans 3 / Source Code Pro (see the @fontsource
+     imports in each app entry) with an open fallback stack matching the Spectrum look. */
+  --spectrum-sans-font-family-stack: 'Source Sans 3', 'Source Sans Pro', system-ui, -apple-system, 'Segoe UI',
+    Roboto, Helvetica, Arial, sans-serif;
+  --spectrum-code-font-family-stack: 'Source Code Pro', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  /* Interaction rhythm shared by all hand-rolled controls (Spectrum components bring their own). */
+  --gc-radius: 6px;
+  --gc-transition: 130ms ease-out;
+}

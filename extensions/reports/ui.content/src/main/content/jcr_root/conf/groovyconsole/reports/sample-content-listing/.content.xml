@@ -5,8 +5,7 @@
           jcr:title="Sample: Content listing"
           description="Lists the child resources of a content path with name, link and resource type. Works on both AEM and plain Sling."
           category="Samples"
-          pageSize="{Long}25"
-          script="import be.orbinson.aem.groovy.console.reports.data.ReportColumnType&#xa;&#xa;def data = report.data()&#xa;&#xa;data.column(&apos;Name&apos;)&#xa;data.column(&apos;Path&apos;, ReportColumnType.LINK)&#xa;data.column(&apos;Type&apos;)&#xa;// UI-only column: shown in the table but omitted from the CSV/XLSX export (exported = false)&#xa;data.column(&apos;Edit&apos;, ReportColumnType.LINK, false)&#xa;&#xa;def resource = resourceResolver.getResource(params.path)&#xa;&#xa;resource?.listChildren()?.each { child -&gt;&#xa;    data.row(&#xa;        child.name,&#xa;        [text: child.name, href: child.path],&#xa;        child.resourceType,&#xa;        [text: &apos;Edit&apos;, href: &quot;/editor.html${child.path}.html&quot;]&#xa;    )&#xa;}&#xa;&#xa;data">
+          pageSize="{Long}25">
     <parameters jcr:primaryType="nt:unstructured">
         <path
             jcr:primaryType="nt:unstructured"

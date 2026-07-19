@@ -1,5 +1,6 @@
 import { html, LitElement, nothing } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
+import { repeat } from 'lit/directives/repeat.js';
 import { ApiError } from '@console/api/client';
 import {
   auditReportQueries,
@@ -7,23 +8,51 @@ import {
   getReport,
   isQueryAuditAvailable,
   previewReport,
+  resolveDynamicOptionsForScript,
   saveReport,
 } from '../../api/reports-api';
 import type {
+  BrowseType,
+  DynamicOption,
   PathType,
   ReportParameter,
   ReportParameterType,
+  ReportParameterValue,
   ReportPreviewResponse,
   ReportQueryAuditResponse,
   SaveReportRequest,
 } from '../../api/reports-types';
 import { toast } from './gcr-app';
 import type { GcrCodeEditor } from './gcr-code-editor';
+import type { GcrPathBrowser } from './gcr-path-browser';
 import { mutePlaceholders } from '@console/util/mute-placeholders';
+import { renderMultifield } from './multifield';
 import { renderResultTable } from './result-cell';
 import { validateRequired } from './validate-parameters';
 
-const PARAMETER_TYPES: ReportParameterType[] = ['STRING', 'NUMBER', 'BOOLEAN', 'DATE', 'SELECT', 'PATH'];
+const PARAMETER_TYPES: ReportParameterType[] = [
+  'STRING',
+  'NUMBER',
+  'BOOLEAN',
+  'DATE',
+  'SELECT',
+  'PATH',
+  'TAG',
+  'DYNAMIC',
+];
+
+const DEFAULT_OPTIONS_SCRIPT = [
+  'def options = report.options()',
+  '',
+  '// Return value/label pairs — the value is submitted, the label is shown.',
+  '// This lists the child resources of /content (works on AEM and Sling); replace with your own logic.',
+  "resourceResolver.getResource('/content')?.listChildren()?.each { child ->",
+  '    options.add(child.path, child.name)',
+  '}',
+  '',
+  'options',
+  '',
+].join('\n');
 
 const DEFAULT_SCRIPT = [
   'import be.orbinson.aem.groovy.console.reports.data.ReportColumnType',
@@ -44,7 +73,11 @@ const DEFAULT_SCRIPT = [
 interface ParameterRow extends Omit<ReportParameter, 'options'> {
   /** Comma-separated in the editor form. */
   options: string;
+  /** Stable client-side identity so keyed rendering never reuses a row's Monaco editor for another row. */
+  _key: number;
 }
+
+let nextParameterKey = 0;
 
 /** Editor view: metadata, Groovy script (Monaco) and parameters. Access is governed by JCR ACLs. */
 @customElement('gcr-report-editor')
@@ -64,13 +97,17 @@ export class GcrReportEditor extends LitElement {
   @state() private pageSize = '';
   @state() private script = DEFAULT_SCRIPT;
   @state() private parameters: ParameterRow[] = [];
+  /** Whether the user may edit the executable Groovy; metadata/parameters stay editable regardless. */
+  @state() private canEditScript = true;
 
   // "try out" run state
-  @state() private testValues: Record<string, string> = {};
+  @state() private testValues: Record<string, string | string[]> = {};
   @state() private preview: ReportPreviewResponse | null = null;
   @state() private previewing = false;
   /** Validation messages for required test values left empty, keyed by parameter name. */
   @state() private testErrors: Record<string, string> = {};
+  /** Result (or error) of the last "Test options" run, shown in a modal. */
+  @state() private optionsTest: { title: string; error?: string; options?: DynamicOption[] } | null = null;
 
   // query-audit state (only offered when the optional query-audit extension is installed)
   @state() private queryAuditAvailable = false;
@@ -78,6 +115,10 @@ export class GcrReportEditor extends LitElement {
   @state() private auditing = false;
 
   @query('gcr-code-editor') private codeEditor?: GcrCodeEditor;
+  @query('gcr-path-browser') private rootBrowser?: GcrPathBrowser;
+
+  /** Index of the parameter whose root path is being picked in the browser. */
+  private browsingRootIndex: number | null = null;
 
   createRenderRoot(): this {
     return this;
@@ -128,9 +169,11 @@ export class GcrReportEditor extends LitElement {
       this.category = definition.category ?? '';
       this.pageSize = definition.pageSize ? String(definition.pageSize) : '';
       this.script = definition.script ?? '';
+      this.canEditScript = definition.canEditScript ?? false;
       this.parameters = definition.parameters.map((parameter) => ({
         ...parameter,
         options: parameter.options.join(', '),
+        _key: nextParameterKey++,
       }));
     } catch (error) {
       this.error = error instanceof ApiError ? error.message : 'Could not load report.';
@@ -148,16 +191,49 @@ export class GcrReportEditor extends LitElement {
         type: 'STRING',
         defaultValue: '',
         required: false,
+        multiple: false,
         options: '',
         pathType: 'NODE',
         rootPath: '',
+        optionsScript: '',
         order: this.parameters.length,
+        _key: nextParameterKey++,
       },
     ];
   }
 
   private updateParameter(index: number, patch: Partial<ParameterRow>): void {
     this.parameters = this.parameters.map((parameter, i) => (i === index ? { ...parameter, ...patch } : parameter));
+  }
+
+  /** Change a parameter's type, seeding a starter options script the first time it becomes DYNAMIC. */
+  private changeParameterType(index: number, type: ReportParameterType): void {
+    const patch: Partial<ParameterRow> = { type };
+    if (type === 'DYNAMIC' && !this.parameters[index].optionsScript) {
+      patch.optionsScript = DEFAULT_OPTIONS_SCRIPT;
+    }
+    this.updateParameter(index, patch);
+  }
+
+  /** Open the repository/taxonomy browser to pick a PATH or TAG parameter's root. */
+  private openRootBrowser(index: number, parameter: ParameterRow): void {
+    if (!this.rootBrowser) {
+      return;
+    }
+    const isTag = parameter.type === 'TAG';
+    this.browsingRootIndex = index;
+    this.rootBrowser.browseType = isTag ? 'TAG' : ((parameter.pathType as BrowseType) || 'NODE');
+    this.rootBrowser.rootPath = isTag ? '/content/cq:tags' : '';
+    void this.rootBrowser.openBrowser(parameter.rootPath ?? '');
+  }
+
+  private onRootSelected(event: CustomEvent<{ path: string; id?: string | null }>): void {
+    if (this.browsingRootIndex === null) {
+      return;
+    }
+    // the root is always a JCR path (the taxonomy/tag node path for TAG, a node path for PATH)
+    this.updateParameter(this.browsingRootIndex, { rootPath: event.detail.path });
+    this.browsingRootIndex = null;
   }
 
   private removeParameter(index: number): void {
@@ -205,12 +281,16 @@ export class GcrReportEditor extends LitElement {
         type: parameter.type,
         defaultValue: parameter.defaultValue || undefined,
         required: parameter.required,
+        multiple: parameter.multiple,
         options: parameter.options
           .split(',')
           .map((option) => option.trim())
           .filter(Boolean),
         pathType: parameter.type === 'PATH' ? parameter.pathType || 'NODE' : undefined,
-        rootPath: parameter.type === 'PATH' ? parameter.rootPath || undefined : undefined,
+        // rootPath scopes the PATH browser and the TAG taxonomy root
+        rootPath:
+          parameter.type === 'PATH' || parameter.type === 'TAG' ? parameter.rootPath || undefined : undefined,
+        optionsScript: parameter.type === 'DYNAMIC' ? parameter.optionsScript || undefined : undefined,
         order: index,
       })),
     };
@@ -232,7 +312,7 @@ export class GcrReportEditor extends LitElement {
     this.preview = null;
 
     try {
-      this.preview = await previewReport(this.buildDefinition(this.reportName.trim() || 'preview'), this.testValues);
+      this.preview = await previewReport(this.buildDefinition(this.reportName.trim() || 'preview'), this.testValuesForRun());
     } catch (error) {
       toast(this, error instanceof ApiError ? error.message : 'Could not run the report.', 'negative');
     } finally {
@@ -258,13 +338,122 @@ export class GcrReportEditor extends LitElement {
     try {
       this.queryAudit = await auditReportQueries(
         this.buildDefinition(this.reportName.trim() || 'preview'),
-        this.testValues,
+        this.testValuesForRun(),
       );
     } catch (error) {
       toast(this, error instanceof ApiError ? error.message : 'Could not audit the report queries.', 'negative');
     } finally {
       this.auditing = false;
     }
+  }
+
+  /** Test values for the try-out run: a `multiple` parameter's newline-separated text becomes a string[]. */
+  private testValuesForRun(): Record<string, ReportParameterValue> {
+    const values: Record<string, ReportParameterValue> = {};
+    for (const parameter of this.parameters) {
+      if (parameter.multiple) {
+        values[parameter.name] = this.testValueList(parameter.name)
+          .map((entry) => entry.trim())
+          .filter(Boolean);
+      } else {
+        const raw = this.testValues[parameter.name];
+        values[parameter.name] = (Array.isArray(raw) ? raw[0] : raw) ?? parameter.defaultValue ?? '';
+      }
+    }
+    return values;
+  }
+
+  // test-value helpers (a `multiple` parameter's test value is an array, like the run form)
+
+  private testValueList(name: string): string[] {
+    const value = this.testValues[name];
+    if (Array.isArray(value)) {
+      return value.length ? value : [''];
+    }
+    return value ? [value] : [''];
+  }
+
+  private clearTestError(name: string): void {
+    if (this.testErrors[name]) {
+      const { [name]: _cleared, ...rest } = this.testErrors;
+      this.testErrors = rest;
+    }
+  }
+
+  private setTestValue(name: string, index: number | null, value: string): void {
+    if (index === null) {
+      this.testValues = { ...this.testValues, [name]: value };
+    } else {
+      const next = [...this.testValueList(name)];
+      next[index] = value;
+      this.testValues = { ...this.testValues, [name]: next };
+    }
+    this.clearTestError(name);
+  }
+
+  private addTestValue(name: string): void {
+    this.testValues = { ...this.testValues, [name]: [...this.testValueList(name), ''] };
+  }
+
+  private removeTestValue(name: string, index: number): void {
+    const next = this.testValueList(name).filter((_, i) => i !== index);
+    this.testValues = { ...this.testValues, [name]: next.length ? next : [''] };
+    this.clearTestError(name);
+  }
+
+  /** Resolve options for an unsaved DYNAMIC parameter and show the result (or the full error) in a modal. */
+  private async testOptions(parameter: ParameterRow): Promise<void> {
+    const title = parameter.label || parameter.name || 'parameter';
+    try {
+      const options = await resolveDynamicOptionsForScript(parameter.optionsScript ?? '', this.testValuesForRun());
+      this.optionsTest = { title, options };
+    } catch (error) {
+      this.optionsTest = { title, error: error instanceof ApiError ? error.message : String(error) };
+    }
+  }
+
+  private closeOptionsTest(): void {
+    this.optionsTest = null;
+  }
+
+  private renderOptionsTestModal() {
+    const test = this.optionsTest;
+    if (!test) {
+      return nothing;
+    }
+    return html`
+      <div
+        class="gcr-browser-overlay"
+        @click=${(event: Event) => event.target === event.currentTarget && this.closeOptionsTest()}
+      >
+        <div
+          class="gcr-browser gcr-test-modal"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Options test result"
+          @keydown=${(event: KeyboardEvent) => event.key === 'Escape' && this.closeOptionsTest()}
+        >
+          <header class="gcr-browser-header">
+            <h2>${test.error ? 'Options script failed' : 'Options'} — ${test.title}</h2>
+            <sp-action-button quiet label="Close" aria-label="Close" @click=${() => this.closeOptionsTest()}>
+              <sp-icon-close slot="icon"></sp-icon-close>
+            </sp-action-button>
+          </header>
+          <div class="gcr-test-modal-body">
+            ${test.error
+              ? html`<pre class="gcr-stacktrace">${test.error}</pre>`
+              : html`
+                  <p>${test.options?.length ?? 0} option(s) returned.</p>
+                  <ul class="gcr-options-preview">
+                    ${(test.options ?? []).map(
+                      (option) => html`<li><code>${option.value}</code> — ${option.label}</li>`,
+                    )}
+                  </ul>
+                `}
+          </div>
+        </div>
+      </div>
+    `;
   }
 
   private async removeReport(): Promise<void> {
@@ -294,7 +483,13 @@ export class GcrReportEditor extends LitElement {
     }
 
     return html`
-      <div class="gcr-page">
+      <div
+        class="gcr-page"
+        @gcr-path-selected=${(event: CustomEvent<{ path: string; id?: string | null }>) =>
+          this.onRootSelected(event)}
+      >
+        <gcr-path-browser></gcr-path-browser>
+        ${this.renderOptionsTestModal()}
         <div class="gcr-breadcrumbs">
           <a href="#/">Reports</a> /
           ${this.isNew
@@ -375,25 +570,44 @@ export class GcrReportEditor extends LitElement {
         <section class="gcr-panel">
           <h3>Script</h3>
           <div class="gcr-editor-frame">
-            <gcr-code-editor .initialValue=${this.script}></gcr-code-editor>
+            <gcr-code-editor .initialValue=${this.script} ?readOnly=${!this.canEditScript}></gcr-code-editor>
           </div>
           <sp-help-text size="s">
             The script receives the <code>params</code> and <code>report</code> bindings and should return
             <code>report.data()</code> (typed columns) or a console <code>Table</code>. Who may view, run, edit
             and create reports is controlled by repository permissions on <code>/conf/groovyconsole/reports</code>.
           </sp-help-text>
+          ${!this.canEditScript
+            ? html`<sp-help-text size="s" variant="neutral">
+                The script is read-only — editing it requires console permission. You can still update the report
+                details and parameters.
+              </sp-help-text>`
+            : nothing}
         </section>
 
-        ${this.renderTryOut()}
+        ${this.canEditScript ? this.renderTryOut() : nothing}
 
         <section class="gcr-panel">
           <div class="gcr-panel-header">
             <h3>Parameters</h3>
-            <sp-action-button size="s" @click=${() => this.addParameter()}>Add parameter</sp-action-button>
+            ${this.canEditScript
+              ? html`<sp-action-button size="s" @click=${() => this.addParameter()}>Add parameter</sp-action-button>`
+              : nothing}
           </div>
           ${this.parameters.length === 0
             ? html`<div class="gcr-empty">No parameters. The report runs without input.</div>`
-            : this.parameters.map((parameter, index) => this.renderParameterRow(parameter, index))}
+            : this.canEditScript
+              ? repeat(
+                  this.parameters,
+                  (parameter) => parameter._key,
+                  (parameter, index) => this.renderParameterRow(parameter, index),
+                )
+              : this.parameters.map((parameter) => this.renderParameterSummary(parameter))}
+          ${!this.canEditScript
+            ? html`<sp-help-text size="s" variant="neutral">
+                Parameters can only be changed with console permission. You can still update the report details.
+              </sp-help-text>`
+            : nothing}
         </section>
       </div>
     `;
@@ -417,7 +631,8 @@ export class GcrReportEditor extends LitElement {
                 </sp-button>`
               : nothing}
             <sp-button size="s" ?disabled=${this.previewing} @click=${() => void this.runPreview()}>
-              ${this.previewing ? 'Running…' : 'Run ▶'}
+              <sp-icon-play slot="icon"></sp-icon-play>
+              ${this.previewing ? 'Running…' : 'Run'}
             </sp-button>
           </div>
         </div>
@@ -494,33 +709,24 @@ export class GcrReportEditor extends LitElement {
   private renderTestValue(parameter: ParameterRow) {
     const label = parameter.label || parameter.name || '(unnamed)';
     const error = this.testErrors[parameter.name];
-    const current = this.testValues[parameter.name] ?? parameter.defaultValue ?? '';
-    const onInput = (event: Event) => {
-      this.testValues = { ...this.testValues, [parameter.name]: (event.target as HTMLInputElement).value };
-      if (this.testErrors[parameter.name]) {
-        const { [parameter.name]: _cleared, ...rest } = this.testErrors;
-        this.testErrors = rest;
-      }
-    };
-    // mirror the run form's typed inputs so the try-out behaves like a real run (e.g. a date picker for DATE)
-    const field =
-      parameter.type === 'DATE'
-        ? html`<input
-            id="test-${parameter.name}"
-            class="gcr-date-input"
-            type="date"
-            aria-label="Test value for ${label}"
-            .value=${current}
-            @input=${onInput}
-          />`
-        : html`<sp-textfield
-            id="test-${parameter.name}"
-            aria-label="Test value for ${label}"
-            type=${parameter.type === 'NUMBER' ? 'number' : 'text'}
-            ?invalid=${!!error}
-            value=${current}
-            @input=${onInput}
-          ></sp-textfield>`;
+
+    // mirror the run form: a `multiple` parameter uses a multifield (rows with add/remove), not one value per line
+    const field = parameter.multiple
+      ? renderMultifield({
+          entries: this.testValueList(parameter.name),
+          renderEntry: (entry, index) =>
+            this.renderTestInput(parameter, `test-${parameter.name}-${index}`, entry, !!error, index),
+          onAdd: () => this.addTestValue(parameter.name),
+          onRemove: (index) => this.removeTestValue(parameter.name, index),
+        })
+      : this.renderTestInput(
+          parameter,
+          `test-${parameter.name}`,
+          (this.testValues[parameter.name] as string) ?? parameter.defaultValue ?? '',
+          !!error,
+          null,
+        );
+
     return html`
       <div class="gcr-field">
         <sp-field-label for="test-${parameter.name}" ?required=${parameter.required}>${label}</sp-field-label>
@@ -528,6 +734,24 @@ export class GcrReportEditor extends LitElement {
         ${error ? html`<sp-help-text variant="negative" role="alert">${error}</sp-help-text>` : nothing}
       </div>
     `;
+  }
+
+  /** A single test-value input (DATE picker or text/number field), writing to the test values at `index`. */
+  private renderTestInput(parameter: ParameterRow, id: string, value: string, invalid: boolean, index: number | null) {
+    const onInput = (event: Event) =>
+      this.setTestValue(parameter.name, index, (event.target as HTMLInputElement).value);
+
+    if (parameter.type === 'DATE') {
+      return html`<input id=${id} class="gcr-date-input" type="date" .value=${value} @input=${onInput} />`;
+    }
+    return html`<sp-textfield
+      id=${id}
+      aria-label="Test value for ${parameter.label || parameter.name}"
+      type=${parameter.type === 'NUMBER' ? 'number' : 'text'}
+      ?invalid=${invalid}
+      value=${value}
+      @input=${onInput}
+    ></sp-textfield>`;
   }
 
   private renderPreviewResult(preview: ReportPreviewResponse) {
@@ -556,6 +780,19 @@ export class GcrReportEditor extends LitElement {
     `;
   }
 
+  /** Read-only one-line view of a parameter, shown when the user may not edit the definition (no console rights). */
+  private renderParameterSummary(parameter: ParameterRow) {
+    const flags = [parameter.type, parameter.multiple ? 'multiple' : '', parameter.required ? 'required' : '']
+      .filter(Boolean)
+      .join(' · ');
+    return html`
+      <div class="gcr-parameter-summary">
+        <strong>${parameter.label || parameter.name || '(unnamed)'}</strong>
+        <span class="gcr-browser-subtle">${parameter.name} — ${flags}</span>
+      </div>
+    `;
+  }
+
   private renderParameterRow(parameter: ParameterRow, index: number) {
     return html`
       <div class="gcr-parameter-row" role="group" aria-label="Parameter ${index + 1}">
@@ -577,8 +814,7 @@ export class GcrReportEditor extends LitElement {
           class="gcr-parameter-type"
           aria-label="Parameter type"
           value=${parameter.type}
-          @change=${(event: Event) =>
-            this.updateParameter(index, { type: (event.target as HTMLInputElement).value as ReportParameterType })}
+          @change=${(event: Event) => this.changeParameterType(index, (event.target as HTMLInputElement).value as ReportParameterType)}
         >
           ${PARAMETER_TYPES.map((type) => html`<sp-menu-item value=${type}>${type}</sp-menu-item>`)}
         </sp-picker>
@@ -616,26 +852,79 @@ export class GcrReportEditor extends LitElement {
                 <sp-menu-item value="PAGE">Pages</sp-menu-item>
                 <sp-menu-item value="ASSET">Assets</sp-menu-item>
               </sp-picker>
-              <sp-textfield
-                class="gcr-parameter-rootpath"
-                aria-label="Path browser root"
-                value=${parameter.rootPath ?? ''}
-                placeholder="Root path (optional)"
-                @input=${(event: Event) =>
-                  this.updateParameter(index, { rootPath: (event.target as HTMLInputElement).value })}
-              ></sp-textfield>
+              ${this.renderRootField(parameter, index, 'Root path (optional)')}
             `
           : nothing}
-        <sp-checkbox
-          ?checked=${parameter.required}
-          @change=${(event: Event) =>
-            this.updateParameter(index, { required: (event.target as HTMLInputElement).checked })}
-        >
-          Required
-        </sp-checkbox>
-        <sp-action-button size="s" quiet @click=${() => this.removeParameter(index)} aria-label="Remove parameter">
-          ✕
+        ${parameter.type === 'TAG'
+          ? this.renderRootField(parameter, index, 'Taxonomy root (optional)')
+          : nothing}
+        <div class="gcr-parameter-actions">
+          <sp-checkbox
+            ?checked=${parameter.multiple}
+            @change=${(event: Event) =>
+              this.updateParameter(index, { multiple: (event.target as HTMLInputElement).checked })}
+          >
+            Multiple
+          </sp-checkbox>
+          <sp-checkbox
+            ?checked=${parameter.required}
+            @change=${(event: Event) =>
+              this.updateParameter(index, { required: (event.target as HTMLInputElement).checked })}
+          >
+            Required
+          </sp-checkbox>
+          <sp-action-button size="s" quiet @click=${() => this.removeParameter(index)} aria-label="Remove parameter">
+            <sp-icon-close slot="icon"></sp-icon-close>
+          </sp-action-button>
+        </div>
+      </div>
+      ${parameter.type === 'DYNAMIC' ? this.renderOptionsScript(parameter, index) : nothing}
+    `;
+  }
+
+  /** The root/taxonomy field for PATH and TAG parameters: a text field plus a browse button. */
+  private renderRootField(parameter: ParameterRow, index: number, placeholder: string) {
+    return html`
+      <div class="gcr-parameter-rootpath gcr-path-field">
+        <sp-textfield
+          aria-label=${placeholder}
+          value=${parameter.rootPath ?? ''}
+          placeholder=${placeholder}
+          @input=${(event: Event) =>
+            this.updateParameter(index, { rootPath: (event.target as HTMLInputElement).value })}
+        ></sp-textfield>
+        <sp-action-button size="s" quiet title="Browse" aria-label="Browse for root"
+          @click=${() => this.openRootBrowser(index, parameter)}>
+          <sp-icon-folder-open slot="icon"></sp-icon-folder-open>
         </sp-action-button>
+      </div>
+    `;
+  }
+
+  /** The Groovy options-script editor shown for a DYNAMIC parameter. */
+  private renderOptionsScript(parameter: ParameterRow, index: number) {
+    return html`
+      <div class="gcr-options-script-field" role="group" aria-label="Options script for parameter ${index + 1}">
+        <sp-field-label for="options-script-${index}">
+          Options script for <strong>${parameter.label || parameter.name || 'this parameter'}</strong> — return
+          <code>report.options()</code> of value/label pairs
+        </sp-field-label>
+        <div class="gcr-editor-frame gcr-options-editor">
+          <gcr-code-editor
+            .initialValue=${parameter.optionsScript || DEFAULT_OPTIONS_SCRIPT}
+            ?readOnly=${!this.canEditScript}
+            @gcr-code-changed=${(event: Event) =>
+              this.updateParameter(index, { optionsScript: (event.target as GcrCodeEditor).value })}
+          ></gcr-code-editor>
+        </div>
+        ${this.canEditScript
+          ? html`<div class="gcr-options-script-actions">
+              <sp-button variant="secondary" size="s" @click=${() => void this.testOptions(parameter)}>
+                <sp-icon-play slot="icon"></sp-icon-play>
+                Test options
+              </sp-button>
+            </div>`
+          : nothing}
       </div>
     `;
   }

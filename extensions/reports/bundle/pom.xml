@@ -31,8 +31,12 @@
                             <goal>bnd-process</goal>
                         </goals>
                         <configuration>
+                            <!-- Both packages are consumed only through optionally-registered / AEM-gated
+                                 components, so mark them optional: the query-audit SPI (used only when the
+                                 query-audit extension is installed) and com.day.cq.* (the tag picker's AEM
+                                 TagManager, inactive on plain Sling) — the bundle still resolves without either. -->
                             <bnd><![CDATA[
-                                Import-Package: be.orbinson.aem.groovy.console.queryaudit.spi;resolution:=optional,*
+                                Import-Package: be.orbinson.aem.groovy.console.queryaudit.spi;resolution:=optional,com.day.cq.*;resolution:=optional,*
                                 ]]></bnd>
                         </configuration>
                     </execution>

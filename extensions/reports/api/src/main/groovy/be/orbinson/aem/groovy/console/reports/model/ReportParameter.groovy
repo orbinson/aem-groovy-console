@@ -23,6 +23,13 @@ class ReportParameter {
     /** Whether a value is required to run the report. */
     boolean required
 
+    /**
+     * Whether the field accepts multiple, dynamically-added values.  When true the value submitted for this
+     * parameter is a list and the report script receives <code>params.&lt;name&gt;</code> as a
+     * {@link java.util.List} of coerced values.
+     */
+    boolean multiple
+
     /** Allowed values for {@link ReportParameterType#SELECT} parameters. */
     List<String> options = []
 
@@ -32,8 +39,19 @@ class ReportParameter {
      */
     String pathType = "NODE"
 
-    /** For {@link ReportParameterType#PATH} parameters: the path the browser is rooted at (optional). */
+    /**
+     * For {@link ReportParameterType#PATH} parameters: the path the browser is rooted at (optional).
+     * For {@link ReportParameterType#TAG} parameters: the taxonomy root the tag browser is rooted at
+     * (defaults to <code>/content/cq:tags</code>).
+     */
     String rootPath
+
+    /**
+     * For {@link ReportParameterType#DYNAMIC} parameters: the Groovy script that produces the options.
+     * Persisted as a <code>.groovy</code> <code>nt:file</code> subnode of the parameter node; this field is the
+     * in-memory carrier used over the HTTP API.
+     */
+    String optionsScript
 
     /** Display order in the reports UI. */
     int order

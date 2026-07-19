@@ -5,7 +5,10 @@
 
 export type ReportColumnType = 'STRING' | 'NUMBER' | 'DATE' | 'BOOLEAN' | 'LINK';
 
-export type ReportParameterType = 'STRING' | 'NUMBER' | 'BOOLEAN' | 'DATE' | 'SELECT' | 'PATH';
+export type ReportParameterType = 'STRING' | 'NUMBER' | 'BOOLEAN' | 'DATE' | 'SELECT' | 'PATH' | 'TAG' | 'DYNAMIC';
+
+/** What a browse request shows: repository nodes/pages/assets, or the cq:tags taxonomy. */
+export type BrowseType = 'NODE' | 'PAGE' | 'ASSET' | 'TAG';
 
 /** What a PATH parameter's path browser shows. */
 export type PathType = 'NODE' | 'PAGE' | 'ASSET';
@@ -17,6 +20,14 @@ export interface BrowseNode {
   primaryType?: string | null;
   hasChildren: boolean;
   selectable: boolean;
+  /** For TAG browsing: the tag ID (e.g. namespace:path/to/tag) submitted as the value. */
+  id?: string | null;
+}
+
+/** A resolved option for a DYNAMIC parameter. */
+export interface DynamicOption {
+  value: string;
+  label: string;
 }
 
 export interface BrowseResponse {
@@ -54,17 +65,29 @@ export interface ReportParameter {
   type: ReportParameterType;
   defaultValue?: string | null;
   required: boolean;
+  /** Whether the field accepts multiple, dynamically-added values (submitted/received as a string[]). */
+  multiple?: boolean;
   options: string[];
   /** For PATH parameters: what the path browser shows. */
   pathType?: PathType;
-  /** For PATH parameters: the path the browser is rooted at. */
+  /** For PATH parameters: the path the browser is rooted at. For TAG parameters: the taxonomy root. */
   rootPath?: string | null;
+  /** For DYNAMIC parameters: the Groovy script that produces the options. */
+  optionsScript?: string | null;
   order: number;
 }
+
+/** Submitted/held value of a parameter: a scalar, or a list for a `multiple` parameter. */
+export type ReportParameterValue = string | string[];
 
 export interface ReportDefinition extends ReportSummary {
   /** Inline Groovy script. */
   script?: string | null;
+  /**
+   * Whether the user may edit the executable Groovy (report script + dynamic options scripts). Editing
+   * metadata/parameters only needs JCR write access (canEdit); scripts additionally need console permission.
+   */
+  canEditScript?: boolean;
   pageSize?: number | null;
   parameters: ReportParameter[];
   created?: string | null;

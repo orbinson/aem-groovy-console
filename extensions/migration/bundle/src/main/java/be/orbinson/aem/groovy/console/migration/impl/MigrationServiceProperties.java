@@ -6,9 +6,16 @@ import org.osgi.service.metatype.annotations.ObjectClassDefinition;
 @ObjectClassDefinition(name = "Groovy Console Migration Service")
 public @interface MigrationServiceProperties {
 
-    @AttributeDefinition(name = "Scripts Base Path",
-        description = "JCR path containing the deployment migration scripts.")
-    String scriptsBasePath() default "/conf/groovyconsole/scripts/migration";
+    @AttributeDefinition(name = "Scripts Base Paths",
+        description = "JCR paths containing the deployment migration scripts, searched in order.  Missing paths are "
+            + "skipped.  The immutable /apps path ships with the code image (reaching publish and surviving on "
+            + "AEMaaCS where /conf is mutable, author-only content); the mutable /conf path suits authored or ad-hoc "
+            + "scripts.",
+        cardinality = 20)
+    String[] scriptsBasePaths() default {
+        "/apps/groovyconsole-migration-scripts",
+        "/conf/groovyconsole/scripts/migration"
+    };
 
     @AttributeDefinition(name = "Migration Allowed Groups",
         description = "List of group names that are authorized to trigger migration runs.  By default, only the 'admin' user has permission to trigger migrations.",

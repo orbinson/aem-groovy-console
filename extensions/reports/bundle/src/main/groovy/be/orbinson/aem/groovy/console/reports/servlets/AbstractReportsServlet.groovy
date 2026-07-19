@@ -59,6 +59,26 @@ abstract class AbstractReportsServlet extends SlingAllMethodsServlet {
         execution.userId == resolver.userID || configurationService.hasPermission(request)
     }
 
+    /**
+     * Normalize a submitted parameter-values map from the request body.  A value may be a scalar (coerced to a
+     * String) or a JSON array (kept as a List of Strings for a {@code multiple} parameter); nulls are preserved.
+     */
+    static Map<String, Object> toParameterValues(Map parameters) {
+        (parameters ?: [:]).collectEntries { key, value ->
+            def normalized
+
+            if (value == null) {
+                normalized = null
+            } else if (value instanceof List) {
+                normalized = value.collect { it == null ? null : it as String }
+            } else {
+                normalized = value as String
+            }
+
+            [(key as String): normalized]
+        } as Map<String, Object>
+    }
+
     Map readJsonBody(SlingHttpServletRequest request) {
         try {
             def body = new JsonSlurper().parse(request.reader)

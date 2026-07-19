@@ -2,7 +2,7 @@
 <jcr:root xmlns:sling="http://sling.apache.org/jcr/sling/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0"
           jcr:primaryType="nt:unstructured"
           jcr:title="Migrations"
-          jcr:description="Deployment migration run history and script registry"
-          id="cq-tools-groovyconsole-migrations"
+          jcr:description="Groovy Console migration run history and script registry"
+          id="granite-deployment-groovyconsole-migrations"
           href="/apps/groovyconsole/migrations.html"
           icon="gears"/>

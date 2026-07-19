@@ -38,6 +38,7 @@ class MigrationIT {
 
     private static final String MIGRATION_ENDPOINT = "/bin/groovyconsole/migration";
     private static final String SCRIPTS_BASE_PATH = "/conf/groovyconsole/scripts/migration";
+    private static final String APPS_SCRIPTS_BASE_PATH = "/apps/groovyconsole-migration-scripts";
 
     private static CloseableHttpClient httpClient;
 
@@ -45,9 +46,10 @@ class MigrationIT {
     static void setUp() {
         httpClient = HttpClients.createDefault();
 
-        // Wait for the Sling Starter and the Groovy Console content package to be fully installed.  The health
-        // check alone is not sufficient: bundle refreshes (e.g. Groovy fragment attachment) can briefly unregister
-        // the servlets right after the services become healthy, so also probe the actual endpoints.
+        // All bundles/content are pre-converted into the launch feature (cp-converter), so there is no
+        // post-startup content-package install cascade to wait out here, unlike the older jetty12-1.1.8-era
+        // whiteboard-corruption workaround this used to carry -- a single successful check once the health
+        // check reports OK and the endpoints are actually reachable is sufficient (see GroovyConsoleReportsIT).
         await().atMost(180, TimeUnit.SECONDS)
                 .pollInterval(5, TimeUnit.SECONDS)
                 .untilAsserted(() -> {
@@ -211,6 +213,52 @@ class MigrationIT {
         assertFalse(response.getAsJsonArray("data").isEmpty(), "Expected at least one migration run in the history");
     }
 
+    @Test
+    @Order(9)
+    void testHealthChecksReportOk() throws Exception {
+        // ensure the last run is a successful one regardless of what earlier tests left behind (e.g. the
+        // intentional failure in testFailFastSkipsRemainingScripts), so this assertion is deterministic
+        postMigration(200);
+
+        HttpGet healthCheck = new HttpGet(BASE_URL + "/system/health.json?tags=migration");
+        healthCheck.addHeader("Authorization", AUTH_HEADER);
+
+        try (CloseableHttpResponse response = httpClient.execute(healthCheck)) {
+            assertEquals(200, response.getStatusLine().getStatusCode());
+
+            String body = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
+            JsonObject jsonResponse = JsonParser.parseString(body).getAsJsonObject();
+
+            assertEquals("OK", jsonResponse.get("overallResult").getAsString());
+            assertTrue(body.contains("AEM Groovy Console Migration - Last Run"),
+                    "Expected the last-run health check to be present");
+            assertTrue(body.contains("AEM Groovy Console Migration - Self Check"),
+                    "Expected the self-check health check to be present");
+        }
+    }
+
+    @Test
+    @Order(10)
+    void testImmutableAppsPathScriptsAreDiscovered() throws Exception {
+        // scripts under the immutable /apps path are discovered alongside /conf by the default multi-path config
+        createMigrationScriptAt(APPS_SCRIPTS_BASE_PATH, "100-apps-migration.groovy", "println 'migration from apps'");
+
+        try {
+            JsonObject run = postMigration(200);
+
+            assertEquals("SUCCESS", run.get("status").getAsString());
+
+            JsonObject result = findResult(run, "100-apps-migration.groovy");
+            assertNotNull(result, "Expected the /apps script to be discovered and executed");
+            assertEquals("SUCCESS", result.get("status").getAsString());
+            assertEquals(APPS_SCRIPTS_BASE_PATH + "/100-apps-migration.groovy",
+                    result.get("scriptPath").getAsString());
+            assertTrue(result.get("output").getAsString().contains("migration from apps"));
+        } finally {
+            deleteMigrationScriptAt(APPS_SCRIPTS_BASE_PATH, "100-apps-migration.groovy");
+        }
+    }
+
     private static boolean endpointsAvailable() {
         try {
             // probe the console post servlet
@@ -292,6 +340,35 @@ class MigrationIT {
 
         assertEquals("", response.get("exceptionStackTrace").getAsString(),
                 "Could not create migration script " + name);
+    }
+
+    private static void createMigrationScriptAt(String basePath, String name, String content) throws IOException {
+        String encodedContent = Base64.encodeBase64String(content.getBytes(StandardCharsets.UTF_8));
+
+        JsonObject response = executeScript(
+                "import org.apache.jackrabbit.commons.JcrUtils\n" +
+                "def parent = JcrUtils.getOrCreateByPath('" + basePath + "', 'sling:Folder', session)\n" +
+                "if (parent.hasNode('" + name + "')) { parent.getNode('" + name + "').remove() }\n" +
+                "def file = parent.addNode('" + name + "', 'nt:file')\n" +
+                "def resource = file.addNode('jcr:content', 'nt:resource')\n" +
+                "def bytes = '" + encodedContent + "'.decodeBase64()\n" +
+                "resource.setProperty('jcr:data', session.valueFactory.createBinary(new ByteArrayInputStream(bytes)))\n" +
+                "session.save()"
+        );
+
+        assertEquals("", response.get("exceptionStackTrace").getAsString(),
+                "Could not create migration script " + name + " at " + basePath);
+    }
+
+    private static void deleteMigrationScriptAt(String basePath, String name) throws IOException {
+        JsonObject response = executeScript(
+                "def node = session.nodeExists('" + basePath + "/" + name + "') ? " +
+                "session.getNode('" + basePath + "/" + name + "') : null\n" +
+                "if (node) { node.remove(); session.save() }"
+        );
+
+        assertEquals("", response.get("exceptionStackTrace").getAsString(),
+                "Could not delete migration script " + name + " at " + basePath);
     }
 
     private static void deleteMigrationScript(String name) throws IOException {
