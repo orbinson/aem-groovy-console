@@ -1,7 +1,7 @@
 {
   "bundles":[
     {
-      "id": "be.orbinson.aem:aem-groovy-console-query-audit:20.0.0-SNAPSHOT",
+      "id": "be.orbinson.aem:aem-groovy-console-query-audit:19.2.0-SNAPSHOT",
       "start-order": "20"
     }
   ]

@@ -8,7 +8,7 @@
     <parent>
         <groupId>be.orbinson.aem</groupId>
         <artifactId>aem-groovy-console-extensions</artifactId>
-        <version>20.0.0-SNAPSHOT</version>
+        <version>19.2.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 

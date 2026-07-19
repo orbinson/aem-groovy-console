@@ -9,9 +9,8 @@
 
 </style>
 
-<script>globalThis.groovyConsoleContextPath = '${request.contextPath @ context="scriptString"}';</script>
-
 <sly data-sly-use.application="be.orbinson.aem.groovy.console.components.Application">
     <sly data-sly-test="${application.sling}" data-sly-include="headlibs-sling.jsp"></sly>
     <sly data-sly-test="${application.aem}" data-sly-include="headlibs-aem.html"></sly>
 </sly>
+<title>${properties.jcr:title}</title>

@@ -19,12 +19,16 @@
         <button type="button" class="btn btn-default" id="new-script">
             <span class="glyphicon glyphicon-pencil"></span> New</span>
         </button>
-        <button type="button" class="btn btn-default" id="open-script">
-            <span class="glyphicon glyphicon-folder-open"></span> Open</span>
-        </button>
-        <button type="button" class="btn btn-default" id="save-script">
-            <span class="glyphicon glyphicon-hdd"></span> Save</span>
-        </button>
+        <sly
+                data-sly-use.application="be.orbinson.aem.groovy.console.components.Application"
+                data-sly-test="${application.aem}">
+            <button data-sly-test="${!wcmmode.disabled}" type="button" class="btn btn-default" id="open-script">
+                <span class="glyphicon glyphicon-folder-open"></span> Open</span>
+            </button>
+            <button data-sly-test="${!wcmmode.disabled}" type="button" class="btn btn-default" id="save-script">
+                <span class="glyphicon glyphicon-hdd"></span> Save</span>
+            </button>
+        </sly>
     </div>
 
     <div id="loader">
