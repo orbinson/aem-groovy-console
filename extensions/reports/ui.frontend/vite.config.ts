@@ -36,9 +36,11 @@ export default defineConfig({
         'reports-panel': resolve(__dirname, 'src/reports-console-panel.ts'),
       },
       output: {
-        // Stable file names so reports.html / the extension provider can reference them without a manifest.
+        // Entry points and their CSS keep stable names so the page servlet / extension provider can reference
+        // them without a manifest; the servlet cache-busts those with a per-deploy ?v token. Shared chunks are
+        // content-hashed, so a code change gets a fresh URL and a redeploy needs no manual browser reload.
         entryFileNames: 'assets/[name].js',
-        chunkFileNames: 'assets/[name].js',
+        chunkFileNames: 'assets/[name]-[hash].js',
         assetFileNames: 'assets/[name][extname]',
         // Monaco is lazy-loaded only by the editor view; keep it in its own stable chunk and keep Vite's
         // preload helper out of it so a dynamic import does not statically drag Monaco in.
