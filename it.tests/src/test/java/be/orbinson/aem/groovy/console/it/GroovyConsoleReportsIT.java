@@ -483,11 +483,12 @@ class GroovyConsoleReportsIT {
         JsonObject result = doGet("/bin/groovyconsole/reports/distributors.json", 200);
 
         JsonArray distributors = result.getAsJsonArray("distributors");
-        // the filesystem distributor is always available; the email distributor is AEM-only (it binds
-        // com.day.cq.mailer.MailService, which is absent on plain Sling), so it is not asserted here
-        assertTrue(containsId(distributors, "filesystem"), "Expected the filesystem distributor");
+        // only usable distributors are listed: on a plain Sling instance the filesystem distributor is disabled
+        // by default and the email distributor has no mail service, so neither is offered as a destination
+        assertFalse(containsId(distributors, "filesystem"), "the disabled filesystem distributor must not be listed");
+        assertFalse(containsId(distributors, "email"), "the email distributor is unavailable without a mail service");
 
-        // the endpoint also surfaces the available export formats used to render a distribution
+        // the endpoint still surfaces the available export formats used to render a distribution
         assertTrue(containsFormat(result.getAsJsonArray("formats"), "csv"), "Expected csv format");
     }
 
