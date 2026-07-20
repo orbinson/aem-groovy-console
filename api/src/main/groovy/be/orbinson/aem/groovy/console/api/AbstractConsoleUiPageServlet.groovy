@@ -1,8 +1,11 @@
 package be.orbinson.aem.groovy.console.api
 
 import groovy.json.JsonBuilder
+import groovy.json.JsonSlurper
+import groovy.util.logging.Slf4j
 import org.apache.sling.api.SlingHttpServletRequest
 import org.apache.sling.api.SlingHttpServletResponse
+import org.apache.sling.api.resource.ResourceResolver
 import org.apache.sling.api.servlets.SlingSafeMethodsServlet
 import org.osgi.framework.BundleContext
 
@@ -16,6 +19,7 @@ import javax.servlet.ServletException
  * Subclasses declare the servlet component and forward their <code>@Activate</code> method to
  * {@link #activate(BundleContext)}.
  */
+@Slf4j("LOG")
 abstract class AbstractConsoleUiPageServlet extends SlingSafeMethodsServlet {
 
     private volatile BundleContext bundleContext
@@ -48,6 +52,11 @@ abstract class AbstractConsoleUiPageServlet extends SlingSafeMethodsServlet {
             throws ServletException, IOException {
         def contextPath = request.contextPath ?: ""
         def configJson = new JsonBuilder([contextPath: contextPath, aem: isAem()]).toString()
+        def assets = resolveEntryAssets(request.resourceResolver)
+
+        def cssLinks = assets.css
+                .collect { href -> "    <link rel=\"stylesheet\" href=\"${contextPath}${href}\"/>" }
+                .join("\n")
 
         response.contentType = "text/html"
         response.characterEncoding = "UTF-8"
@@ -59,14 +68,50 @@ abstract class AbstractConsoleUiPageServlet extends SlingSafeMethodsServlet {
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
     <title>${pageTitle}</title>
-    <link rel="stylesheet" href="${contextPath}${assetsPath}/${assetName}.css"/>
+${cssLinks}
 </head>
 <body>
 <${appElement}></${appElement}>
 <script>window.__GC_CONFIG__ = ${configJson};</script>
-<script type="module" src="${contextPath}${assetsPath}/${assetName}.js"></script>
+<script type="module" src="${contextPath}${assets.js}"></script>
 </body>
 </html>
 """)
+    }
+
+    /**
+     * Resolve the SPA entry's JavaScript and stylesheet paths.  Prefers the content-hashed files listed in the
+     * Vite build manifest (so an unchanged asset keeps its URL and stays cached, while a changed one gets a fresh
+     * URL and is refetched — cache-busting without a query token, which would double-load the entry module).
+     * Falls back to the stable <code>&lt;assetName&gt;.js/.css</code> names when no manifest is present.
+     */
+    private Map<String, Object> resolveEntryAssets(ResourceResolver resourceResolver) {
+        def spaBase = assetsPath.endsWith("/assets") ? assetsPath[0..<(assetsPath.length() - "/assets".length())]
+                : assetsPath
+        def fallback = [js: "${assetsPath}/${assetName}.js".toString(),
+                        css: ["${assetsPath}/${assetName}.css".toString()]] as Map<String, Object>
+
+        try {
+            def manifestResource = resourceResolver?.getResource("${spaBase}/manifest.json")
+            def stream = manifestResource?.adaptTo(InputStream)
+
+            if (!stream) {
+                return fallback
+            }
+
+            def manifest = stream.withCloseable { new JsonSlurper().parse(it) }
+            def entry = manifest.values().find { it instanceof Map && it.isEntry && it.name == assetName }
+
+            if (!entry?.file) {
+                return fallback
+            }
+
+            [js: "${spaBase}/${entry.file}".toString(),
+             css: (entry.css ?: []).collect { css -> "${spaBase}/${css}".toString() }] as Map<String, Object>
+        } catch (Exception e) {
+            LOG.warn("could not read SPA manifest for {}; falling back to stable asset names", assetName, e)
+
+            fallback
+        }
     }
 }

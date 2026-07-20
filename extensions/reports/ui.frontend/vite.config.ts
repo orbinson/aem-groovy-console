@@ -28,6 +28,9 @@ export default defineConfig({
     emptyOutDir: true,
     target: 'es2021',
     chunkSizeWarningLimit: 4000,
+    // emit a manifest so the page servlet can resolve the content-hashed entry (cache-busting without a query
+    // token, which would double-load the entry module); written at the spa root as manifest.json
+    manifest: 'manifest.json',
     rollupOptions: {
       input: {
         // the business-facing reports UI (reports.html)
@@ -36,10 +39,13 @@ export default defineConfig({
         'reports-panel': resolve(__dirname, 'src/reports-console-panel.ts'),
       },
       output: {
-        // Stable file names so reports.html / the extension provider can reference them without a manifest.
-        entryFileNames: 'assets/[name].js',
-        chunkFileNames: 'assets/[name].js',
-        assetFileNames: 'assets/[name][extname]',
+        // Content-hash the reports entry, its chunks and assets so a changed file gets a fresh URL and an
+        // unchanged one stays cached; the servlet reads the manifest to link the hashed entry. The console
+        // extension module keeps a stable name because the extension provider references it by fixed path.
+        entryFileNames: (chunk) =>
+          chunk.name === 'reports-panel' ? 'assets/[name].js' : 'assets/[name]-[hash].js',
+        chunkFileNames: 'assets/[name]-[hash].js',
+        assetFileNames: 'assets/[name]-[hash][extname]',
         // Monaco is lazy-loaded only by the editor view; keep it in its own stable chunk and keep Vite's
         // preload helper out of it so a dynamic import does not statically drag Monaco in.
         manualChunks: (id) => {
