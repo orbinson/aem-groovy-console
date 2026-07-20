@@ -18,6 +18,16 @@ import type { GcrCodeEditor } from './gcr-code-editor';
 import { mutePlaceholders } from '@console/util/mute-placeholders';
 import { renderResultTable } from './result-cell';
 import { validateRequired } from './validate-parameters';
+import {
+  buildCron,
+  type CronMode,
+  type CronParts,
+  DEFAULT_CRON_PARTS,
+  describeCron,
+  parseCron,
+  validateCron,
+  WEEKDAYS,
+} from '../../util/cron';
 
 const PARAMETER_TYPES: ReportParameterType[] = ['STRING', 'NUMBER', 'BOOLEAN', 'DATE', 'SELECT', 'PATH'];
 
@@ -64,6 +74,11 @@ export class GcrReportEditor extends LitElement {
   // schedule state
   @state() private scheduleEnabled = false;
   @state() private cronExpression = '';
+  @state() private cronMode: CronMode = DEFAULT_CRON_PARTS.mode;
+  @state() private cronHour = DEFAULT_CRON_PARTS.hour;
+  @state() private cronMinute = DEFAULT_CRON_PARTS.minute;
+  @state() private cronWeekday = DEFAULT_CRON_PARTS.weekday;
+  @state() private cronDayOfMonth = DEFAULT_CRON_PARTS.dayOfMonth;
   @state() private scheduledBy: string | null = null;
   @state() private scheduleValues: Record<string, string> = {};
 
@@ -145,6 +160,7 @@ export class GcrReportEditor extends LitElement {
       }));
       this.scheduleEnabled = definition.schedule?.enabled ?? false;
       this.cronExpression = definition.schedule?.cronExpression ?? '';
+      this.applyCronParts(parseCron(this.cronExpression));
       this.scheduledBy = definition.schedule?.scheduledBy ?? null;
       this.scheduleValues = { ...(definition.schedule?.parameterValues ?? {}) };
       this.distributions = (definition.distributions ?? []).map((target) => ({
@@ -426,18 +442,7 @@ export class GcrReportEditor extends LitElement {
 
         ${this.scheduleEnabled
           ? html`
-              <div class="gcr-form-grid">
-                <div class="gcr-field">
-                  <sp-field-label for="schedule-cron" required>Cron expression</sp-field-label>
-                  <sp-textfield
-                    id="schedule-cron"
-                    value=${this.cronExpression}
-                    placeholder="0 0 6 * * ?"
-                    @input=${(event: Event) => (this.cronExpression = (event.target as HTMLInputElement).value)}
-                  ></sp-textfield>
-                  <sp-help-text size="s">Quartz-style cron (seconds minutes hours day month weekday).</sp-help-text>
-                </div>
-              </div>
+              ${this.renderCronBuilder()}
               <sp-help-text size="s">
                 The scheduled report runs as you — with your permissions — so it sees exactly what you can see.
                 ${this.scheduledBy
@@ -456,6 +461,148 @@ export class GcrReportEditor extends LitElement {
           : html`<sp-help-text size="s">The report only runs on demand.</sp-help-text>`}
       </section>
     `;
+  }
+
+  private renderCronBuilder() {
+    const modes: Array<{ value: CronMode; label: string }> = [
+      { value: 'daily', label: 'Every day' },
+      { value: 'weekday', label: 'Every weekday (Mon–Fri)' },
+      { value: 'weekly', label: 'Every week' },
+      { value: 'monthly', label: 'Every month' },
+      { value: 'custom', label: 'Custom cron expression' },
+    ];
+    const cronError = this.cronMode === 'custom' ? validateCron(this.cronExpression) : null;
+    const description = describeCron(this.cronExpression);
+
+    return html`
+      <div class="gcr-form-grid">
+        <div class="gcr-field">
+          <sp-field-label for="schedule-frequency">Frequency</sp-field-label>
+          <sp-picker
+            id="schedule-frequency"
+            value=${this.cronMode}
+            @change=${(event: Event) => this.setCronMode((event.target as HTMLInputElement).value as CronMode)}
+          >
+            ${modes.map((mode) => html`<sp-menu-item value=${mode.value}>${mode.label}</sp-menu-item>`)}
+          </sp-picker>
+        </div>
+
+        ${this.cronMode === 'weekly'
+          ? html`<div class="gcr-field">
+              <sp-field-label for="schedule-weekday">Day of week</sp-field-label>
+              <sp-picker
+                id="schedule-weekday"
+                value=${this.cronWeekday}
+                @change=${(event: Event) => {
+                  this.cronWeekday = (event.target as HTMLInputElement).value;
+                  this.syncCronFromParts();
+                }}
+              >
+                ${WEEKDAYS.map((day) => html`<sp-menu-item value=${day.value}>${day.label}</sp-menu-item>`)}
+              </sp-picker>
+            </div>`
+          : nothing}
+        ${this.cronMode === 'monthly'
+          ? html`<div class="gcr-field">
+              <sp-field-label for="schedule-day-of-month">Day of month</sp-field-label>
+              <sp-textfield
+                id="schedule-day-of-month"
+                type="number"
+                min="1"
+                max="31"
+                value=${String(this.cronDayOfMonth)}
+                @input=${(event: Event) =>
+                  this.updateCronNumber('cronDayOfMonth', (event.target as HTMLInputElement).value, 1, 31)}
+              ></sp-textfield>
+              <sp-help-text size="s">1–31. Months without this day are skipped.</sp-help-text>
+            </div>`
+          : nothing}
+        ${this.cronMode === 'custom'
+          ? html`<div class="gcr-field gcr-field-wide">
+              <sp-field-label for="schedule-cron" required>Cron expression</sp-field-label>
+              <sp-textfield
+                id="schedule-cron"
+                value=${this.cronExpression}
+                placeholder="0 0 6 * * ?"
+                @input=${(event: Event) => (this.cronExpression = (event.target as HTMLInputElement).value)}
+              ></sp-textfield>
+              <sp-help-text size="s" variant=${cronError ? 'negative' : 'neutral'}>
+                ${cronError ??
+                'Quartz-style cron: seconds minutes hours day-of-month month day-of-week [year].'}
+              </sp-help-text>
+            </div>`
+          : html`
+              <div class="gcr-field">
+                <sp-field-label for="schedule-hour">Hour (0–23)</sp-field-label>
+                <sp-textfield
+                  id="schedule-hour"
+                  type="number"
+                  min="0"
+                  max="23"
+                  value=${String(this.cronHour)}
+                  @input=${(event: Event) =>
+                    this.updateCronNumber('cronHour', (event.target as HTMLInputElement).value, 0, 23)}
+                ></sp-textfield>
+              </div>
+              <div class="gcr-field">
+                <sp-field-label for="schedule-minute">Minute (0–59)</sp-field-label>
+                <sp-textfield
+                  id="schedule-minute"
+                  type="number"
+                  min="0"
+                  max="59"
+                  value=${String(this.cronMinute)}
+                  @input=${(event: Event) =>
+                    this.updateCronNumber('cronMinute', (event.target as HTMLInputElement).value, 0, 59)}
+                ></sp-textfield>
+              </div>
+            `}
+      </div>
+      ${description || this.cronExpression
+        ? html`<sp-help-text size="s">
+            ${description ? html`${description} ` : nothing}Cron:
+            <code>${this.cronExpression || '—'}</code>
+          </sp-help-text>`
+        : nothing}
+    `;
+  }
+
+  private applyCronParts(parts: CronParts): void {
+    this.cronMode = parts.mode;
+    this.cronHour = parts.hour;
+    this.cronMinute = parts.minute;
+    this.cronWeekday = parts.weekday;
+    this.cronDayOfMonth = parts.dayOfMonth;
+  }
+
+  private setCronMode(mode: CronMode): void {
+    this.cronMode = mode;
+
+    // a preset owns the expression; custom mode leaves the current expression for the user to edit
+    if (mode !== 'custom') {
+      this.syncCronFromParts();
+    }
+  }
+
+  private updateCronNumber(
+    field: 'cronHour' | 'cronMinute' | 'cronDayOfMonth',
+    raw: string,
+    min: number,
+    max: number,
+  ): void {
+    const parsed = Number.parseInt(raw, 10);
+    this[field] = Number.isNaN(parsed) ? min : Math.min(max, Math.max(min, parsed));
+    this.syncCronFromParts();
+  }
+
+  private syncCronFromParts(): void {
+    this.cronExpression = buildCron({
+      mode: this.cronMode,
+      hour: this.cronHour,
+      minute: this.cronMinute,
+      weekday: this.cronWeekday,
+      dayOfMonth: this.cronDayOfMonth,
+    });
   }
 
   private renderScheduleValue(parameter: ParameterRow) {
@@ -504,34 +651,47 @@ export class GcrReportEditor extends LitElement {
 
   private renderDistributionRow(target: DistributionTarget, index: number) {
     return html`
-      <div class="gcr-parameter-row" role="group" aria-label="Distribution ${index + 1}">
-        <sp-picker
-          aria-label="Distributor"
-          value=${target.distributorId}
-          @change=${(event: Event) =>
-            this.updateDistribution(index, { distributorId: (event.target as HTMLInputElement).value })}
-        >
-          ${this.distributors.map((distributor) => html`<sp-menu-item value=${distributor.id}>${distributor.name}</sp-menu-item>`)}
-        </sp-picker>
-        <sp-picker
-          aria-label="Export format"
-          value=${target.format}
-          @change=${(event: Event) =>
-            this.updateDistribution(index, { format: (event.target as HTMLInputElement).value })}
-        >
-          ${this.distributionFormats.map(
-            (format) => html`<sp-menu-item value=${format.format}>${format.format.toUpperCase()}</sp-menu-item>`,
-          )}
-        </sp-picker>
-        ${this.renderDistributionConfig(target, index)}
-        <sp-action-button
-          size="s"
-          quiet
-          @click=${() => this.removeDistribution(index)}
-          aria-label="Remove distribution"
-        >
-          <sp-icon-close slot="icon"></sp-icon-close>
-        </sp-action-button>
+      <div class="gcr-distribution" role="group" aria-label="Distribution ${index + 1}">
+        <div class="gcr-distribution-header">
+          <h4 class="gcr-subhead">Distribution ${index + 1}</h4>
+          <sp-action-button
+            size="s"
+            quiet
+            @click=${() => this.removeDistribution(index)}
+            aria-label="Remove distribution ${index + 1}"
+          >
+            <sp-icon-close slot="icon"></sp-icon-close>
+          </sp-action-button>
+        </div>
+        <div class="gcr-form-grid">
+          <div class="gcr-field">
+            <sp-field-label for="dist-${index}-destination">Destination</sp-field-label>
+            <sp-picker
+              id="dist-${index}-destination"
+              value=${target.distributorId}
+              @change=${(event: Event) =>
+                this.updateDistribution(index, { distributorId: (event.target as HTMLInputElement).value })}
+            >
+              ${this.distributors.map(
+                (distributor) => html`<sp-menu-item value=${distributor.id}>${distributor.name}</sp-menu-item>`,
+              )}
+            </sp-picker>
+          </div>
+          <div class="gcr-field">
+            <sp-field-label for="dist-${index}-format">Export format</sp-field-label>
+            <sp-picker
+              id="dist-${index}-format"
+              value=${target.format}
+              @change=${(event: Event) =>
+                this.updateDistribution(index, { format: (event.target as HTMLInputElement).value })}
+            >
+              ${this.distributionFormats.map(
+                (format) => html`<sp-menu-item value=${format.format}>${format.format.toUpperCase()}</sp-menu-item>`,
+              )}
+            </sp-picker>
+          </div>
+          ${this.renderDistributionConfig(target, index)}
+        </div>
       </div>
     `;
   }
@@ -543,39 +703,53 @@ export class GcrReportEditor extends LitElement {
 
     if (target.distributorId === 'email') {
       return html`
-        <sp-textfield
-          class="gcr-parameter-label"
-          aria-label="Recipients"
-          value=${value('recipients')}
-          placeholder="a@example.com, b@example.com"
-          @input=${setConfig('recipients')}
-        ></sp-textfield>
-        <sp-textfield
-          class="gcr-parameter-default"
-          aria-label="Subject"
-          value=${value('subject')}
-          placeholder="Subject (optional)"
-          @input=${setConfig('subject')}
-        ></sp-textfield>
+        <div class="gcr-field gcr-field-wide">
+          <sp-field-label for="dist-${index}-recipients" required>Recipients</sp-field-label>
+          <sp-textfield
+            id="dist-${index}-recipients"
+            value=${value('recipients')}
+            placeholder="jane@example.com, team@example.com"
+            @input=${setConfig('recipients')}
+          ></sp-textfield>
+          <sp-help-text size="s">One or more email addresses, separated by commas or semicolons.</sp-help-text>
+        </div>
+        <div class="gcr-field gcr-field-wide">
+          <sp-field-label for="dist-${index}-subject">Subject</sp-field-label>
+          <sp-textfield
+            id="dist-${index}-subject"
+            value=${value('subject')}
+            placeholder="Weekly traffic report"
+            @input=${setConfig('subject')}
+          ></sp-textfield>
+          <sp-help-text size="s">Optional. Falls back to a default subject when empty.</sp-help-text>
+        </div>
       `;
     }
 
     if (target.distributorId === 'filesystem') {
       return html`
-        <sp-textfield
-          class="gcr-parameter-label"
-          aria-label="Directory"
-          value=${value('directory')}
-          placeholder="/var/reports"
-          @input=${setConfig('directory')}
-        ></sp-textfield>
-        <sp-textfield
-          class="gcr-parameter-default"
-          aria-label="File name"
-          value=${value('filename')}
-          placeholder="File name (optional)"
-          @input=${setConfig('filename')}
-        ></sp-textfield>
+        <div class="gcr-field">
+          <sp-field-label for="dist-${index}-directory" required>Directory</sp-field-label>
+          <sp-textfield
+            id="dist-${index}-directory"
+            value=${value('directory')}
+            placeholder="reports/daily"
+            @input=${setConfig('directory')}
+          ></sp-textfield>
+          <sp-help-text size="s">
+            Target folder, resolved inside the allowed root directory configured on the filesystem distributor.
+          </sp-help-text>
+        </div>
+        <div class="gcr-field">
+          <sp-field-label for="dist-${index}-filename">File name</sp-field-label>
+          <sp-textfield
+            id="dist-${index}-filename"
+            value=${value('filename')}
+            placeholder="traffic.csv"
+            @input=${setConfig('filename')}
+          ></sp-textfield>
+          <sp-help-text size="s">Optional. Defaults to <code>&lt;report&gt;-&lt;timestamp&gt;.&lt;ext&gt;</code>.</sp-help-text>
+        </div>
       `;
     }
 

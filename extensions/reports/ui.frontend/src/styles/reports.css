@@ -634,6 +634,25 @@ body {
   height: 360px;
 }
 
+/* distribution target card: a bordered group of labelled fields */
+.gcr-distribution {
+  border: 1px solid var(--spectrum-gray-300);
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin-bottom: 12px;
+}
+
+.gcr-distribution-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.gcr-distribution-header .gcr-subhead {
+  margin: 0;
+}
+
 .gcr-parameter-row {
   display: flex;
   align-items: center;
