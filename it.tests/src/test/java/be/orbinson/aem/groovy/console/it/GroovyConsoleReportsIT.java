@@ -436,7 +436,9 @@ class GroovyConsoleReportsIT {
 
             String body = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
             assertTrue(body.contains("<gcr-app>"), "Expected the reports app element");
-            assertTrue(body.contains("/apps/groovyconsole-reports/spa/assets/reports.js"), "Expected the reports bundle script");
+            // the entry is content-hashed (reports-<hash>.js), resolved from the Vite manifest for cache-busting
+            assertTrue(body.matches("(?s).*/apps/groovyconsole-reports/spa/assets/reports-[\\w-]+\\.js.*"),
+                    "Expected the hashed reports bundle script");
         }
     }
 
