@@ -26,6 +26,8 @@ import org.apache.sling.settings.SlingSettingsService
 import org.osgi.service.component.annotations.Activate
 import org.osgi.service.component.annotations.Component
 import org.osgi.service.component.annotations.Reference
+import org.osgi.service.component.annotations.ReferenceCardinality
+import org.osgi.service.component.annotations.ReferencePolicy
 import org.osgi.service.metatype.annotations.Designate
 
 import java.nio.charset.StandardCharsets
@@ -60,7 +62,17 @@ class DefaultMigrationService implements MigrationService {
     @Reference
     private SlingSettingsService slingSettingsService
 
-    private String scriptsBasePath
+    /**
+     * Optional index-usage auditor. Present only when the query-audit extension is installed (a bridge component
+     * registers a {@link ScriptIndexAuditor} then); absent (null) otherwise — e.g. on AEM as a Cloud Service — in
+     * which case index measurement is silently skipped. This service is referenced through the migration-owned
+     * {@link ScriptIndexAuditor} interface (never the query-audit types), so this component always loads and
+     * activates whether or not the query-audit extension is present.
+     */
+    @Reference(cardinality = ReferenceCardinality.OPTIONAL, policy = ReferencePolicy.DYNAMIC)
+    private volatile ScriptIndexAuditor scriptIndexAuditor
+
+    private List<String> scriptsBasePaths
 
     private Set<String> allowedMigrationGroups
 
@@ -75,7 +87,7 @@ class DefaultMigrationService implements MigrationService {
     @Activate
     @Synchronized
     void activate(MigrationServiceProperties properties) {
-        scriptsBasePath = properties.scriptsBasePath()
+        scriptsBasePaths = ((properties.scriptsBasePaths() ?: []).findAll() ?: DEFAULT_SCRIPTS_BASE_PATHS) as List
         allowedMigrationGroups = (properties.allowedMigrationGroups() ?: []).findAll() as Set
         staleLockMillis = properties.staleLockMillis()
         maxRunHistory = properties.maxRunHistory()
@@ -96,8 +108,8 @@ class DefaultMigrationService implements MigrationService {
                     isPendingScript(resourceResolver, script)
                 }
 
-                LOG.info("found {} pending migration script(s) below path : {}", pendingScripts.size(),
-                        options.path ?: scriptsBasePath)
+                LOG.info("found {} pending migration script(s) below path(s) : {}", pendingScripts.size(),
+                        options.path ?: scriptsBasePaths.join(", "))
 
                 def results
                 def status
@@ -106,9 +118,13 @@ class DefaultMigrationService implements MigrationService {
                     results = pendingScripts.collect { script -> dryRunResult(script) }
                     status = MigrationStatus.SUCCESS
                 } else {
-                    results = executeScripts(resourceResolver, pendingScripts, options.data)
+                    results = executeScripts(resourceResolver, pendingScripts, options.data, options.measureIndexUsage)
                     status = results.any { result -> result.status == MigrationStatus.FAILED } ?
                             MigrationStatus.FAILED : MigrationStatus.SUCCESS
+
+                    if (options.measureIndexUsage) {
+                        reportIndexUsage(results)
+                    }
                 }
 
                 def endDate = Calendar.instance
@@ -287,15 +303,19 @@ class DefaultMigrationService implements MigrationService {
     private List<Map> findScripts(ResourceResolver resourceResolver, String overridePath = null) {
         def scripts = []
 
-        def rootPath = overridePath ?: scriptsBasePath
-        def rootResource = resourceResolver.getResource(rootPath)
+        def rootPaths = overridePath ? [overridePath] : scriptsBasePaths
 
-        if (rootResource) {
-            collectScripts(rootResource, scripts)
-        } else {
-            LOG.debug("migration scripts path not found : {}", rootPath)
+        rootPaths.each { rootPath ->
+            def rootResource = resourceResolver.getResource(rootPath)
+
+            if (rootResource) {
+                collectScripts(rootResource, scripts)
+            } else {
+                LOG.debug("migration scripts path not found : {}", rootPath)
+            }
         }
 
+        // deterministic alphanumeric path order across all base paths (/apps sorts before /conf)
         scripts.sort { script -> script.path }
     }
 
@@ -381,7 +401,8 @@ class DefaultMigrationService implements MigrationService {
 
     // execution
 
-    private List<MigrationScriptResult> executeScripts(ResourceResolver resourceResolver, List<Map> pendingScripts, String data) {
+    private List<MigrationScriptResult> executeScripts(ResourceResolver resourceResolver, List<Map> pendingScripts,
+                                                       String data, boolean measureIndexUsage) {
         def results = []
 
         def failed = false
@@ -402,7 +423,7 @@ class DefaultMigrationService implements MigrationService {
                         error: ""
                 )
             } else {
-                result = executeScript(resourceResolver, script, data)
+                result = executeScript(resourceResolver, script, data, measureIndexUsage)
                 failed = result.status == MigrationStatus.FAILED
 
                 if (failed) {
@@ -420,7 +441,7 @@ class DefaultMigrationService implements MigrationService {
         results
     }
 
-    private MigrationScriptResult executeScript(ResourceResolver resourceResolver, Map script, String data) {
+    private MigrationScriptResult executeScript(ResourceResolver resourceResolver, Map script, String data, boolean measureIndexUsage) {
         LOG.info("executing migration script : {}", script.path)
 
         def started = System.currentTimeMillis()
@@ -435,7 +456,24 @@ class DefaultMigrationService implements MigrationService {
                 data: data
         )
 
-        def response = groovyConsoleService.runScript(scriptContext)
+        def response
+        def queryAudit = []
+
+        def auditor = scriptIndexAuditor
+
+        if (measureIndexUsage && auditor) {
+            // Wrap execution so the query-audit extension captures each query and reports its Oak index usage.
+            // The closure assigns the enclosing `response` directly (Groovy closures capture by reference).
+            def session = resourceResolver.adaptTo(javax.jcr.Session)
+
+            queryAudit = auditor.audit(session, { response = groovyConsoleService.runScript(scriptContext) } as Runnable)
+        } else {
+            if (measureIndexUsage) {
+                LOG.warn("index usage requested but the query-audit extension is not installed; skipping measurement")
+            }
+
+            response = groovyConsoleService.runScript(scriptContext)
+        }
 
         def durationMillis = System.currentTimeMillis() - started
 
@@ -446,8 +484,27 @@ class DefaultMigrationService implements MigrationService {
                 runningTime: formatRunningTime(durationMillis),
                 durationMillis: durationMillis,
                 output: truncate(response.output),
-                error: truncate(response.exceptionStackTrace)
+                error: truncate(response.exceptionStackTrace),
+                queryAudit: queryAudit
         )
+    }
+
+    /** Log a CI-friendly summary of which migration scripts run queries that lack a covering index. */
+    private void reportIndexUsage(List<MigrationScriptResult> results) {
+        def flagged = results.findAll { result -> result.queryAudit.any { query -> query.needsIndex } }
+
+        if (flagged.isEmpty()) {
+            LOG.info("index audit: all migration scripts' queries are backed by an index")
+            return
+        }
+
+        LOG.warn("index audit: {} migration script(s) run queries with no covering index:", flagged.size())
+
+        flagged.each { result ->
+            result.queryAudit.findAll { query -> query.needsIndex }.each { query ->
+                LOG.warn("  {} -> NEEDS INDEX: {}", result.scriptPath, query.statement)
+            }
+        }
     }
 
     private MigrationScriptResult dryRunResult(Map script) {

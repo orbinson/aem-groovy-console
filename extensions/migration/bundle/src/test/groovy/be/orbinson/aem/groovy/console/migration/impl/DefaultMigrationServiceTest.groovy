@@ -398,9 +398,47 @@ class DefaultMigrationServiceTest {
         assertNull(migrationService.getRun(null))
     }
 
+    @Test
+    void discoversScriptsFromBothDefaultBasePathsInPathOrder() {
+        context.build().resource(DEFAULT_SCRIPTS_BASE_PATH_APPS).commit()
+
+        addScriptAt(DEFAULT_SCRIPTS_BASE_PATH_APPS, "001-apps.groovy", "apps script")
+        addScript("001-conf.groovy", "conf script")
+
+        def run = migrationService.run(new MigrationRunOptions())
+
+        assertEquals(MigrationStatus.SUCCESS, run.status)
+        // /apps sorts before /conf, so the immutable script runs first
+        assertEquals(["apps script", "conf script"], executedScripts)
+        assertEquals([
+                "$DEFAULT_SCRIPTS_BASE_PATH_APPS/001-apps.groovy" as String,
+                "$DEFAULT_SCRIPTS_BASE_PATH/001-conf.groovy" as String
+        ], run.results*.scriptPath)
+    }
+
+    @Test
+    void honorsConfiguredSingleBasePath() {
+        migrationService = context.registerInjectActivateService(new DefaultMigrationService(),
+                [scriptsBasePaths: [DEFAULT_SCRIPTS_BASE_PATH_APPS] as String[]])
+
+        context.build().resource(DEFAULT_SCRIPTS_BASE_PATH_APPS).commit()
+
+        addScriptAt(DEFAULT_SCRIPTS_BASE_PATH_APPS, "001-apps.groovy", "apps script")
+        addScript("001-conf.groovy", "conf script")
+
+        migrationService.run(new MigrationRunOptions())
+
+        // only the /apps path is configured, so the /conf script is ignored
+        assertEquals(["apps script"], executedScripts)
+    }
+
     private void addScript(String name, String content) {
+        addScriptAt(DEFAULT_SCRIPTS_BASE_PATH, name, content)
+    }
+
+    private void addScriptAt(String basePath, String name, String content) {
         context.load().binaryFile(new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8)),
-                "$DEFAULT_SCRIPTS_BASE_PATH/$name")
+                "$basePath/$name")
     }
 
     private void replaceScript(String name, String content) {

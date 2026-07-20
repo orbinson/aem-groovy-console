@@ -3,8 +3,8 @@ package be.orbinson.aem.groovy.console.configuration.impl
 import be.orbinson.aem.groovy.console.configuration.ConfigurationService
 import groovy.transform.Synchronized
 import groovy.util.logging.Slf4j
+import org.apache.jackrabbit.api.JackrabbitSession
 import org.apache.jackrabbit.api.security.user.User
-import org.apache.jackrabbit.api.security.user.UserManager
 import org.apache.sling.api.SlingHttpServletRequest
 import org.apache.sling.api.resource.ResourceResolverFactory
 import org.osgi.framework.BundleContext
@@ -13,6 +13,8 @@ import org.osgi.service.component.annotations.Component
 import org.osgi.service.component.annotations.Modified
 import org.osgi.service.component.annotations.Reference
 import org.osgi.service.metatype.annotations.Designate
+
+import javax.jcr.Session
 
 @Component(service = ConfigurationService, immediate = true)
 @Designate(ocd = ConfigurationServiceProperties)
@@ -112,7 +114,13 @@ class DefaultConfigurationService implements ConfigurationService {
 
     private boolean isAdminOrAllowedGroupMember(SlingHttpServletRequest request, Set<String> groupIds) {
         resourceResolverFactory.getServiceResourceResolver(null).withCloseable { resourceResolver ->
-            def userManager = resourceResolver.adaptTo(UserManager);
+            // ResourceResolver has no AdapterFactory for UserManager itself (only for User/Authorizable, which
+            // resolve the *current* resolver's own user, not an arbitrary principal) - on both AEM and plain
+            // Sling/Oak the JCR Session is a JackrabbitSession, so go through that to look up an arbitrary
+            // principal's group membership.
+            def session = resourceResolver.adaptTo(Session)
+            def userManager = (session instanceof JackrabbitSession) ? session.userManager : null
+
             if (userManager != null) {
                 def principal = request.userPrincipal
                 def authorizable = principal ? userManager.getAuthorizable(principal) : null
@@ -130,7 +138,7 @@ class DefaultConfigurationService implements ConfigurationService {
                     false
                 }
             } else {
-                LOG.debug("UserManager not available, probably in a Sling Based application, falling back to is admin check")
+                LOG.debug("UserManager not available (JCR session is not a JackrabbitSession), falling back to is admin check")
                 return request.getResourceResolver().getUserID() == "admin"
             }
         }

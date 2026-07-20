@@ -11,12 +11,21 @@ import {
   getReport,
   getResultPage,
   listChildPaths,
+  resolveDynamicOptions,
 } from '../../api/reports-api';
-import type { ReportDefinition, ReportExecution, ReportParameter, ResultPage } from '../../api/reports-types';
+import type {
+  DynamicOption,
+  ReportDefinition,
+  ReportExecution,
+  ReportParameter,
+  ReportParameterValue,
+  ResultPage,
+} from '../../api/reports-types';
 import { toast } from './gcr-app';
 import { mutePlaceholders } from '@console/util/mute-placeholders';
+import { renderMultifield } from './multifield';
 import type { GcrPathBrowser } from './gcr-path-browser';
-import type { PathType } from '../../api/reports-types';
+import type { BrowseType } from '../../api/reports-types';
 import { formatDate, renderResultTable } from './result-cell';
 import { validateRequired } from './validate-parameters';
 
@@ -34,12 +43,20 @@ const POLL_MAX_MS = 30 * 60 * 1000;
 @customElement('gcr-report-run')
 export class GcrReportRun extends LitElement {
   @property() name = '';
+  /** Parameter values parsed from the URL, prefilled over each parameter's default when the report loads.
+   *  Each key holds every occurrence of that query parameter, so a `multiple` field can be seeded with a list. */
+  @property({ attribute: false }) prefill: Record<string, string[]> = {};
+  /** When true, the report is executed automatically once loaded and prefilled (if required params are satisfied). */
+  @property({ type: Boolean }) autorun = false;
+
+  /** Set when a load was started for an autorun request, so run() fires exactly once after that load finishes. */
+  private autorunPending = false;
 
   @state() private definition: ReportDefinition | null = null;
   @state() private loaded = false;
   @state() private error: string | null = null;
   @state() private running = false;
-  @state() private values: Record<string, string> = {};
+  @state() private values: Record<string, ReportParameterValue> = {};
   @state() private execution: ReportExecution | null = null;
   @state() private resultPage: ResultPage | null = null;
   @state() private loadingPage = false;
@@ -50,8 +67,14 @@ export class GcrReportRun extends LitElement {
   @state() private pathSuggestions: Record<string, string[]> = {};
   /** Validation messages for required parameters left empty, keyed by parameter name. */
   @state() private fieldErrors: Record<string, string> = {};
-  /** The PATH parameter currently being picked in the path browser. */
-  private browsingParam: string | null = null;
+  /** Resolved options for DYNAMIC parameters, keyed by parameter name. */
+  @state() private dynamicOptions: Record<string, DynamicOption[]> = {};
+  /** Whether a DYNAMIC parameter's options are being (re)loaded, keyed by parameter name. */
+  @state() private dynamicLoading: Record<string, boolean> = {};
+  /** Error resolving a DYNAMIC parameter's options, keyed by parameter name. */
+  @state() private dynamicErrors: Record<string, string> = {};
+  /** The PATH/TAG parameter entry currently being picked in the browser. */
+  private browsing: { name: string; index: number | null; isTag: boolean } | null = null;
 
   /** Bumped whenever the viewed report changes or a new run starts, so in-flight loads/polls for a superseded
    *  report bail out instead of writing their result over the current report's state. */
@@ -82,6 +105,7 @@ export class GcrReportRun extends LitElement {
 
   protected willUpdate(changed: Map<string, unknown>): void {
     if (changed.has('name') && this.name) {
+      this.autorunPending = this.autorun;
       void this.load();
     }
   }
@@ -104,11 +128,27 @@ export class GcrReportRun extends LitElement {
       this.definition = definition;
       this.pageSize = definition.pageSize ?? 0;
 
-      const defaults: Record<string, string> = {};
+      const defaults: Record<string, ReportParameterValue> = {};
       for (const parameter of definition.parameters) {
-        defaults[parameter.name] = parameter.defaultValue ?? '';
+        // a URL prefill for a known parameter overrides its default; for a scalar field the last value wins
+        const prefilled = this.prefill[parameter.name];
+        const fallback = parameter.defaultValue ?? '';
+        if (parameter.multiple) {
+          defaults[parameter.name] = prefilled?.length ? prefilled : fallback ? [fallback] : [];
+        } else {
+          defaults[parameter.name] = prefilled?.length ? prefilled[prefilled.length - 1] : fallback;
+        }
       }
       this.values = defaults;
+      this.dynamicOptions = {};
+      this.dynamicErrors = {};
+
+      // eagerly resolve dynamic options (with default values) so the pickers are populated on first open
+      for (const parameter of definition.parameters) {
+        if (parameter.type === 'DYNAMIC') {
+          void this.loadDynamicOptions(parameter);
+        }
+      }
 
       void this.refreshExecutions();
     } catch (error) {
@@ -118,6 +158,10 @@ export class GcrReportRun extends LitElement {
     } finally {
       if (!this.stale(token)) {
         this.loaded = true;
+        if (this.autorunPending && !this.error) {
+          this.autorunPending = false;
+          void this.run();
+        }
       }
     }
   }
@@ -298,7 +342,8 @@ export class GcrReportRun extends LitElement {
     return html`
       <div
         class="gcr-page"
-        @gcr-path-selected=${(event: CustomEvent<{ path: string }>) => this.onPathSelected(event)}
+        @gcr-path-selected=${(event: CustomEvent<{ path: string; id?: string | null }>) =>
+          this.onPathSelected(event)}
       >
         <gcr-path-browser></gcr-path-browser>
         <div class="gcr-breadcrumbs"><a href="#/">Reports</a> / ${definition.title}</div>
@@ -365,14 +410,6 @@ export class GcrReportRun extends LitElement {
   }
 
   private renderParameter(parameter: ReportParameter) {
-    const value = this.values[parameter.name] ?? '';
-    const update = (newValue: string): void => {
-      this.values = { ...this.values, [parameter.name]: newValue };
-      if (this.fieldErrors[parameter.name]) {
-        const { [parameter.name]: _cleared, ...rest } = this.fieldErrors;
-        this.fieldErrors = rest;
-      }
-    };
     const error = this.fieldErrors[parameter.name];
     const label = html`
       <sp-field-label for="param-${parameter.name}" ?required=${parameter.required}>
@@ -383,128 +420,278 @@ export class GcrReportRun extends LitElement {
       ? html`<sp-help-text variant="negative" role="alert">${error}</sp-help-text>`
       : nothing;
 
+    if (parameter.multiple) {
+      return html`
+        <div class="gcr-field">
+          ${label}
+          ${renderMultifield({
+            entries: this.valueList(parameter.name),
+            renderEntry: (entry, index) =>
+              this.renderControl(
+                parameter,
+                index === 0 ? `param-${parameter.name}` : `param-${parameter.name}-${index}`,
+                entry,
+                !!error,
+                index,
+              ),
+            onAdd: () => this.addValue(parameter.name),
+            onRemove: (index) => this.removeValue(parameter.name, index),
+          })}
+          ${errorMessage}
+        </div>
+      `;
+    }
+
+    // BOOLEAN renders its own inline label rather than a field label
+    if (parameter.type === 'BOOLEAN') {
+      return html`
+        <div class="gcr-field">
+          ${this.renderControl(parameter, `param-${parameter.name}`, this.valueScalar(parameter.name), !!error, null)}
+        </div>
+      `;
+    }
+
+    return html`
+      <div class="gcr-field">
+        ${label}
+        ${this.renderControl(parameter, `param-${parameter.name}`, this.valueScalar(parameter.name), !!error, null)}
+        ${errorMessage}
+      </div>
+    `;
+  }
+
+  /** Render a single input control for a parameter entry (index is null for a single-value parameter). */
+  private renderControl(
+    parameter: ReportParameter,
+    id: string,
+    value: string,
+    invalid: boolean,
+    index: number | null,
+  ) {
+    const onChange = (newValue: string): void => this.setValue(parameter.name, index, newValue);
+
     switch (parameter.type) {
       case 'BOOLEAN':
         return html`
-          <div class="gcr-field">
-            <sp-checkbox
-              id="param-${parameter.name}"
-              ?checked=${value === 'true'}
-              @change=${(event: Event) => update((event.target as HTMLInputElement).checked ? 'true' : 'false')}
-            >
-              ${parameter.label || parameter.name}
-            </sp-checkbox>
-          </div>
+          <sp-checkbox
+            id=${id}
+            ?checked=${value === 'true'}
+            @change=${(event: Event) => onChange((event.target as HTMLInputElement).checked ? 'true' : 'false')}
+          >
+            ${parameter.label || parameter.name}
+          </sp-checkbox>
         `;
       case 'SELECT':
         return html`
-          <div class="gcr-field">
-            ${label}
-            <sp-picker
-              id="param-${parameter.name}"
-              value=${value}
-              ?invalid=${!!error}
-              @change=${(event: Event) => update((event.target as HTMLInputElement).value)}
-            >
-              ${parameter.options.map((option) => html`<sp-menu-item value=${option}>${option}</sp-menu-item>`)}
-            </sp-picker>
-            ${errorMessage}
-          </div>
+          <sp-picker
+            id=${id}
+            value=${value}
+            ?invalid=${invalid}
+            @change=${(event: Event) => onChange((event.target as HTMLInputElement).value)}
+          >
+            ${parameter.options.map((option) => html`<sp-menu-item value=${option}>${option}</sp-menu-item>`)}
+          </sp-picker>
         `;
       case 'DATE':
         return html`
-          <div class="gcr-field">
-            ${label}
-            <input
-              id="param-${parameter.name}"
-              class="gcr-date-input"
-              type="date"
-              .value=${value}
-              @input=${(event: Event) => update((event.target as HTMLInputElement).value)}
-            />
-            ${errorMessage}
-          </div>
+          <input
+            id=${id}
+            class="gcr-date-input"
+            type="date"
+            .value=${value}
+            @input=${(event: Event) => onChange((event.target as HTMLInputElement).value)}
+          />
         `;
       case 'NUMBER':
         return html`
-          <div class="gcr-field">
-            ${label}
-            <sp-textfield
-              id="param-${parameter.name}"
-              type="number"
-              value=${value}
-              ?invalid=${!!error}
-              @input=${(event: Event) => update((event.target as HTMLInputElement).value)}
-            ></sp-textfield>
-            ${errorMessage}
-          </div>
+          <sp-textfield
+            id=${id}
+            type="number"
+            value=${value}
+            ?invalid=${invalid}
+            @input=${(event: Event) => onChange((event.target as HTMLInputElement).value)}
+          ></sp-textfield>
         `;
       case 'PATH':
-        return html`
-          <div class="gcr-field">
-            ${label}
-            <div class="gcr-path-field">
-              <input
-                id="param-${parameter.name}"
-                class="gcr-path-input"
-                list="paths-${parameter.name}"
-                .value=${value}
-                placeholder=${parameter.rootPath || '/content'}
-                autocomplete="off"
-                @focus=${() => void this.loadPathSuggestions(parameter.name, value)}
-                @input=${(event: Event) => {
-                  const next = (event.target as HTMLInputElement).value;
-                  update(next);
-                  void this.loadPathSuggestions(parameter.name, next);
-                }}
-              />
-              <datalist id="paths-${parameter.name}">
-                ${(this.pathSuggestions[parameter.name] ?? []).map((path) => html`<option value=${path}></option>`)}
-              </datalist>
-              <sp-action-button title="Browse repository" @click=${() => this.openPathBrowser(parameter)}>
-                Browse…
-              </sp-action-button>
-            </div>
-            ${errorMessage}
-          </div>
-        `;
+        return this.renderPathControl(parameter, id, value, index);
+      case 'TAG':
+        return this.renderTagControl(parameter, id, value, index);
+      case 'DYNAMIC':
+        return this.renderDynamicControl(parameter, id, value, invalid, index);
       default:
         return html`
-          <div class="gcr-field">
-            ${label}
-            <sp-textfield
-              id="param-${parameter.name}"
-              value=${value}
-              ?invalid=${!!error}
-              @input=${(event: Event) => update((event.target as HTMLInputElement).value)}
-            ></sp-textfield>
-            ${errorMessage}
-          </div>
+          <sp-textfield
+            id=${id}
+            value=${value}
+            ?invalid=${invalid}
+            @input=${(event: Event) => onChange((event.target as HTMLInputElement).value)}
+          ></sp-textfield>
         `;
     }
   }
 
-  /** Open the shared path browser modal configured for the given PATH parameter. */
-  private openPathBrowser(parameter: ReportParameter): void {
+  private renderPathControl(parameter: ReportParameter, id: string, value: string, index: number | null) {
+    return html`
+      <div class="gcr-path-field">
+        <input
+          id=${id}
+          class="gcr-path-input"
+          list="paths-${id}"
+          .value=${value}
+          placeholder=${parameter.rootPath || '/content'}
+          autocomplete="off"
+          @focus=${() => void this.loadPathSuggestions(parameter.name, value)}
+          @input=${(event: Event) => {
+            const next = (event.target as HTMLInputElement).value;
+            this.setValue(parameter.name, index, next);
+            void this.loadPathSuggestions(parameter.name, next);
+          }}
+        />
+        <datalist id="paths-${id}">
+          ${(this.pathSuggestions[parameter.name] ?? []).map((path) => html`<option value=${path}></option>`)}
+        </datalist>
+        <sp-action-button title="Browse repository" @click=${() => this.openBrowser(parameter, index)}>
+          Browse…
+        </sp-action-button>
+      </div>
+    `;
+  }
+
+  private renderTagControl(parameter: ReportParameter, id: string, value: string, index: number | null) {
+    return html`
+      <div class="gcr-path-field">
+        <sp-textfield
+          id=${id}
+          value=${value}
+          placeholder="namespace:path/to/tag"
+          @input=${(event: Event) => this.setValue(parameter.name, index, (event.target as HTMLInputElement).value)}
+        ></sp-textfield>
+        <sp-action-button title="Browse tags" @click=${() => this.openBrowser(parameter, index)}>
+          Browse tags…
+        </sp-action-button>
+      </div>
+    `;
+  }
+
+  private renderDynamicControl(
+    parameter: ReportParameter,
+    id: string,
+    value: string,
+    invalid: boolean,
+    index: number | null,
+  ) {
+    const options = this.dynamicOptions[parameter.name] ?? [];
+    const errorText = this.dynamicErrors[parameter.name];
+
+    return html`
+      <sp-picker
+        id=${id}
+        value=${value}
+        ?invalid=${invalid}
+        ?pending=${this.dynamicLoading[parameter.name]}
+        @mousedown=${() => void this.loadDynamicOptions(parameter)}
+        @change=${(event: Event) => this.setValue(parameter.name, index, (event.target as HTMLInputElement).value)}
+      >
+        ${options.map((option) => html`<sp-menu-item value=${option.value}>${option.label}</sp-menu-item>`)}
+      </sp-picker>
+      ${errorText ? html`<sp-help-text variant="negative" role="alert">${errorText}</sp-help-text>` : nothing}
+    `;
+  }
+
+  // value helpers: a parameter's value is a scalar, or an array for a `multiple` parameter
+
+  private valueList(name: string): string[] {
+    const value = this.values[name];
+    if (Array.isArray(value)) {
+      return value.length ? value : [''];
+    }
+    return value ? [value] : [''];
+  }
+
+  private valueScalar(name: string): string {
+    const value = this.values[name];
+    return Array.isArray(value) ? (value[0] ?? '') : (value ?? '');
+  }
+
+  private clearFieldError(name: string): void {
+    if (this.fieldErrors[name]) {
+      const { [name]: _cleared, ...rest } = this.fieldErrors;
+      this.fieldErrors = rest;
+    }
+  }
+
+  private setValue(name: string, index: number | null, newValue: string): void {
+    if (index === null) {
+      this.values = { ...this.values, [name]: newValue };
+    } else {
+      const next = [...this.valueList(name)];
+      next[index] = newValue;
+      this.values = { ...this.values, [name]: next };
+    }
+    this.clearFieldError(name);
+  }
+
+  private addValue(name: string): void {
+    this.values = { ...this.values, [name]: [...this.valueList(name), ''] };
+  }
+
+  private removeValue(name: string, index: number): void {
+    const next = this.valueList(name).filter((_, entryIndex) => entryIndex !== index);
+    this.values = { ...this.values, [name]: next.length ? next : [''] };
+    this.clearFieldError(name);
+  }
+
+  /** Resolve (or refresh) the options of a DYNAMIC parameter, passing the values it may depend on. */
+  private async loadDynamicOptions(parameter: ReportParameter): Promise<void> {
+    const name = parameter.name;
+    this.dynamicLoading = { ...this.dynamicLoading, [name]: true };
+    this.dynamicErrors = { ...this.dynamicErrors, [name]: '' };
+
+    try {
+      const options = await resolveDynamicOptions(this.name, name, this.values);
+      if (this.disposed) {
+        return;
+      }
+      this.dynamicOptions = { ...this.dynamicOptions, [name]: options };
+    } catch (error) {
+      if (this.disposed) {
+        return;
+      }
+      this.dynamicErrors = {
+        ...this.dynamicErrors,
+        [name]: error instanceof ApiError ? error.message : 'Could not load options.',
+      };
+    } finally {
+      if (!this.disposed) {
+        this.dynamicLoading = { ...this.dynamicLoading, [name]: false };
+      }
+    }
+  }
+
+  /** Open the shared browser modal configured for the given PATH/TAG parameter entry. */
+  private openBrowser(parameter: ReportParameter, index: number | null): void {
     if (!this.pathBrowser) {
       return;
     }
-    this.browsingParam = parameter.name;
-    this.pathBrowser.pathType = (parameter.pathType as PathType) || 'NODE';
-    this.pathBrowser.rootPath = parameter.rootPath ?? '';
-    void this.pathBrowser.openBrowser(this.values[parameter.name] ?? '');
+    const isTag = parameter.type === 'TAG';
+    this.browsing = { name: parameter.name, index, isTag };
+    this.pathBrowser.browseType = isTag ? 'TAG' : ((parameter.pathType as BrowseType) || 'NODE');
+    this.pathBrowser.rootPath = parameter.rootPath ?? (isTag ? '/content/cq:tags' : '');
+    void this.pathBrowser.openBrowser(isTag ? '' : this.valueAt(parameter.name, index));
   }
 
-  private onPathSelected(event: CustomEvent<{ path: string }>): void {
-    if (this.browsingParam) {
-      const name = this.browsingParam;
-      this.values = { ...this.values, [name]: event.detail.path };
-      if (this.fieldErrors[name]) {
-        const { [name]: _cleared, ...rest } = this.fieldErrors;
-        this.fieldErrors = rest;
-      }
-      this.browsingParam = null;
+  private valueAt(name: string, index: number | null): string {
+    return index === null ? this.valueScalar(name) : (this.valueList(name)[index] ?? '');
+  }
+
+  private onPathSelected(event: CustomEvent<{ path: string; id?: string | null }>): void {
+    if (!this.browsing) {
+      return;
     }
+    const { name, index, isTag } = this.browsing;
+    const selected = isTag ? (event.detail.id ?? event.detail.path) : event.detail.path;
+    this.setValue(name, index, selected);
+    this.browsing = null;
   }
 
   /** Fetch the children of the path segment the user is currently typing, for the datalist. */

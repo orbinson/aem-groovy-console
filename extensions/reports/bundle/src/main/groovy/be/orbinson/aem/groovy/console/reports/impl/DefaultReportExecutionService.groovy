@@ -92,7 +92,7 @@ class DefaultReportExecutionService implements ReportExecutionService {
     private ReportDistributorRegistry distributorRegistry
 
     @Override
-    ReportExecution execute(ReportDefinition reportDefinition, Map<String, String> parameterValues,
+    ReportExecution execute(ReportDefinition reportDefinition, Map<String, Object> parameterValues,
                             ResourceResolver resourceResolver) {
         execute(reportDefinition, parameterValues, resourceResolver, [])
     }
@@ -125,7 +125,7 @@ class DefaultReportExecutionService implements ReportExecutionService {
     }
 
     @Override
-    ReportPreview preview(ReportDefinition reportDefinition, Map<String, String> parameterValues,
+    ReportPreview preview(ReportDefinition reportDefinition, Map<String, Object> parameterValues,
                           ResourceResolver resourceResolver) {
         def coercedValues = ParameterCoercer.coerce(reportDefinition.parameters, parameterValues)
         def script = resolveScript(reportDefinition)

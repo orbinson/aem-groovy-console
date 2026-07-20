@@ -31,4 +31,10 @@ class MigrationRunOptions {
      * Mirrors {@code AecuService.execute(String path, String data)}.
      */
     String data
+
+    /**
+     * If true, measure the Oak index usage of the queries each migration script runs (requires the optional
+     * query-audit extension to be installed; otherwise it is a no-op). Intended for CI validation.
+     */
+    boolean measureIndexUsage
 }

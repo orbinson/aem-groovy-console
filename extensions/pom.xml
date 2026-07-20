@@ -25,6 +25,7 @@
     <modules>
         <module>reports</module>
         <module>migration</module>
+        <module>query-audit</module>
     </modules>
 
 </project>

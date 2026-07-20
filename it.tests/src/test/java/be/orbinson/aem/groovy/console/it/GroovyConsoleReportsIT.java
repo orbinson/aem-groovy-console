@@ -89,6 +89,8 @@ class GroovyConsoleReportsIT {
         assertEquals(REPORT_NAME, definition.get("name").getAsString());
         assertEquals("IT Report", definition.get("title").getAsString());
         assertTrue(definition.get("canEdit").getAsBoolean());
+        // admin has console permission, so may edit the executable Groovy too
+        assertTrue(definition.get("canEditScript").getAsBoolean());
 
         JsonArray parameters = definition.getAsJsonArray("parameters");
         assertEquals(2, parameters.size());
@@ -616,6 +618,72 @@ class GroovyConsoleReportsIT {
     }
 
     @Test
+    void testMultiValueParameterRoundTripsAndExecutesAsList() throws Exception {
+        JsonObject multi = new JsonObject();
+        multi.addProperty("name", "items");
+        multi.addProperty("label", "Items");
+        multi.addProperty("type", "STRING");
+        multi.addProperty("multiple", true);
+
+        JsonArray parameters = new JsonArray();
+        parameters.add(multi);
+
+        createReport("it-multi", String.join("\n",
+                "def data = report.data()",
+                "data.column('Item')",
+                "(params.items ?: []).each { data.row(it as String) }",
+                "data"), parameters);
+
+        // the multiple flag round-trips through persistence
+        JsonObject definition = doGet("/bin/groovyconsole/reports.json?name=it-multi", 200);
+        assertTrue(definition.getAsJsonArray("parameters").get(0).getAsJsonObject().get("multiple").getAsBoolean(),
+                "the multiple flag must round-trip");
+
+        // an array value is passed to the script as a list, one row per element
+        JsonObject values = new JsonObject();
+        JsonArray items = new JsonArray();
+        items.add("alpha");
+        items.add("beta");
+        items.add("gamma");
+        values.add("items", items);
+
+        JsonObject execution = execute("it-multi", values);
+
+        assertEquals("SUCCESS", execution.get("status").getAsString());
+        assertEquals(3, execution.get("rowCount").getAsLong(), "each submitted value must become a row");
+
+        JsonObject page = doGet("/bin/groovyconsole/reports/result.json?executionId="
+                + execution.get("executionId").getAsString(), 200);
+        assertEquals("alpha", page.getAsJsonArray("rows").get(0).getAsJsonArray().get(0).getAsString());
+        assertEquals("gamma", page.getAsJsonArray("rows").get(2).getAsJsonArray().get(0).getAsString());
+    }
+
+    @Test
+    void testDynamicOptionsEndpointReturnsValueLabelPairs() throws Exception {
+        JsonObject body = new JsonObject();
+        body.addProperty("script", String.join("\n",
+                "def options = report.options()",
+                "options.add('v1', 'Label One')",
+                "options.add('v2')",
+                "options"));
+        body.add("parameters", new JsonObject());
+
+        try (CloseableHttpResponse response = doPostJson("/bin/groovyconsole/reports/options", body.toString())) {
+            assertEquals(200, response.getStatusLine().getStatusCode());
+
+            JsonObject result = parse(EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8));
+            JsonArray options = result.getAsJsonArray("options");
+
+            assertEquals(2, options.size());
+            assertEquals("v1", options.get(0).getAsJsonObject().get("value").getAsString());
+            assertEquals("Label One", options.get(0).getAsJsonObject().get("label").getAsString());
+            // a single-arg add uses the value as the label
+            assertEquals("v2", options.get(1).getAsJsonObject().get("value").getAsString());
+            assertEquals("v2", options.get(1).getAsJsonObject().get("label").getAsString());
+        }
+    }
+
+    @Test
     void testManualDistributeUnknownExecutionReturns404() throws Exception {
         JsonObject target = new JsonObject();
         target.addProperty("distributorId", "filesystem");
@@ -634,6 +702,19 @@ class GroovyConsoleReportsIT {
     }
 
     @Test
+    void testDynamicOptionsEndpointReportsScriptFailure() throws Exception {
+        JsonObject body = new JsonObject();
+        body.addProperty("script", "throw new RuntimeException('boom from options')");
+        body.add("parameters", new JsonObject());
+
+        try (CloseableHttpResponse response = doPostJson("/bin/groovyconsole/reports/options", body.toString())) {
+            assertEquals(500, response.getStatusLine().getStatusCode());
+            assertTrue(EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8).contains("boom from options"),
+                    "a failing options script must surface its error");
+        }
+    }
+
+    @Test
     void testManualDistributeWithoutTargetsReturns400() throws Exception {
         String id = ensureExecuted();
 
@@ -644,6 +725,15 @@ class GroovyConsoleReportsIT {
         try (CloseableHttpResponse response = doPostJson("/bin/groovyconsole/reports/distribute", body.toString())) {
             assertEquals(400, response.getStatusLine().getStatusCode());
         }
+    }
+
+    @Test
+    void testTagBrowseIsSlingSafe() throws Exception {
+        // pure-JCR tag browsing: on plain Sling /content/cq:tags does not exist, so the TAG browser returns
+        // empty instead of failing — proving the tag picker never touches an AEM API
+        JsonObject result = doGet("/bin/groovyconsole/reports/browse.json?path=/content/cq:tags&type=TAG", 200);
+
+        assertEquals(0, result.getAsJsonArray("children").size(), "no tags exist on a plain Sling instance");
     }
 
     // internals
@@ -746,11 +836,15 @@ class GroovyConsoleReportsIT {
     }
 
     private static void createReport(String name, String script) throws IOException {
+        createReport(name, script, new JsonArray());
+    }
+
+    private static void createReport(String name, String script, JsonArray parameters) throws IOException {
         JsonObject definition = new JsonObject();
         definition.addProperty("name", name);
         definition.addProperty("title", name);
         definition.addProperty("script", script);
-        definition.add("parameters", new JsonArray());
+        definition.add("parameters", parameters);
 
         try (CloseableHttpResponse response = doPostJson("/bin/groovyconsole/reports", definition.toString())) {
             assertEquals(200, response.getStatusLine().getStatusCode(), "Could not create report " + name);

@@ -32,4 +32,14 @@ interface MigrationScriptResult {
     String getOutput()
 
     String getError()
+
+    /**
+     * Index audit of the JCR queries this script executed, when the run was started with
+     * {@link MigrationRunOptions#measureIndexUsage} and the query-audit extension is installed. Each entry is a map
+     * with keys {@code statement}, {@code plan} and {@code needsIndex}; {@code needsIndex=true} means Oak had to
+     * traverse (no covering index on this instance). Empty when not measured.
+     *
+     * @return per-query index audit (possibly empty)
+     */
+    List<Map<String, Object>> getQueryAudit()
 }

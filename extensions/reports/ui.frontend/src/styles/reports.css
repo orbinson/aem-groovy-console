@@ -416,8 +416,16 @@ body {
   align-items: center;
 }
 
-.gcr-path-field .gcr-path-input {
-  flex: 1;
+.gcr-path-field .gcr-path-input,
+.gcr-path-field > sp-textfield {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* the browse button keeps its full label ("Browse…") and never shrinks/truncates */
+.gcr-path-field sp-action-button {
+  flex: 0 0 auto;
+  white-space: nowrap;
 }
 
 /* ---- panels & forms ---- */
@@ -656,9 +664,11 @@ body {
 .gcr-parameter-row {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px 6px;
   padding: 6px 0;
-  flex-wrap: nowrap;
+  /* wrap to multiple lines when the viewport is too narrow instead of shrinking/overflowing the fixed-width
+     common fields, so rows stay responsive while keeping identical field widths on desktop */
+  flex-wrap: wrap;
 }
 
 /* allow Spectrum fields to shrink below their intrinsic width so the row stays on one line */
@@ -667,32 +677,232 @@ body {
   min-width: 0;
 }
 
+/* common fields have a fixed width and neither grow nor shrink, so name/label/type/default line up identically
+   across every parameter row regardless of the type-specific config fields; only the config area (which does
+   grow AND shrink) absorbs the difference */
 .gcr-parameter-name {
-  flex: 1 1 110px;
+  flex: 0 0 150px;
 }
 
 .gcr-parameter-label {
-  flex: 1 1 120px;
+  flex: 0 0 160px;
 }
 
 .gcr-parameter-type {
-  flex: 0 1 110px;
+  flex: 0 0 120px;
 }
 
 .gcr-parameter-default {
-  flex: 1 1 110px;
+  flex: 0 0 150px;
 }
 
 .gcr-parameter-options,
 .gcr-parameter-pathtype,
 .gcr-parameter-rootpath {
   flex: 1 1 120px;
+  min-width: 0;
 }
 
 /* keep the trailing controls from shrinking/wrapping */
 .gcr-parameter-row sp-checkbox,
 .gcr-parameter-row sp-action-button {
   flex: 0 0 auto;
+}
+
+/* ---- query audit ---- */
+
+.gcr-tryout-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.gcr-audit {
+  margin-top: 12px;
+}
+
+.gcr-audit-summary {
+  font-size: 13px;
+  color: var(--spectrum-gray-700);
+  margin-bottom: 8px;
+}
+
+.gcr-audit-flag {
+  color: var(--spectrum-red-900);
+  font-weight: 600;
+}
+
+.gcr-audit-ok {
+  color: var(--spectrum-green-900, #007a4d);
+  font-weight: 600;
+}
+
+.gcr-audit-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.gcr-audit-item {
+  border: 1px solid var(--spectrum-gray-300);
+  border-radius: 6px;
+  padding: 10px 12px;
+  background: var(--spectrum-gray-50);
+}
+
+.gcr-audit-item--warn {
+  border-color: var(--spectrum-red-400, #f7a19a);
+  background: var(--spectrum-red-100, #fbeceb);
+}
+
+.gcr-audit-item-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.gcr-audit-statement {
+  font-family: var(--spectrum-code-font-family-stack);
+  font-size: 12px;
+  color: var(--spectrum-gray-800);
+  word-break: break-word;
+}
+
+.gcr-badge {
+  flex: 0 0 auto;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 2px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.gcr-badge--warn {
+  background: var(--spectrum-red-800, #d31510);
+  color: #fff;
+}
+
+.gcr-badge--ok {
+  background: var(--spectrum-green-800, #007a4d);
+  color: #fff;
+}
+
+.gcr-audit-plan-details {
+  margin-top: 8px;
+}
+
+.gcr-audit-plan-details summary {
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--spectrum-gray-600);
+}
+
+.gcr-audit-plan {
+  font-family: var(--spectrum-code-font-family-stack);
+  font-size: 12px;
+  background: var(--spectrum-gray-200);
+  border-radius: 6px;
+  padding: 12px;
+  margin-top: 6px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* trailing controls (Multiple / Required / remove) pinned right so they align across all rows,
+   regardless of the type-specific config fields in the middle */
+.gcr-parameter-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+  flex: 0 0 auto;
+}
+
+/* read-only parameter summary (shown to users without console permission) */
+.gcr-parameter-summary {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 6px 0;
+}
+
+/* dynamic-parameter options script editor */
+.gcr-options-script-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 4px 0 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--spectrum-gray-300);
+  border-radius: 6px;
+  background: var(--spectrum-gray-75);
+}
+
+.gcr-options-script-field .gcr-options-script-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* the dynamic-options editor is a Monaco instance (Groovy highlighting + autocomplete), shorter than the main
+   report script editor */
+.gcr-options-editor .gcr-editor-container {
+  height: 220px;
+}
+
+/* wide modal for the "Test options" result / error so a full stack trace is readable */
+.gcr-test-modal {
+  width: min(900px, 92vw);
+}
+
+.gcr-test-modal-body {
+  padding: 16px 20px;
+  overflow: auto;
+}
+
+.gcr-options-preview {
+  margin: 8px 0 0;
+  padding-left: 18px;
+}
+
+.gcr-options-preview li {
+  margin: 2px 0;
+}
+
+.gcr-options-preview code {
+  font-family: var(--spectrum-code-font-family-stack);
+}
+
+/* ---- multifield: repeatable values with add / remove ---- */
+.gcr-multifield {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.gcr-multifield-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* the value control (textfield, path/tag field, picker…) takes the remaining width */
+.gcr-multifield-row > :first-child {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.gcr-multifield-remove {
+  flex: 0 0 auto;
+}
+
+.gcr-multifield-add {
+  align-self: flex-start;
+  margin-top: 2px;
 }
 
 /* ---- toast ---- */

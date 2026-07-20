@@ -7,6 +7,7 @@ import be.orbinson.aem.groovy.console.reports.model.ReportDistributionTarget
 import be.orbinson.aem.groovy.console.reports.model.ReportExecution
 import be.orbinson.aem.groovy.console.reports.model.ReportParameter
 import be.orbinson.aem.groovy.console.reports.model.ReportPreview
+import be.orbinson.aem.groovy.console.reports.model.ReportQueryAudit
 import be.orbinson.aem.groovy.console.reports.model.ReportResultPage
 import be.orbinson.aem.groovy.console.reports.model.ReportSchedule
 
@@ -30,7 +31,8 @@ class ReportJsonMapper {
         ]
     }
 
-    static Map definition(ReportDefinition definition, boolean canEdit, List<ReportExporter> exporters) {
+    static Map definition(ReportDefinition definition, boolean canEdit, boolean canEditScript,
+                          List<ReportExporter> exporters) {
         [
                 name          : definition.name,
                 title         : definition.title,
@@ -46,6 +48,9 @@ class ReportJsonMapper {
                 lastModified  : formatDate(definition.lastModified),
                 lastModifiedBy: definition.lastModifiedBy,
                 canEdit       : canEdit,
+                // whether the caller may edit the executable Groovy (report script + dynamic options scripts);
+                // metadata/parameter edits only need JCR write (canEdit), but scripts need console permission
+                canEditScript : canEditScript,
                 exportFormats : exporters.collect { exporter -> format(exporter) }
         ]
     }
@@ -86,9 +91,11 @@ class ReportJsonMapper {
                 type        : parameter.type.name(),
                 defaultValue: parameter.defaultValue,
                 required    : parameter.required,
+                multiple    : parameter.multiple,
                 options     : parameter.options,
                 pathType    : parameter.pathType,
                 rootPath    : parameter.rootPath,
+                optionsScript: parameter.optionsScript,
                 order       : parameter.order
         ]
     }
@@ -138,6 +145,19 @@ class ReportJsonMapper {
                 output             : preview.output,
                 exceptionStackTrace: preview.exceptionStackTrace,
                 runningTime        : preview.runningTime
+        ]
+    }
+
+    static Map queryAudit(ReportQueryAudit audit) {
+        [
+                status             : audit.status?.name(),
+                queries            : (audit.queries ?: []).collect { query ->
+                    [statement: query.statement, language: query.language, plan: query.plan,
+                     needsIndex: query.needsIndex]
+                },
+                output             : audit.output,
+                exceptionStackTrace: audit.exceptionStackTrace,
+                runningTime        : audit.runningTime
         ]
     }
 

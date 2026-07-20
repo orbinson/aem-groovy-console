@@ -29,6 +29,8 @@ import '@spectrum-web-components/icons-workflow/icons/sp-icon-close.js';
 import '@spectrum-web-components/icons-workflow/icons/sp-icon-refresh.js';
 import '@spectrum-web-components/icons-workflow/icons/sp-icon-play.js';
 import '@spectrum-web-components/icons-workflow/icons/sp-icon-chevron-right.js';
+import '@spectrum-web-components/icons-workflow/icons/sp-icon-add.js';
+import '@spectrum-web-components/icons-workflow/icons/sp-icon-folder-open.js';
 
 // App styles
 import './styles/reports.css';

@@ -21,13 +21,14 @@ interface ReportExecutionService {
      * it finishes — callers poll {@link #getExecution(String)} for the outcome.
      *
      * @param reportDefinition report to execute
-     * @param parameterValues raw (string) parameter values, validated and coerced against the declared parameters
+     * @param parameterValues raw parameter values, validated and coerced against the declared parameters; each
+     *        value is a String, or a List of Strings for a {@code multiple} parameter
      * @param resourceResolver resolver of the requesting user; the script executes with a detached clone of it,
      *        so the user's JCR ACLs apply
      * @return the started execution (status RUNNING, or already terminal for a very fast run)
      * @throws IllegalArgumentException when parameter validation fails
      */
-    ReportExecution execute(ReportDefinition reportDefinition, Map<String, String> parameterValues,
+    ReportExecution execute(ReportDefinition reportDefinition, Map<String, Object> parameterValues,
                             ResourceResolver resourceResolver)
 
     /**
@@ -51,12 +52,13 @@ interface ReportExecutionService {
      * and returns the typed result, captured output and any failure directly.
      *
      * @param reportDefinition the (possibly unsaved) report to run
-     * @param parameterValues raw (string) test values, validated and coerced against the declared parameters
+     * @param parameterValues raw test values, validated and coerced against the declared parameters; each value
+     *        is a String, or a List of Strings for a {@code multiple} parameter
      * @param resourceResolver resolver of the requesting user
      * @return the preview result (status SUCCESS or FAILED)
      * @throws IllegalArgumentException when parameter validation fails
      */
-    ReportPreview preview(ReportDefinition reportDefinition, Map<String, String> parameterValues,
+    ReportPreview preview(ReportDefinition reportDefinition, Map<String, Object> parameterValues,
                           ResourceResolver resourceResolver)
 
     /**

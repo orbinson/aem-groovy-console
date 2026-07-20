@@ -17,6 +17,7 @@ export class GcrCodeEditor extends LitElement {
   private disposeDiagnostics?: () => void;
 
   @property() initialValue = '';
+  @property({ type: Boolean }) readOnly = false;
 
   // Render in light DOM so Monaco's document-level styles apply.
   createRenderRoot(): this {
@@ -47,6 +48,7 @@ export class GcrCodeEditor extends LitElement {
       fontFamily: EDITOR_FONT_FAMILY,
       fixedOverflowWidgets: true,
       tabSize: 4,
+      readOnly: this.readOnly,
       quickSuggestions: { other: true, comments: false, strings: true },
     });
 
@@ -55,6 +57,12 @@ export class GcrCodeEditor extends LitElement {
     });
 
     this.disposeDiagnostics = attachGroovyDiagnostics(monaco, this.editor);
+  }
+
+  protected updated(changed: Map<string, unknown>): void {
+    if (changed.has('readOnly')) {
+      this.editor?.updateOptions({ readOnly: this.readOnly });
+    }
   }
 
   disconnectedCallback(): void {

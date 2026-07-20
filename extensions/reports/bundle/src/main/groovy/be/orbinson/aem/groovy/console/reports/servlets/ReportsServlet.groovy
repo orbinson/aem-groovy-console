@@ -58,8 +58,9 @@ class ReportsServlet extends AbstractReportsServlet {
         def resolver = request.resourceResolver
         def name = request.getParameter(PARAMETER_NAME)
 
-        // authoring a report writes server-side executable Groovy, so it requires console permission in
-        // addition to JCR write access; reflect that in the capability flags the UI uses to show edit actions
+        // metadata/parameter edits need only JCR write access (canEdit); editing the executable Groovy (report
+        // script + dynamic options scripts) additionally requires console permission, and so does creating a
+        // report (which establishes a script). The UI uses these flags to gate edit actions and the script editor.
         def consolePermitted = configurationService.hasPermission(request)
 
         if (name) {
@@ -69,13 +70,14 @@ class ReportsServlet extends AbstractReportsServlet {
             if (!definition) {
                 writeError(response, SC_NOT_FOUND, "Report not found: $name")
             } else {
-                writeJsonResponse(response, ReportJsonMapper.definition(definition,
-                        consolePermitted && reportService.canEdit(resolver, name), exporterRegistry.exporters))
+                def canEdit = reportService.canEdit(resolver, name)
+
+                writeJsonResponse(response, ReportJsonMapper.definition(definition, canEdit,
+                        consolePermitted && canEdit, exporterRegistry.exporters))
             }
         } else {
             def reports = reportService.getReports(resolver).collect { definition ->
-                ReportJsonMapper.summary(definition,
-                        consolePermitted && reportService.canEdit(resolver, definition.name))
+                ReportJsonMapper.summary(definition, reportService.canEdit(resolver, definition.name))
             }
 
             writeJsonResponse(response,
@@ -86,14 +88,6 @@ class ReportsServlet extends AbstractReportsServlet {
     @Override
     protected void doPost(SlingHttpServletRequest request, SlingHttpServletResponse response)
             throws ServletException, IOException {
-        // saving a report writes server-side executable Groovy, so it requires console permission on top of
-        // the JCR write check inside saveReport
-        if (!configurationService.hasPermission(request)) {
-            writeError(response, SC_FORBIDDEN, "Not allowed to save reports.")
-
-            return
-        }
-
         def body = readJsonBody(request)
 
         if (!body || !body["name"]) {
@@ -104,21 +98,42 @@ class ReportsServlet extends AbstractReportsServlet {
 
         def resolver = request.resourceResolver
         def name = body["name"] as String
+        def submitted = fromBody(body)
 
-        // authorization is the JCR write check inside saveReport (PersistenceException -> 403)
+        // The report script and any dynamic-options scripts are executable Groovy, so writing them requires
+        // console permission. A caller without it may only edit an existing report's metadata (a metadata-only
+        // write that never touches the .groovy script nodes or the parameter definitions), and cannot create a
+        // report (which would establish a script).
+        def consolePermitted = configurationService.hasPermission(request)
+
+        // JCR access is enforced inside the service (PersistenceException -> ReportException -> 403)
         try {
-            def definition = reportService.saveReport(resolver, fromBody(body), resolver.userID)
+            def definition
 
-            // register/refresh/remove the cron job to match the saved schedule
-            scheduleService.reconcile(definition)
+            if (consolePermitted) {
+                definition = reportService.saveReport(resolver, submitted, resolver.userID)
 
-            // enable the executor to run this scheduled report as its author (self-scoped, best-effort)
-            if (definition.schedule?.enabled) {
-                ReportImpersonation.grantSelfImpersonation(resolver, EXECUTOR_SYSTEM_USER_NAME)
+                // register/refresh/remove the cron job to match the saved schedule
+                scheduleService.reconcile(definition)
+
+                // enable the executor to run this scheduled report as its author (self-scoped, best-effort)
+                if (definition.schedule?.enabled) {
+                    ReportImpersonation.grantSelfImpersonation(resolver, EXECUTOR_SYSTEM_USER_NAME)
+                }
+            } else if (reportService.getReport(resolver, name)) {
+                // a non–console-permitted user may only edit metadata; the schedule/script are left untouched
+                definition = reportService.updateReportMetadata(resolver, submitted, resolver.userID)
+            } else {
+                writeError(response, SC_FORBIDDEN,
+                        "Creating a report, or editing its script, requires console permission (reports run Groovy).")
+
+                return
             }
 
-            writeJsonResponse(response, ReportJsonMapper.definition(definition,
-                    reportService.canEdit(resolver, name), exporterRegistry.exporters))
+            def canEdit = reportService.canEdit(resolver, name)
+
+            writeJsonResponse(response, ReportJsonMapper.definition(definition, canEdit,
+                    consolePermitted && canEdit, exporterRegistry.exporters))
         } catch (IllegalArgumentException e) {
             writeError(response, SC_BAD_REQUEST, e.message)
         } catch (ReportException e) {
@@ -206,9 +221,11 @@ class ReportsServlet extends AbstractReportsServlet {
                 type: toParameterType(parameter["type"] as String),
                 defaultValue: parameter["defaultValue"] == null ? null : parameter["defaultValue"] as String,
                 required: Boolean.TRUE == parameter["required"],
+                multiple: Boolean.TRUE == parameter["multiple"],
                 options: (parameter["options"] as List ?: []).collect { it as String }.findAll(),
                 pathType: parameter["pathType"] ? parameter["pathType"] as String : "NODE",
                 rootPath: parameter["rootPath"] == null ? null : parameter["rootPath"] as String,
+                optionsScript: parameter["optionsScript"] == null ? null : parameter["optionsScript"] as String,
                 order: parameter["order"] != null ? (parameter["order"] as Integer) : index
         )
     }

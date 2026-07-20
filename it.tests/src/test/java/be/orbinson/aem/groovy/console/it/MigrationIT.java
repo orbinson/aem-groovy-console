@@ -38,6 +38,7 @@ class MigrationIT {
 
     private static final String MIGRATION_ENDPOINT = "/bin/groovyconsole/migration";
     private static final String SCRIPTS_BASE_PATH = "/conf/groovyconsole/scripts/migration";
+    private static final String APPS_SCRIPTS_BASE_PATH = "/apps/groovyconsole-migration-scripts";
 
     private static CloseableHttpClient httpClient;
 
@@ -236,6 +237,28 @@ class MigrationIT {
         }
     }
 
+    @Test
+    @Order(10)
+    void testImmutableAppsPathScriptsAreDiscovered() throws Exception {
+        // scripts under the immutable /apps path are discovered alongside /conf by the default multi-path config
+        createMigrationScriptAt(APPS_SCRIPTS_BASE_PATH, "100-apps-migration.groovy", "println 'migration from apps'");
+
+        try {
+            JsonObject run = postMigration(200);
+
+            assertEquals("SUCCESS", run.get("status").getAsString());
+
+            JsonObject result = findResult(run, "100-apps-migration.groovy");
+            assertNotNull(result, "Expected the /apps script to be discovered and executed");
+            assertEquals("SUCCESS", result.get("status").getAsString());
+            assertEquals(APPS_SCRIPTS_BASE_PATH + "/100-apps-migration.groovy",
+                    result.get("scriptPath").getAsString());
+            assertTrue(result.get("output").getAsString().contains("migration from apps"));
+        } finally {
+            deleteMigrationScriptAt(APPS_SCRIPTS_BASE_PATH, "100-apps-migration.groovy");
+        }
+    }
+
     private static boolean endpointsAvailable() {
         try {
             // probe the console post servlet
@@ -317,6 +340,35 @@ class MigrationIT {
 
         assertEquals("", response.get("exceptionStackTrace").getAsString(),
                 "Could not create migration script " + name);
+    }
+
+    private static void createMigrationScriptAt(String basePath, String name, String content) throws IOException {
+        String encodedContent = Base64.encodeBase64String(content.getBytes(StandardCharsets.UTF_8));
+
+        JsonObject response = executeScript(
+                "import org.apache.jackrabbit.commons.JcrUtils\n" +
+                "def parent = JcrUtils.getOrCreateByPath('" + basePath + "', 'sling:Folder', session)\n" +
+                "if (parent.hasNode('" + name + "')) { parent.getNode('" + name + "').remove() }\n" +
+                "def file = parent.addNode('" + name + "', 'nt:file')\n" +
+                "def resource = file.addNode('jcr:content', 'nt:resource')\n" +
+                "def bytes = '" + encodedContent + "'.decodeBase64()\n" +
+                "resource.setProperty('jcr:data', session.valueFactory.createBinary(new ByteArrayInputStream(bytes)))\n" +
+                "session.save()"
+        );
+
+        assertEquals("", response.get("exceptionStackTrace").getAsString(),
+                "Could not create migration script " + name + " at " + basePath);
+    }
+
+    private static void deleteMigrationScriptAt(String basePath, String name) throws IOException {
+        JsonObject response = executeScript(
+                "def node = session.nodeExists('" + basePath + "/" + name + "') ? " +
+                "session.getNode('" + basePath + "/" + name + "') : null\n" +
+                "if (node) { node.remove(); session.save() }"
+        );
+
+        assertEquals("", response.get("exceptionStackTrace").getAsString(),
+                "Could not delete migration script " + name + " at " + basePath);
     }
 
     private static void deleteMigrationScript(String name) throws IOException {

@@ -25,4 +25,14 @@ class ReportDsl {
     Table table() {
         new Table()
     }
+
+    /**
+     * Create a new option list for a dynamic-options script.  Return the populated list from the script to
+     * supply the options of a {@code DYNAMIC} parameter.
+     *
+     * @return empty option list
+     */
+    OptionList options() {
+        new OptionList()
+    }
 }
