@@ -443,23 +443,6 @@ class GroovyConsoleReportsIT {
     }
 
     @Test
-    void testConsoleAnnouncesReportsUiExtension() throws Exception {
-        // the reports bundle registers a ConsoleUiExtensionProvider; the modern console page must
-        // announce its panel module in the injected config
-        HttpGet get = new HttpGet(BASE_URL + "/apps/groovyconsole.modern.html");
-        get.addHeader("Authorization", AUTH_HEADER);
-
-        try (CloseableHttpResponse response = httpClient.execute(get)) {
-            assertEquals(200, response.getStatusLine().getStatusCode());
-
-            String body = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
-            // the panel module is content-hashed (reports-panel-<hash>.js), resolved from the manifest
-            assertTrue(body.matches("(?s).*/apps/groovyconsole-reports/spa/assets/reports-panel-[\\w-]+\\.js.*"),
-                    "Expected the hashed reports panel module in the console UI extensions");
-        }
-    }
-
-    @Test
     void testDeleteReport() throws Exception {
         // dedicated report so deletion does not interfere with other tests
         JsonObject definition = new JsonObject();

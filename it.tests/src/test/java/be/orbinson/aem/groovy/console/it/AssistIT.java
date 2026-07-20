@@ -190,22 +190,12 @@ class AssistIT {
     }
 
     @Test
-    void testDefaultUiServesModernConsole() throws Exception {
+    void testDefaultUiServesClassicConsole() throws Exception {
+        // the 19.x line ships only the classic Ace console; the default path must serve it, not the modern SPA
         String html = getHtml("/apps/groovyconsole.html");
 
-        assertTrue(html.contains("<gc-app>"), "Expected modern UI app element on default path");
-        assertFalse(html.contains("script-editor"), "Did not expect classic UI markup on default path");
-    }
-
-    @Test
-    void testModernSelectorServesSpaShell() throws Exception {
-        String html = getHtml("/apps/groovyconsole.modern.html");
-
-        assertTrue(html.contains("<gc-app>"), "Expected modern UI app element");
-        assertTrue(html.contains("__GC_CONFIG__"), "Expected injected SPA config");
-        // the entry is content-hashed (index-<hash>.js), resolved from the Vite manifest for cache-busting
-        assertTrue(html.matches("(?s).*/apps/groovyconsole/spa/assets/index-[\\w-]+\\.js.*"),
-                "Expected the hashed SPA bundle reference");
+        assertTrue(html.contains("script-editor"), "Expected the classic console editor on the default path");
+        assertFalse(html.contains("<gc-app>"), "Did not expect the modern SPA shell on the 19.x classic line");
     }
 
     @Test

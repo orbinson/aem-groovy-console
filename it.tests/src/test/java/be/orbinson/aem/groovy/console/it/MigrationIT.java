@@ -75,15 +75,6 @@ class MigrationIT {
                 "Expected the hashed migration bundle script");
     }
 
-    @Test
-    void testConsoleAnnouncesMigrationUiExtensionHashed() throws Exception {
-        // the modern console injects the migration panel module URL, resolved to its content-hashed name
-        String body = getHtml("/apps/groovyconsole.modern.html");
-
-        assertTrue(body.matches("(?s).*/apps/groovyconsole-migration/spa/assets/migration-panel-[\\w-]+\\.js.*"),
-                "Expected the hashed migration panel module in the console UI extensions");
-    }
-
     private static String getHtml(String path) throws IOException {
         HttpGet get = new HttpGet(BASE_URL + path);
         get.addHeader("Authorization", AUTH_HEADER);

@@ -20,6 +20,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.*;
@@ -39,16 +40,25 @@ class StreamingIT {
 
     private static CloseableHttpClient httpClient;
 
+    private static final AtomicInteger READY_STREAK = new AtomicInteger();
+
     @BeforeAll
     static void setUp() {
         httpClient = HttpClients.createDefault();
 
-        // All bundles/content are pre-converted into the launch feature (cp-converter), so there is no
-        // post-startup content-package install cascade to wait out here -- a single successful check
-        // against the actual servlet is sufficient (see GroovyConsoleReportsIT).
+        // Cold start briefly registers the console servlets, then a framework-level cascade (resource
+        // resolver / repository settling) unregisters and re-registers them a few seconds later. A single
+        // readiness hit can succeed during that transient window and then break, so require several
+        // consecutive successes -- spanning past the cascade -- before running the (non-retrying) tests.
         await().atMost(180, TimeUnit.SECONDS)
-                .pollInterval(5, TimeUnit.SECONDS)
-                .untilAsserted(() -> assertTrue(isGroovyConsoleReady(), "Groovy Console not ready"));
+                .pollInterval(2, TimeUnit.SECONDS)
+                .until(() -> {
+                    if (isGroovyConsoleReady()) {
+                        return READY_STREAK.incrementAndGet() >= 3;
+                    }
+                    READY_STREAK.set(0);
+                    return false;
+                });
     }
 
     @AfterAll
