@@ -68,6 +68,24 @@ test.describe('reports', () => {
     await expect(namesRow).toContainText('alpha, beta');
   });
 
+  test('opens the edit view with a working code editor', async ({ page }) => {
+    // the edit view lazy-loads the Monaco code editor; the sample report also has a PATH parameter, so the
+    // path browser lazy-loads too. Both must initialise — this guards against a chunk-load clash that leaves
+    // the <gcr-code-editor> host element on the page but never upgraded (no Monaco, no script field).
+    await page.goto(`${REPORTS_URL}#/report/sample-content-listing/edit`);
+
+    await expect(page.getByRole('heading', { name: new RegExp(`Edit: ${SAMPLE_TITLE}`) })).toBeVisible({
+      timeout: 30_000,
+    });
+
+    // the Monaco editor must actually render, not just the host element
+    await expect(page.locator('gcr-code-editor .monaco-editor')).toBeVisible({ timeout: 30_000 });
+
+    // the scheduling and distribution sections are part of the editor
+    await expect(page.getByRole('heading', { name: 'Schedule' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Distribution' })).toBeVisible();
+  });
+
   test('registers a Reports panel in the modern console', async ({ page }) => {
     await page.goto(MODERN_URL);
 

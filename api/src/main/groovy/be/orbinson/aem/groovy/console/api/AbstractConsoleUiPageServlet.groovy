@@ -43,23 +43,11 @@ abstract class AbstractConsoleUiPageServlet extends SlingSafeMethodsServlet {
         bundleContext?.getServiceReference("com.day.cq.wcm.api.PageManagerFactory") != null
     }
 
-    /**
-     * Cache-busting token for the SPA's stable-named entry assets.  The bundle's last-modified time changes on
-     * every (re)deploy but is constant within one, so browsers refetch the entry after a deploy yet still cache it
-     * during normal use.  The entry then pulls in its content-hashed chunks, so a redeploy needs no manual reload.
-     */
-    protected String getAssetVersion() {
-        def bundle = bundleContext?.bundle
-
-        bundle ? Long.toString(bundle.lastModified) : "0"
-    }
-
     @Override
     protected void doGet(SlingHttpServletRequest request, SlingHttpServletResponse response)
             throws ServletException, IOException {
         def contextPath = request.contextPath ?: ""
         def configJson = new JsonBuilder([contextPath: contextPath, aem: isAem()]).toString()
-        def version = assetVersion
 
         response.contentType = "text/html"
         response.characterEncoding = "UTF-8"
@@ -71,12 +59,12 @@ abstract class AbstractConsoleUiPageServlet extends SlingSafeMethodsServlet {
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
     <title>${pageTitle}</title>
-    <link rel="stylesheet" href="${contextPath}${assetsPath}/${assetName}.css?v=${version}"/>
+    <link rel="stylesheet" href="${contextPath}${assetsPath}/${assetName}.css"/>
 </head>
 <body>
 <${appElement}></${appElement}>
 <script>window.__GC_CONFIG__ = ${configJson};</script>
-<script type="module" src="${contextPath}${assetsPath}/${assetName}.js?v=${version}"></script>
+<script type="module" src="${contextPath}${assetsPath}/${assetName}.js"></script>
 </body>
 </html>
 """)
