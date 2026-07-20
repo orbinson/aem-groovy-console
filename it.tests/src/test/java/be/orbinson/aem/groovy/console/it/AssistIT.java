@@ -203,7 +203,9 @@ class AssistIT {
 
         assertTrue(html.contains("<gc-app>"), "Expected modern UI app element");
         assertTrue(html.contains("__GC_CONFIG__"), "Expected injected SPA config");
-        assertTrue(html.contains("/apps/groovyconsole/spa/assets/index.js"), "Expected SPA bundle reference");
+        // the entry is content-hashed (index-<hash>.js), resolved from the Vite manifest for cache-busting
+        assertTrue(html.matches("(?s).*/apps/groovyconsole/spa/assets/index-[\\w-]+\\.js.*"),
+                "Expected the hashed SPA bundle reference");
     }
 
     @Test

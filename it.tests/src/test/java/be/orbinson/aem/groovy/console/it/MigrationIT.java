@@ -66,6 +66,36 @@ class MigrationIT {
     }
 
     @Test
+    void testMigrationPageServedWithHashedEntry() throws Exception {
+        String body = getHtml("/apps/groovyconsole/migrations.html");
+
+        assertTrue(body.contains("<gcm-app>"), "Expected the migration app element");
+        // the entry is content-hashed (migration-<hash>.js), resolved from the Vite manifest for cache-busting
+        assertTrue(body.matches("(?s).*/apps/groovyconsole-migration/spa/assets/migration-[\\w-]+\\.js.*"),
+                "Expected the hashed migration bundle script");
+    }
+
+    @Test
+    void testConsoleAnnouncesMigrationUiExtensionHashed() throws Exception {
+        // the modern console injects the migration panel module URL, resolved to its content-hashed name
+        String body = getHtml("/apps/groovyconsole.modern.html");
+
+        assertTrue(body.matches("(?s).*/apps/groovyconsole-migration/spa/assets/migration-panel-[\\w-]+\\.js.*"),
+                "Expected the hashed migration panel module in the console UI extensions");
+    }
+
+    private static String getHtml(String path) throws IOException {
+        HttpGet get = new HttpGet(BASE_URL + path);
+        get.addHeader("Authorization", AUTH_HEADER);
+
+        try (CloseableHttpResponse response = httpClient.execute(get)) {
+            assertEquals(200, response.getStatusLine().getStatusCode());
+
+            return EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
+        }
+    }
+
+    @Test
     @Order(1)
     void testSyncRunExecutesNewScript() throws Exception {
         createMigrationScript("001-first.groovy", "println 'migration one'");

@@ -1,7 +1,6 @@
 package be.orbinson.aem.groovy.console.api
 
 import groovy.json.JsonBuilder
-import groovy.json.JsonSlurper
 import groovy.util.logging.Slf4j
 import org.apache.sling.api.SlingHttpServletRequest
 import org.apache.sling.api.SlingHttpServletResponse
@@ -88,30 +87,13 @@ ${cssLinks}
     private Map<String, Object> resolveEntryAssets(ResourceResolver resourceResolver) {
         def spaBase = assetsPath.endsWith("/assets") ? assetsPath[0..<(assetsPath.length() - "/assets".length())]
                 : assetsPath
-        def fallback = [js: "${assetsPath}/${assetName}.js".toString(),
-                        css: ["${assetsPath}/${assetName}.css".toString()]] as Map<String, Object>
+        def entry = SpaManifest.entry(resourceResolver, spaBase, assetName)
 
-        try {
-            def manifestResource = resourceResolver?.getResource("${spaBase}/manifest.json")
-            def stream = manifestResource?.adaptTo(InputStream)
-
-            if (!stream) {
-                return fallback
-            }
-
-            def manifest = stream.withCloseable { new JsonSlurper().parse(it) }
-            def entry = manifest.values().find { it instanceof Map && it.isEntry && it.name == assetName }
-
-            if (!entry?.file) {
-                return fallback
-            }
-
-            [js: "${spaBase}/${entry.file}".toString(),
-             css: (entry.css ?: []).collect { css -> "${spaBase}/${css}".toString() }] as Map<String, Object>
-        } catch (Exception e) {
-            LOG.warn("could not read SPA manifest for {}; falling back to stable asset names", assetName, e)
-
-            fallback
+        if (entry.js) {
+            return entry
         }
+
+        [js: "${assetsPath}/${assetName}.js".toString(),
+         css: ["${assetsPath}/${assetName}.css".toString()]] as Map<String, Object>
     }
 }

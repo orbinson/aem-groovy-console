@@ -20,16 +20,20 @@ export default defineConfig({
     emptyOutDir: true,
     target: 'es2021',
     chunkSizeWarningLimit: 4000,
+    // emit a manifest so the console page (ModernConsoleConfig) can link the content-hashed entry for
+    // cache-busting; written at the spa root as manifest.json
+    manifest: 'manifest.json',
     rollupOptions: {
       input: {
         // console SPA (modern.html)
         index: resolve(__dirname, 'index.html'),
       },
       output: {
-        // Stable file names so modern.html can link them without a manifest.
-        entryFileNames: 'assets/[name].js',
-        chunkFileNames: 'assets/[name].js',
-        assetFileNames: 'assets/[name][extname]',
+        // Content-hash the entry, chunks and assets so a changed file gets a fresh URL and an unchanged one stays
+        // cached; the console page resolves the hashed names (incl. the Monaco chunk's CSS) from the manifest.
+        entryFileNames: 'assets/[name]-[hash].js',
+        chunkFileNames: 'assets/[name]-[hash].js',
+        assetFileNames: 'assets/[name]-[hash][extname]',
         // Give the Monaco chunk a stable name the HTL entry page can link to.  Vite's preload helper must
         // NOT end up inside the monaco chunk, or every dynamic import would statically drag Monaco in.
         manualChunks: (id) => {

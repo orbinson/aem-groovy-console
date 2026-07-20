@@ -39,11 +39,10 @@ export default defineConfig({
         'reports-panel': resolve(__dirname, 'src/reports-console-panel.ts'),
       },
       output: {
-        // Content-hash the reports entry, its chunks and assets so a changed file gets a fresh URL and an
-        // unchanged one stays cached; the servlet reads the manifest to link the hashed entry. The console
-        // extension module keeps a stable name because the extension provider references it by fixed path.
-        entryFileNames: (chunk) =>
-          chunk.name === 'reports-panel' ? 'assets/[name].js' : 'assets/[name]-[hash].js',
+        // Content-hash the entries (reports page + console panel), chunks and assets so a changed file gets a
+        // fresh URL and an unchanged one stays cached; the servlet and the console resolve the hashed names from
+        // the manifest.
+        entryFileNames: 'assets/[name]-[hash].js',
         chunkFileNames: 'assets/[name]-[hash].js',
         assetFileNames: 'assets/[name]-[hash][extname]',
         // Monaco is lazy-loaded only by the editor view; keep it in its own stable chunk and keep Vite's

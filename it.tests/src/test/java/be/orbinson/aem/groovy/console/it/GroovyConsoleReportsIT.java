@@ -453,8 +453,9 @@ class GroovyConsoleReportsIT {
             assertEquals(200, response.getStatusLine().getStatusCode());
 
             String body = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
-            assertTrue(body.contains("/apps/groovyconsole-reports/spa/assets/reports-panel.js"),
-                    "Expected the reports panel module in the console UI extensions");
+            // the panel module is content-hashed (reports-panel-<hash>.js), resolved from the manifest
+            assertTrue(body.matches("(?s).*/apps/groovyconsole-reports/spa/assets/reports-panel-[\\w-]+\\.js.*"),
+                    "Expected the hashed reports panel module in the console UI extensions");
         }
     }
 

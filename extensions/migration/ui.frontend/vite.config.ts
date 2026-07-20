@@ -27,6 +27,9 @@ export default defineConfig({
     outDir: '../ui.apps/src/main/content/jcr_root/apps/groovyconsole-migration/spa',
     emptyOutDir: true,
     target: 'es2021',
+    // emit a manifest so the page servlet and the console (for the panel URL) can link the content-hashed
+    // entries for cache-busting; written at the spa root as manifest.json
+    manifest: 'manifest.json',
     rollupOptions: {
       input: {
         // the migration history UI (migration.html)
@@ -35,10 +38,11 @@ export default defineConfig({
         'migration-panel': resolve(__dirname, 'src/migration-console-panel.ts'),
       },
       output: {
-        // Stable file names so migration.html / the extension provider can reference them without a manifest.
-        entryFileNames: 'assets/[name].js',
-        chunkFileNames: 'assets/[name].js',
-        assetFileNames: 'assets/[name][extname]',
+        // Content-hash the entries, chunks and assets for cache-busting; the page servlet and the console
+        // resolve the hashed names from the manifest.
+        entryFileNames: 'assets/[name]-[hash].js',
+        chunkFileNames: 'assets/[name]-[hash].js',
+        assetFileNames: 'assets/[name]-[hash][extname]',
       },
     },
   },
