@@ -15,6 +15,7 @@ import org.junit.jupiter.api.io.TempDir
 import java.nio.file.Path
 
 import static org.junit.jupiter.api.Assertions.assertEquals
+import static org.junit.jupiter.api.Assertions.assertFalse
 import static org.junit.jupiter.api.Assertions.assertThrows
 import static org.junit.jupiter.api.Assertions.assertTrue
 
@@ -95,6 +96,12 @@ class FilesystemReportDistributorTest {
         assertThrows(ReportException) {
             distributor.distribute(execution(), reportData(), target([directory: "out"]))
         }
+    }
+
+    @Test
+    void "is available only when enabled"(@TempDir Path tempDir) {
+        assertTrue(distributor(tempDir.toString(), true).available, "enabled distributor should be available")
+        assertFalse(distributor(tempDir.toString(), false).available, "disabled distributor should be unavailable")
     }
 
     @Test

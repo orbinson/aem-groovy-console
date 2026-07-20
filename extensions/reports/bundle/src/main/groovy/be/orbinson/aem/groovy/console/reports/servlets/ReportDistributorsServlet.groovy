@@ -33,8 +33,9 @@ class ReportDistributorsServlet extends AbstractReportsServlet {
     protected void doGet(SlingHttpServletRequest request, SlingHttpServletResponse response)
             throws ServletException, IOException {
         writeJsonResponse(response, [
-                distributors: distributorRegistry.distributors.collect { distributor ->
-                    ReportJsonMapper.distributor(distributor)
+                // only list usable distributors, so authors are never offered a disabled/unconfigured destination
+                distributors: distributorRegistry.distributors.findAll { distributor -> distributor.available }.collect {
+                    distributor -> ReportJsonMapper.distributor(distributor)
                 },
                 formats     : exporterRegistry.exporters.collect { exporter -> ReportJsonMapper.format(exporter) }
         ])

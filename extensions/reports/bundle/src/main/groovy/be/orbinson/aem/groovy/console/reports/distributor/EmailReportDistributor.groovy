@@ -71,6 +71,11 @@ class EmailReportDistributor implements ReportDistributor {
     }
 
     @Override
+    boolean isAvailable() {
+        mailService != null
+    }
+
+    @Override
     void distribute(ReportExecution execution, ReportData reportData, ReportDistributionTarget target) {
         if (!mailService) {
             throw new ReportException("mail service unavailable")

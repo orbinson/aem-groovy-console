@@ -29,6 +29,15 @@ interface ReportDistributor {
     String getName()
 
     /**
+     * Whether this distributor is currently usable — e.g. enabled and configured.  Unavailable distributors are
+     * hidden from the reports UI so authors are never offered a destination that would fail.  Implementations that
+     * are always usable simply return true.
+     *
+     * @return true when the distributor can accept distributions
+     */
+    boolean isAvailable()
+
+    /**
      * Distribute the result of a completed execution.  Implementations should throw {@link ReportException} on
      * failure so the caller can record it against the execution.
      *

@@ -59,6 +59,11 @@ class FilesystemReportDistributor implements ReportDistributor {
     }
 
     @Override
+    boolean isAvailable() {
+        enabled
+    }
+
+    @Override
     void distribute(ReportExecution execution, ReportData reportData, ReportDistributionTarget target) {
         if (!enabled) {
             throw new ReportException("filesystem distributor is disabled")

@@ -209,7 +209,10 @@ itself.
 
 Distributors are discovered from registered
 `be.orbinson.aem.groovy.console.reports.ReportDistributor` services (mirroring the exporter SPI), so a custom
-distributor registered as an OSGi service surfaces automatically in the API and UI. Two ship built in:
+distributor registered as an OSGi service surfaces automatically in the API and UI. Only distributors that report
+themselves **available** (`ReportDistributor.isAvailable()`) are offered as a destination — the filesystem
+distributor is available only when enabled, and the email distributor only when a mail service is bound — so
+authors are never shown a destination that would fail. Two ship built in:
 
 - **Email** (`email`) — attaches the rendered export and sends it via AEM's mail service (SMTP is configured on
   the platform, as for the console's own notifications). Config: `recipients` (comma/semicolon/space separated)

@@ -13,8 +13,10 @@ import org.apache.commons.mail.MultiPartEmail
 import org.junit.jupiter.api.Test
 
 import static org.junit.jupiter.api.Assertions.assertEquals
+import static org.junit.jupiter.api.Assertions.assertFalse
 import static org.junit.jupiter.api.Assertions.assertInstanceOf
 import static org.junit.jupiter.api.Assertions.assertThrows
+import static org.junit.jupiter.api.Assertions.assertTrue
 
 class EmailReportDistributorTest {
 
@@ -76,6 +78,15 @@ class EmailReportDistributorTest {
         assertThrows(ReportException) {
             distributor.distribute(execution(), reportData(), target([recipients: "a@example.com"]))
         }
+    }
+
+    @Test
+    void "is available only when a mail service is bound"() {
+        def distributor = new EmailReportDistributor()
+        assertFalse(distributor.available, "no mail service should mean unavailable")
+
+        distributor.mailService = [send: { Email email -> null }] as MailService
+        assertTrue(distributor.available, "a bound mail service should mean available")
     }
 
     @Test

@@ -639,7 +639,7 @@ export class GcrReportEditor extends LitElement {
         </div>
 
         ${this.distributors.length === 0
-          ? html`<sp-help-text size="s">No distributors are installed.</sp-help-text>`
+          ? html`<sp-help-text size="s">No distributors are available.</sp-help-text>`
           : this.distributions.length === 0
             ? html`<div class="gcr-empty">
                 No distributions. The result is only stored and available for download.
