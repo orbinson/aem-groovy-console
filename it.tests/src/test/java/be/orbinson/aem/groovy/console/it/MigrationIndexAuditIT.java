@@ -48,10 +48,15 @@ class MigrationIndexAuditIT {
     private static CloseableHttpClient httpClient;
 
     @BeforeAll
-    static void setUp() throws IOException {
+    static void setUp() {
         httpClient = HttpClients.createDefault();
         waitForReadiness(300);
-        deployMigrationScript();
+        // The migration scripts base (/conf/groovyconsole/scripts/migration) is provisioned asynchronously, and can
+        // still be missing when the console endpoint first reports ready — the deploy then 404s. Retry until it lands.
+        await().atMost(120, TimeUnit.SECONDS)
+                .pollInterval(2, TimeUnit.SECONDS)
+                .ignoreExceptions()
+                .untilAsserted(MigrationIndexAuditIT::deployMigrationScript);
     }
 
     @AfterAll
