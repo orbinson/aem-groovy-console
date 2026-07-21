@@ -9,6 +9,7 @@ import {
   getExecution,
   getExecutions,
   getReport,
+  getReportsConfig,
   getResultPage,
   listChildPaths,
   resolveDynamicOptions,
@@ -63,6 +64,8 @@ export class GcrReportRun extends LitElement {
   @state() private executions: ReportExecution[] = [];
   @state() private pageSize = 0;
   @state() private distributing = false;
+  // global OSGi flag; when false the "Distribute now" action is hidden
+  @state() private distributionFeatureEnabled = true;
   /** Repository-path autocomplete suggestions per PATH parameter, keyed by parameter name. */
   @state() private pathSuggestions: Record<string, string[]> = {};
   /** Validation messages for required parameters left empty, keyed by parameter name. */
@@ -92,6 +95,9 @@ export class GcrReportRun extends LitElement {
   connectedCallback(): void {
     super.connectedCallback();
     this.disposed = false;
+    void getReportsConfig().then((config) => {
+      this.distributionFeatureEnabled = config.distributionEnabled;
+    });
   }
 
   disconnectedCallback(): void {
@@ -751,7 +757,7 @@ export class GcrReportRun extends LitElement {
                 </sp-button>
               `,
             )}
-            ${definition.canEdit && definition.distributions.length
+            ${this.distributionFeatureEnabled && definition.canEdit && definition.distributions.length
               ? html`
                   <sp-button
                     size="s"

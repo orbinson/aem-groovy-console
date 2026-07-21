@@ -13,6 +13,7 @@ import type {
   ReportParameterValue,
   ReportPreviewResponse,
   ReportQueryAuditResponse,
+  ReportsFeatureConfig,
   ResultPage,
   SaveReportRequest,
 } from './reports-types';
@@ -21,6 +22,15 @@ const BASE = '/bin/groovyconsole/reports';
 
 export function listReports(): Promise<ReportListResponse> {
   return getJsonWithError<ReportListResponse>(`${BASE}.json`);
+}
+
+/** Global reports feature flags (OSGi). Falls back to all-enabled if the endpoint is unavailable. */
+export async function getReportsConfig(): Promise<ReportsFeatureConfig> {
+  try {
+    return await getJsonWithError<ReportsFeatureConfig>(`${BASE}/config.json`);
+  } catch {
+    return { schedulingEnabled: true, distributionEnabled: true };
+  }
 }
 
 export function getReport(name: string): Promise<ReportDefinition> {

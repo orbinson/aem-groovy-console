@@ -38,6 +38,9 @@ class DefaultReportScheduleService implements ReportScheduleService {
     @Reference
     private ReportService reportService
 
+    @Reference
+    private ReportsConfigurationService reportsConfigurationService
+
     @Activate
     void activate() {
         reconcileDeployedReports()
@@ -47,6 +50,12 @@ class DefaultReportScheduleService implements ReportScheduleService {
     @Synchronized
     void reconcile(ReportDefinition reportDefinition) {
         unschedule(reportDefinition.path)
+
+        // scheduling disabled globally (OSGi): never register a job; the unschedule above also drops any that
+        // survived from when it was enabled
+        if (!reportsConfigurationService.schedulingEnabled) {
+            return
+        }
 
         def schedule = reportDefinition.schedule
 
@@ -94,6 +103,19 @@ class DefaultReportScheduleService implements ReportScheduleService {
     @Override
     @Synchronized
     void reconcileDeployedReports() {
+        // scheduling disabled globally (OSGi): drop every report job (UI- and code-authored alike) and stop
+        if (!reportsConfigurationService.schedulingEnabled) {
+            def scheduledJobs = jobManager.getScheduledJobs(JOB_TOPIC, 0, null)
+
+            scheduledJobs.each { scheduledJob -> scheduledJob.unschedule() }
+
+            if (scheduledJobs) {
+                LOG.info("scheduling disabled; unscheduled {} report job(s)", scheduledJobs.size())
+            }
+
+            return
+        }
+
         try {
             resourceResolverFactory.getServiceResourceResolver(null).withCloseable { resolver ->
                 def deployed = reportService.findReports(resolver, PATH_APPS_REPORTS_FOLDER)

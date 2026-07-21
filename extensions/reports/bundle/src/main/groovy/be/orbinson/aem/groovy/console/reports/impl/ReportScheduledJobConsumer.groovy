@@ -30,10 +30,21 @@ class ReportScheduledJobConsumer implements JobConsumer {
     @Reference
     private ReportExecutionService reportExecutionService
 
+    @Reference
+    private ReportsConfigurationService reportsConfigurationService
+
     @Override
     JobConsumer.JobResult process(Job job) {
         def reportPath = job.getProperty(JOB_PROPERTY_REPORT_PATH, String)
         def reportName = job.getProperty(JOB_PROPERTY_REPORT_NAME, String)
+
+        // scheduling disabled globally (OSGi): skip any job that still fires (jobs are unregistered on startup,
+        // but a job could be mid-flight when the config is toggled)
+        if (!reportsConfigurationService.schedulingEnabled) {
+            LOG.info("scheduling is disabled; skipping scheduled report {}", reportName)
+
+            return JobConsumer.JobResult.OK
+        }
 
         if (!reportPath) {
             LOG.error("scheduled report job has no report path; cancelling")

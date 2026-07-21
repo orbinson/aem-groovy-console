@@ -14,12 +14,18 @@ class DefaultReportsConfigurationService implements ReportsConfigurationService 
 
     private int maxResultRows
 
+    private boolean schedulingEnabled
+
+    private boolean distributionEnabled
+
     @Activate
     @Modified
     @Synchronized
     void activate(ReportsConfigurationProperties properties) {
         defaultPageSize = properties.defaultPageSize()
         maxResultRows = properties.maxResultRows()
+        schedulingEnabled = properties.schedulingEnabled()
+        distributionEnabled = properties.distributionEnabled()
     }
 
     @Override
@@ -30,5 +36,15 @@ class DefaultReportsConfigurationService implements ReportsConfigurationService 
     @Override
     int getMaxResultRows() {
         maxResultRows
+    }
+
+    @Override
+    boolean isSchedulingEnabled() {
+        schedulingEnabled
+    }
+
+    @Override
+    boolean isDistributionEnabled() {
+        distributionEnabled
     }
 }

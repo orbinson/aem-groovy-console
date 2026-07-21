@@ -394,6 +394,14 @@ class DefaultReportExecutionService implements ReportExecutionService {
     // fail the run — the report itself succeeded.
     private void applyDistributions(ReportExecution execution, ReportData reportData,
                                     List<ReportDistributionTarget> distributionTargets) {
+        // distribution disabled globally (OSGi): the single sink for both the scheduled and manual paths, so this
+        // guard blocks every distribution regardless of how it was triggered
+        if (!reportsConfigurationService.distributionEnabled) {
+            LOG.info("distribution is disabled; skipping {} distribution target(s)", distributionTargets.size())
+
+            return
+        }
+
         def errors = []
 
         distributionTargets.each { target ->

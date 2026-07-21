@@ -6,6 +6,7 @@ import {
   auditReportQueries,
   deleteReport,
   getReport,
+  getReportsConfig,
   isQueryAuditAvailable,
   listDistributors,
   previewReport,
@@ -116,6 +117,10 @@ export class GcrReportEditor extends LitElement {
   /** Whether the user may edit the executable Groovy; metadata/parameters stay editable regardless. */
   @state() private canEditScript = true;
 
+  // global OSGi feature flags (default on until the definition loads); hide the sections when disabled
+  @state() private schedulingFeatureEnabled = true;
+  @state() private distributionFeatureEnabled = true;
+
   // schedule state
   @state() private scheduleEnabled = false;
   @state() private cronExpression = '';
@@ -166,6 +171,11 @@ export class GcrReportEditor extends LitElement {
     // is actually opened; the list and run views stay lightweight.
     void import('./gcr-code-editor');
     void this.loadDistributors();
+    // Global feature flags decide whether the scheduling / distribution sections are shown at all.
+    void getReportsConfig().then((config) => {
+      this.schedulingFeatureEnabled = config.schedulingEnabled;
+      this.distributionFeatureEnabled = config.distributionEnabled;
+    });
     // Offer the "Audit queries" action only where the optional query-audit extension is installed.
     void isQueryAuditAvailable().then((available) => {
       this.queryAuditAvailable = available;
@@ -688,6 +698,10 @@ export class GcrReportEditor extends LitElement {
   }
 
   private renderSchedule() {
+    // hidden entirely when scheduling is disabled globally (OSGi)
+    if (!this.schedulingFeatureEnabled) {
+      return nothing;
+    }
     return html`
       <section class="gcr-panel">
         <div class="gcr-panel-header">
@@ -890,6 +904,10 @@ export class GcrReportEditor extends LitElement {
   }
 
   private renderDistribution() {
+    // hidden entirely when distribution is disabled globally (OSGi)
+    if (!this.distributionFeatureEnabled) {
+      return nothing;
+    }
     return html`
       <section class="gcr-panel">
         <div class="gcr-panel-header">

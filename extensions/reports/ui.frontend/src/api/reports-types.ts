@@ -59,6 +59,12 @@ export interface ReportListResponse {
   canManage: boolean;
 }
 
+/** Global reports feature flags (OSGi); when a flag is false the matching UI section is hidden. */
+export interface ReportsFeatureConfig {
+  schedulingEnabled: boolean;
+  distributionEnabled: boolean;
+}
+
 export interface ReportParameter {
   name: string;
   label: string;
@@ -126,6 +132,9 @@ export interface ReportDefinition extends ReportSummary {
   lastModified?: string | null;
   lastModifiedBy?: string | null;
   exportFormats: ExportFormat[];
+  /** Global OSGi feature flags: when false, the UI hides the scheduling / distribution sections. */
+  schedulingEnabled?: boolean;
+  distributionEnabled?: boolean;
 }
 
 /** Definition payload for create/update (read-only fields omitted). */

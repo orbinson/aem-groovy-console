@@ -4,6 +4,7 @@ import be.orbinson.aem.groovy.console.configuration.ConfigurationService
 import be.orbinson.aem.groovy.console.reports.ReportException
 import be.orbinson.aem.groovy.console.reports.ReportExecutionService
 import be.orbinson.aem.groovy.console.reports.ReportService
+import be.orbinson.aem.groovy.console.reports.impl.ReportsConfigurationService
 import groovy.util.logging.Slf4j
 import org.apache.sling.api.SlingHttpServletRequest
 import org.apache.sling.api.SlingHttpServletResponse
@@ -38,9 +39,18 @@ class ReportDistributeServlet extends AbstractReportsServlet {
     @Reference
     private ConfigurationService configurationService
 
+    @Reference
+    private ReportsConfigurationService reportsConfigurationService
+
     @Override
     protected void doPost(SlingHttpServletRequest request, SlingHttpServletResponse response)
             throws ServletException, IOException {
+        if (!reportsConfigurationService.distributionEnabled) {
+            writeError(response, SC_SERVICE_UNAVAILABLE, "Report distribution is disabled.")
+
+            return
+        }
+
         def body = readJsonBody(request)
         def executionId = body?.get(PARAMETER_EXECUTION_ID) as String
 
