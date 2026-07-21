@@ -3,8 +3,12 @@ package be.orbinson.aem.groovy.console.reports.impl
 import be.orbinson.aem.groovy.console.reports.ReportException
 import be.orbinson.aem.groovy.console.reports.ReportService
 import be.orbinson.aem.groovy.console.reports.model.ReportDefinition
+import be.orbinson.aem.groovy.console.reports.model.ReportDistributionTarget
 import be.orbinson.aem.groovy.console.reports.model.ReportParameter
 import be.orbinson.aem.groovy.console.reports.model.ReportParameterType
+import be.orbinson.aem.groovy.console.reports.model.ReportSchedule
+import groovy.json.JsonBuilder
+import groovy.json.JsonSlurper
 import groovy.util.logging.Slf4j
 import org.apache.jackrabbit.JcrConstants
 import org.apache.sling.api.resource.ModifiableValueMap
@@ -18,9 +22,11 @@ import org.osgi.service.component.annotations.Component
 import javax.jcr.Session
 
 import static be.orbinson.aem.groovy.console.reports.constants.ReportsConstants.CHARSET
+import static be.orbinson.aem.groovy.console.reports.constants.ReportsConstants.DISTRIBUTIONS_NODE_NAME
 import static be.orbinson.aem.groovy.console.reports.constants.ReportsConstants.PARAMETERS_NODE_NAME
 import static be.orbinson.aem.groovy.console.reports.constants.ReportsConstants.PATH_REPORTS_FOLDER
 import static be.orbinson.aem.groovy.console.reports.constants.ReportsConstants.RESOURCE_TYPE_DEFINITION
+import static be.orbinson.aem.groovy.console.reports.constants.ReportsConstants.SCHEDULE_NODE_NAME
 
 /**
  * Report definition CRUD backed by the requesting user's resolver, so JCR access control alone governs who can
@@ -51,6 +57,24 @@ class DefaultReportService implements ReportService {
 
     private static final String PROPERTY_LAST_MODIFIED_BY = "lastModifiedBy"
 
+    private static final String PROPERTY_ENABLED = "enabled"
+
+    private static final String PROPERTY_CRON_EXPRESSION = "cronExpression"
+
+    private static final String PROPERTY_RUN_AS = "runAs"
+
+    private static final String PROPERTY_SCHEDULED_BY = "scheduledBy"
+
+    private static final String PROPERTY_PARAMETER_VALUES = "parameterValues"
+
+    private static final String PROPERTY_DISTRIBUTOR_ID = "distributorId"
+
+    private static final String PROPERTY_FORMAT = "format"
+
+    private static final String PROPERTY_CONFIG = "config"
+
+    private static final String DISTRIBUTION_NODE_PREFIX = "target"
+
     @Override
     List<ReportDefinition> getReports(ResourceResolver resourceResolver) {
         def reportsFolder = resourceResolver.getResource(PATH_REPORTS_FOLDER)
@@ -70,6 +94,31 @@ class DefaultReportService implements ReportService {
         def resource = getReportResource(resourceResolver, name)
 
         resource ? toReportDefinition(resource) : null
+    }
+
+    @Override
+    ReportDefinition getReportAtPath(ResourceResolver resourceResolver, String path) {
+        if (!path) {
+            return null
+        }
+
+        def resource = resourceResolver.getResource(path)
+
+        resource && isReportDefinition(resource) ? toReportDefinition(resource) : null
+    }
+
+    @Override
+    List<ReportDefinition> findReports(ResourceResolver resourceResolver, String basePath) {
+        def base = basePath ? resourceResolver.getResource(basePath) : null
+
+        if (!base) {
+            return []
+        }
+
+        def definitions = []
+        collectDefinitions(base, definitions)
+
+        definitions.sort { definition -> definition.path }
     }
 
     @Override
@@ -102,6 +151,8 @@ class DefaultReportService implements ReportService {
 
             saveScript(resourceResolver, resource, resource.name, reportDefinition.script)
             saveParameters(resourceResolver, resource, reportDefinition.parameters)
+            saveSchedule(resourceResolver, resource, reportDefinition.schedule, userId)
+            saveDistributions(resourceResolver, resource, reportDefinition.distributions)
 
             resourceResolver.commit()
 
@@ -228,6 +279,11 @@ class DefaultReportService implements ReportService {
                         "Parameter names are required and may only contain letters, digits, '-' and '_'.")
             }
         }
+
+        // reject a bad cron before anything is written, so an enabled schedule always has a runnable expression
+        if (reportDefinition.schedule?.enabled) {
+            CronValidator.validate(reportDefinition.schedule.cronExpression)
+        }
     }
 
     private static void putOrRemove(ModifiableValueMap valueMap, String name, Object value) {
@@ -317,6 +373,128 @@ class DefaultReportService implements ReportService {
         }
     }
 
+    // Persist the schedule under a child node. Sets scheduledBy server-side and enforces the run-as gate: a
+    // non-self runAs is only accepted when the requesting user is permitted to impersonate it.
+    private static void saveSchedule(ResourceResolver resourceResolver, Resource reportResource,
+                                     ReportSchedule schedule, String userId) {
+        def existing = reportResource.getChild(SCHEDULE_NODE_NAME)
+
+        if (existing) {
+            resourceResolver.delete(existing)
+        }
+
+        if (!schedule) {
+            return
+        }
+
+        // schedules saved through the service (the UI/API path) always run as their author: runAs is forced to
+        // the requesting user, so a user can only ever schedule a report to run as themselves. (Reports deployed
+        // in code bypass this and may leave runAs blank to run as the executor service user.)
+        schedule.scheduledBy = userId
+        schedule.runAs = userId
+
+        resourceResolver.create(reportResource, SCHEDULE_NODE_NAME, [
+                (JcrConstants.JCR_PRIMARYTYPE): JcrConstants.NT_UNSTRUCTURED,
+                (PROPERTY_ENABLED)            : schedule.enabled,
+                (PROPERTY_CRON_EXPRESSION)    : schedule.cronExpression ?: "",
+                (PROPERTY_RUN_AS)             : schedule.runAs,
+                (PROPERTY_SCHEDULED_BY)       : schedule.scheduledBy,
+                (PROPERTY_PARAMETER_VALUES)   : new JsonBuilder(schedule.parameterValues ?: [:]).toString()
+        ] as Map<String, Object>)
+    }
+
+    private static void saveDistributions(ResourceResolver resourceResolver, Resource reportResource,
+                                          List<ReportDistributionTarget> distributions) {
+        def existing = reportResource.getChild(DISTRIBUTIONS_NODE_NAME)
+
+        if (existing) {
+            resourceResolver.delete(existing)
+        }
+
+        if (!distributions) {
+            return
+        }
+
+        def distributionsResource = resourceResolver.create(reportResource, DISTRIBUTIONS_NODE_NAME,
+                [(JcrConstants.JCR_PRIMARYTYPE): JcrConstants.NT_UNSTRUCTURED] as Map<String, Object>)
+
+        distributions.eachWithIndex { target, index ->
+            resourceResolver.create(distributionsResource, "$DISTRIBUTION_NODE_PREFIX$index", [
+                    (JcrConstants.JCR_PRIMARYTYPE): JcrConstants.NT_UNSTRUCTURED,
+                    (PROPERTY_DISTRIBUTOR_ID)     : target.distributorId,
+                    (PROPERTY_FORMAT)             : target.format,
+                    (PROPERTY_CONFIG)             : new JsonBuilder(target.config ?: [:]).toString()
+            ] as Map<String, Object>)
+        }
+    }
+
+    private static ReportSchedule readSchedule(Resource reportResource) {
+        def scheduleResource = reportResource.getChild(SCHEDULE_NODE_NAME)
+
+        if (!scheduleResource) {
+            return null
+        }
+
+        def properties = scheduleResource.valueMap
+
+        new ReportSchedule(
+                enabled: properties.get(PROPERTY_ENABLED, false),
+                cronExpression: properties.get(PROPERTY_CRON_EXPRESSION, String),
+                runAs: properties.get(PROPERTY_RUN_AS, String),
+                scheduledBy: properties.get(PROPERTY_SCHEDULED_BY, String),
+                // preserve arrays for `multiple` parameters (do not flatten to String)
+                parameterValues: toObjectMap(properties.get(PROPERTY_PARAMETER_VALUES, String))
+        )
+    }
+
+    private static List<ReportDistributionTarget> readDistributions(Resource reportResource) {
+        def distributionsResource = reportResource.getChild(DISTRIBUTIONS_NODE_NAME)
+
+        if (!distributionsResource) {
+            return []
+        }
+
+        distributionsResource.listChildren()
+                .findAll { child -> child.name.startsWith(DISTRIBUTION_NODE_PREFIX) }
+                .sort { child -> child.name }
+                .collect { child ->
+                    def properties = child.valueMap
+
+                    new ReportDistributionTarget(
+                            distributorId: properties.get(PROPERTY_DISTRIBUTOR_ID, String),
+                            format: properties.get(PROPERTY_FORMAT, String),
+                            config: toObjectMap(properties.get(PROPERTY_CONFIG, String))
+                    )
+                }
+    }
+
+    private static Map<String, String> toStringMap(String json) {
+        toObjectMap(json).collectEntries { key, value -> [(key): value as String] } as Map<String, String>
+    }
+
+    private static Map<String, Object> toObjectMap(String json) {
+        if (!json) {
+            return [:]
+        }
+
+        try {
+            new JsonSlurper().parseText(json) as Map<String, Object>
+        } catch (Exception ignored) {
+            [:]
+        }
+    }
+
+    // depth-first collect report definitions under a folder, not descending into a definition's own child nodes
+    private static void collectDefinitions(Resource resource, List<ReportDefinition> definitions) {
+        resource.listChildren().each { child ->
+            if (isReportDefinition(child)) {
+                definitions.add(toReportDefinition(child))
+            } else {
+                collectDefinitions(child, definitions)
+            }
+        }
+    }
+
     private static boolean isReportDefinition(Resource resource) {
         resource.isResourceType(RESOURCE_TYPE_DEFINITION)
     }
@@ -350,12 +528,15 @@ class DefaultReportService implements ReportService {
 
         new ReportDefinition(
                 name: resource.name,
+                path: resource.path,
                 title: properties.get(PROPERTY_TITLE, resource.name),
                 description: properties.get(PROPERTY_DESCRIPTION, String),
                 category: properties.get(PROPERTY_CATEGORY, String),
                 script: readScript(resource),
                 pageSize: properties.get(PROPERTY_PAGE_SIZE, Integer),
                 parameters: toParameters(resource),
+                schedule: readSchedule(resource),
+                distributions: readDistributions(resource),
                 created: properties.get(JcrConstants.JCR_CREATED, Calendar),
                 createdBy: properties.get(PROPERTY_CREATED_BY, String),
                 lastModified: properties.get(PROPERTY_LAST_MODIFIED, Calendar),

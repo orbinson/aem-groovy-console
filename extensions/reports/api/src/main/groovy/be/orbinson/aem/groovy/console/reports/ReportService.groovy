@@ -30,6 +30,26 @@ interface ReportService {
     ReportDefinition getReport(ResourceResolver resourceResolver, String name)
 
     /**
+     * Get the report definition at an exact repository path, or null if there is none there or it is not readable.
+     * Unlike {@link #getReport}, this resolves definitions anywhere (e.g. the immutable <code>/apps</code>
+     * drop-zone), which is how scheduled jobs load the definition they were registered for.
+     *
+     * @param resourceResolver requesting resolver
+     * @param path full definition node path
+     * @return report definition or null
+     */
+    ReportDefinition getReportAtPath(ResourceResolver resourceResolver, String path)
+
+    /**
+     * Recursively collect the report definitions under a base path (used to discover code-deployed definitions).
+     *
+     * @param resourceResolver requesting resolver
+     * @param basePath folder to scan
+     * @return report definitions found beneath the base path (empty when the path is missing or unreadable)
+     */
+    List<ReportDefinition> findReports(ResourceResolver resourceResolver, String basePath)
+
+    /**
      * Create or update a report definition.  The write uses the given resolver, so it fails when the user
      * lacks JCR write access to the reports tree.
      *

@@ -40,7 +40,9 @@ works without this package; installing it adds the reports feature.
 - [Column types](#column-types)
 - [Query performance audit](#query-performance-audit)
 - [Execution model](#execution-model)
+- [Scheduling](#scheduling)
 - [Exports](#exports)
+- [Distribution](#distribution)
 - [Access control](#access-control)
 - [User interfaces](#user-interfaces)
 - [Configuration](#configuration)
@@ -175,6 +177,54 @@ The complete result is persisted as a gzipped JSON binary (`jcr:data`) under
 `/var/groovyconsole/reports/executions`. **Every row is stored** — the UI paginates and exports from the persisted
 result without re-running the script. Old executions are purged on a configurable schedule.
 
+## Scheduling
+
+A report can run **unattended on a cron schedule**. Enable it in the editor's *Schedule* section (or set a
+`schedule` child node on the definition) with a Quartz-style cron expression and, optionally, fixed parameter
+values used for the scheduled run (there is no interactive form). Each scheduled report maps to exactly one Sling
+scheduled job on the topic `groovyconsole/reports/job`, keyed on the definition's node path, so schedules persist
+across restarts and, in a cluster, fire on a single instance. Saving the report reconciles the job (create /
+update / remove); deleting the report removes it. When the job fires the report runs through the normal
+[execution model](#execution-model) and its configured [distributions](#distribution) are applied to the result.
+
+The cron expression is the Sling scheduler's Quartz form — 6 or 7 whitespace-separated fields
+(`seconds minutes hours day-of-month month day-of-week [year]`), e.g. `0 0 6 * * ?` for 06:00 daily. It is
+validated when the report is saved; an invalid expression is rejected with a `400` before anything is persisted.
+**Sub-minute schedules are not allowed**: the seconds field must be a fixed value (0–59), so a report cannot be
+set to run every second.
+
+### Code-deployed schedules
+
+Reports authored in the UI live under `/conf`. Reports **deployed in code** are auto-discovered from the immutable
+drop-zone **`/apps/groovyconsole-reports-definitions`**: on startup, and whenever that tree changes (e.g. a content
+package install), their enabled schedules are registered and schedules for definitions that no longer exist are
+removed. Ship your definitions there in their own content package (a sibling of the reports package's own
+`/apps/groovyconsole-reports`, so neither package's install wipes the other). Because `/apps` cannot be written at
+runtime through the repository's write servlets, definitions found here are trusted to run under the executor
+service user (see below).
+
+### Run-as identity
+
+A scheduled run has no request user, so it needs an identity. There are two, by how the report was created:
+
+- **Scheduled through the UI/API** — the report runs **as its author**, with that user's own permissions, so it
+  sees exactly what they can see. The author is set server-side (`runAs`/`scheduledBy` in the request body are
+  ignored): a user can only ever schedule a report to run **as themselves**, never as another user, so scheduling
+  can never be used to gain access. This is enabled by a self-scoped impersonation grant made when the schedule is
+  saved — a user may grant a system user impersonation over their *own* account, so no privileged
+  user-administration is involved. If that author later can't be impersonated (grant removed, user disabled), the
+  run fails closed with a clear error rather than running with the wrong rights.
+- **Deployed in code** (a definition installed by a content package, with no `runAs`) — the report runs as the
+  dedicated executor service user **`aem-groovy-console-reports-executor`**, which ships with `jcr:read` on
+  `/content`. This is the identity for reports shipped and vetted by developers. Scope its ACLs to the trees your
+  code-deployed reports need.
+
+The executor is a separate identity from the minimal bookkeeping service user
+(`aem-groovy-console-reports-service`, which only persists executions under `/var`), so execution rights and
+bookkeeping rights stay cleanly separated. Because a report editor can also edit the executable Groovy, treat
+write access to `/conf/groovyconsole/reports` as the trust boundary and restrict it accordingly (see
+[Access control](#access-control)).
+
 ## Exports
 
 Export formats are discovered from registered `be.orbinson.aem.groovy.console.reports.ReportExporter` services;
@@ -192,6 +242,47 @@ registering a new one automatically surfaces it in the API and UI.
 
 A column can be excluded from exports (UI-only) by declaring it with `exported = false`:
 `data.column('Edit', ReportColumnType.LINK, false)`.
+
+## Distribution
+
+A report can **distribute** its result to one or more destinations. Each *distribution target* pairs a distributor
+with an [export format](#exports), so any registered exporter (CSV, XLSX, …) can be delivered. Targets are
+configured in the editor's *Distribution* section and stored on the definition; they are applied automatically
+when a **scheduled** run finishes successfully, and on demand for any completed run via **Distribute now** in the
+run view. A distribution failure is recorded on the execution (`distributionErrors`) but never fails the run
+itself.
+
+Distributors are discovered from registered
+`be.orbinson.aem.groovy.console.reports.ReportDistributor` services (mirroring the exporter SPI), so a custom
+distributor registered as an OSGi service surfaces automatically in the API and UI. Only distributors that report
+themselves **available** (`ReportDistributor.isAvailable()`) are offered as a destination — the filesystem
+distributor is available only when enabled, and the email distributor only when a mail service is bound — so
+authors are never shown a destination that would fail. Two ship built in:
+
+- **Email** (`email`) — attaches the rendered export and sends it via AEM's mail service (SMTP is configured on
+  the platform, as for the console's own notifications). Config: `recipients` (comma/semicolon/space separated)
+  and an optional `subject`. Inactive on plain Sling with no mail service. An optional **recipient-domain
+  allowlist** bounds where reports may be sent, via
+  `be.orbinson.aem.groovy.console.reports.impl.EmailReportDistributorConfig`:
+
+  | Property                  | Default | Meaning                                                                        |
+  |---------------------------|---------|--------------------------------------------------------------------------------|
+  | `allowedRecipientDomains` | (empty) | Recipient domains reports may be sent to. Empty means any address is allowed.  |
+
+  When set, every recipient's domain must match an entry or the whole distribution is rejected (recorded in
+  `distributionErrors`); leave it empty to send anywhere.
+- **Filesystem** (`filesystem`) — writes the rendered export to a directory on the local filesystem. Config:
+  `directory` and an optional `filename` (defaults to `<report>-<timestamp>.<ext>`). **Disabled by default** —
+  writing to disk is sensitive, so enable it deliberately via
+  `be.orbinson.aem.groovy.console.reports.impl.FilesystemReportDistributorConfig`:
+
+  | Property               | Default | Meaning                                                                     |
+  |------------------------|---------|-----------------------------------------------------------------------------|
+  | `enabled`              | `false` | Enable the filesystem distributor.                                          |
+  | `allowedRootDirectory` | (empty) | Absolute path every target directory must resolve within. Required to use.  |
+
+  Target directories and file names are resolved against `allowedRootDirectory` with a canonical-path check, so
+  `..` segments or an absolute path that escapes the configured root are rejected.
 
 ## Access control
 

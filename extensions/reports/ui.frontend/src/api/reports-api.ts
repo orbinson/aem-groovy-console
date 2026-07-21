@@ -3,6 +3,8 @@ import { delJson, getJson, getJsonWithError, postJson } from '@console/api/clien
 import type {
   BrowseResponse,
   BrowseType,
+  DistributionTarget,
+  DistributorsResponse,
   DynamicOption,
   ReportDefinition,
   ReportExecution,
@@ -11,6 +13,7 @@ import type {
   ReportParameterValue,
   ReportPreviewResponse,
   ReportQueryAuditResponse,
+  ReportsFeatureConfig,
   ResultPage,
   SaveReportRequest,
 } from './reports-types';
@@ -19,6 +22,15 @@ const BASE = '/bin/groovyconsole/reports';
 
 export function listReports(): Promise<ReportListResponse> {
   return getJsonWithError<ReportListResponse>(`${BASE}.json`);
+}
+
+/** Global reports feature flags (OSGi). Falls back to all-enabled if the endpoint is unavailable. */
+export async function getReportsConfig(): Promise<ReportsFeatureConfig> {
+  try {
+    return await getJsonWithError<ReportsFeatureConfig>(`${BASE}/config.json`);
+  } catch {
+    return { schedulingEnabled: true, distributionEnabled: true };
+  }
 }
 
 export function getReport(name: string): Promise<ReportDefinition> {
@@ -64,6 +76,19 @@ export function executeReport(
   parameters: Record<string, ReportParameterValue>,
 ): Promise<ReportExecution> {
   return postJson<ReportExecution>(`${BASE}/execute`, { name, parameters });
+}
+
+/** Available distributors and export formats, for the report editor's distribution section. */
+export function listDistributors(): Promise<DistributorsResponse> {
+  return getJsonWithError<DistributorsResponse>(`${BASE}/distributors.json`);
+}
+
+/** Distribute an already-completed successful execution on demand. */
+export function distributeExecution(
+  executionId: string,
+  targets: DistributionTarget[],
+): Promise<ReportExecution> {
+  return postJson<ReportExecution>(`${BASE}/distribute`, { executionId, targets });
 }
 
 /** Resolve the options of a saved DYNAMIC parameter, passing the already-entered values it may depend on. */

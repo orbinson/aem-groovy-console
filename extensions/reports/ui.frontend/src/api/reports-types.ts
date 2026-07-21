@@ -59,6 +59,12 @@ export interface ReportListResponse {
   canManage: boolean;
 }
 
+/** Global reports feature flags (OSGi); when a flag is false the matching UI section is hidden. */
+export interface ReportsFeatureConfig {
+  schedulingEnabled: boolean;
+  distributionEnabled: boolean;
+}
+
 export interface ReportParameter {
   name: string;
   label: string;
@@ -77,6 +83,35 @@ export interface ReportParameter {
   order: number;
 }
 
+/** Cron schedule for unattended report runs. */
+export interface ReportSchedule {
+  enabled: boolean;
+  cronExpression?: string | null;
+  /** Optional user to run as; blank runs as the reports service user. */
+  runAs?: string | null;
+  /** Set server-side to the user that saved the schedule; read-only in the UI. */
+  scheduledBy?: string | null;
+  /** Fixed parameter values used for scheduled runs (a scalar, or a list for a `multiple` parameter). */
+  parameterValues: Record<string, ReportParameterValue>;
+}
+
+/** A configured distribution target: which distributor, which export format, and its config. */
+export interface DistributionTarget {
+  distributorId: string;
+  format: string;
+  config: Record<string, unknown>;
+}
+
+export interface Distributor {
+  id: string;
+  name: string;
+}
+
+export interface DistributorsResponse {
+  distributors: Distributor[];
+  formats: ExportFormat[];
+}
+
 /** Submitted/held value of a parameter: a scalar, or a list for a `multiple` parameter. */
 export type ReportParameterValue = string | string[];
 
@@ -90,11 +125,16 @@ export interface ReportDefinition extends ReportSummary {
   canEditScript?: boolean;
   pageSize?: number | null;
   parameters: ReportParameter[];
+  schedule?: ReportSchedule | null;
+  distributions: DistributionTarget[];
   created?: string | null;
   createdBy?: string | null;
   lastModified?: string | null;
   lastModifiedBy?: string | null;
   exportFormats: ExportFormat[];
+  /** Global OSGi feature flags: when false, the UI hides the scheduling / distribution sections. */
+  schedulingEnabled?: boolean;
+  distributionEnabled?: boolean;
 }
 
 /** Definition payload for create/update (read-only fields omitted). */
@@ -106,6 +146,8 @@ export interface SaveReportRequest {
   script?: string;
   pageSize?: number;
   parameters?: Array<Omit<ReportParameter, 'order'> & { order?: number }>;
+  schedule?: ReportSchedule | null;
+  distributions?: DistributionTarget[];
 }
 
 export interface ReportExecution {
@@ -122,6 +164,8 @@ export interface ReportExecution {
   parameterValues: Record<string, unknown>;
   output?: string | null;
   exceptionStackTrace?: string | null;
+  /** Distribution failures recorded after a successful run (empty when all succeeded). */
+  distributionErrors?: string[] | null;
 }
 
 export interface ReportExecutionsResponse {

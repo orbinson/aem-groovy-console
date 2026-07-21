@@ -1,11 +1,13 @@
 package be.orbinson.aem.groovy.console.reports.impl
 
 import be.orbinson.aem.groovy.console.GroovyConsoleService
+import be.orbinson.aem.groovy.console.reports.ReportDistributorRegistry
 import be.orbinson.aem.groovy.console.reports.ReportException
 import be.orbinson.aem.groovy.console.reports.ReportExecutionService
 import be.orbinson.aem.groovy.console.reports.ReportResultStore
 import be.orbinson.aem.groovy.console.reports.data.ReportData
 import be.orbinson.aem.groovy.console.reports.model.ReportDefinition
+import be.orbinson.aem.groovy.console.reports.model.ReportDistributionTarget
 import be.orbinson.aem.groovy.console.reports.model.ReportExecution
 import be.orbinson.aem.groovy.console.reports.model.ReportExecutionStatus
 import be.orbinson.aem.groovy.console.reports.model.ReportPreview
@@ -69,6 +71,8 @@ class DefaultReportExecutionService implements ReportExecutionService {
 
     private static final String PROPERTY_SCRIPT = "script"
 
+    private static final String PROPERTY_DISTRIBUTION_ERRORS = "distributionErrors"
+
     @Reference
     private GroovyConsoleService groovyConsoleService
 
@@ -84,9 +88,18 @@ class DefaultReportExecutionService implements ReportExecutionService {
     @Reference
     private ReportsConfigurationService reportsConfigurationService
 
+    @Reference
+    private ReportDistributorRegistry distributorRegistry
+
     @Override
     ReportExecution execute(ReportDefinition reportDefinition, Map<String, Object> parameterValues,
                             ResourceResolver resourceResolver) {
+        execute(reportDefinition, parameterValues, resourceResolver, [])
+    }
+
+    @Override
+    ReportExecution execute(ReportDefinition reportDefinition, Map<String, String> parameterValues,
+                            ResourceResolver resourceResolver, List<ReportDistributionTarget> distributionTargets) {
         def coercedValues = ParameterCoercer.coerce(reportDefinition.parameters, parameterValues)
         def script = resolveScript(reportDefinition)
         def userId = resourceResolver.userID
@@ -98,12 +111,13 @@ class DefaultReportExecutionService implements ReportExecutionService {
 
         def asyncResolver = resourceResolver.clone(null)
         def scriptContext = buildReportContext(reportDefinition.name, coercedValues, script, userId, asyncResolver)
+        def targets = distributionTargets ?: []
 
         executionRegistry.start(scriptContext, { RunScriptResponse response, long durationMillis ->
             if (response.exceptionStackTrace) {
                 finishFailed(executionId, response, durationMillis)
             } else {
-                finishSuccess(executionId, response, durationMillis)
+                finishSuccess(executionId, response, durationMillis, targets)
             }
         } as ExecutionCallback)
 
@@ -168,6 +182,27 @@ class DefaultReportExecutionService implements ReportExecutionService {
                 script: script,
                 userId: userId
         )
+    }
+
+    @Override
+    void distribute(String executionId, List<ReportDistributionTarget> distributionTargets) {
+        def execution = getExecution(executionId)
+
+        if (!execution) {
+            throw new ReportException("execution not found: ${executionId}")
+        }
+
+        if (execution.status != ReportExecutionStatus.SUCCESS) {
+            throw new ReportException("only a successful execution can be distributed: ${executionId}")
+        }
+
+        def reportData = resultStore.getData(executionId)
+
+        if (reportData == null) {
+            throw new ReportException("no stored result for execution: ${executionId}")
+        }
+
+        applyDistributions(execution, reportData, distributionTargets ?: [])
     }
 
     @Override
@@ -247,7 +282,8 @@ class DefaultReportExecutionService implements ReportExecutionService {
                 columnCount: properties.get(PROPERTY_COLUMN_COUNT, Long),
                 parameterValues: toParameterValues(properties.get(PROPERTY_PARAMETER_VALUES, String)),
                 output: readOutput(resource),
-                exceptionStackTrace: properties.get(PROPERTY_EXCEPTION_STACK_TRACE, String)
+                exceptionStackTrace: properties.get(PROPERTY_EXCEPTION_STACK_TRACE, String),
+                distributionErrors: (properties.get(PROPERTY_DISTRIBUTION_ERRORS, new String[0]) as List)
         )
     }
 
@@ -292,16 +328,17 @@ class DefaultReportExecutionService implements ReportExecutionService {
         }
     }
 
-    private void finishSuccess(String executionId, RunScriptResponse response, long durationMillis) {
+    private void finishSuccess(String executionId, RunScriptResponse response, long durationMillis,
+                               List<ReportDistributionTarget> distributionTargets) {
         def reportData = ResultParser.parse(response.result)
 
-        withResourceResolver { ResourceResolver resourceResolver ->
+        def distributable = withResourceResolver { ResourceResolver resourceResolver ->
             def resource = getExecutionResource(resourceResolver, executionId)
 
             if (!resource) {
                 LOG.warn("execution {} was removed before it completed; discarding result", executionId)
 
-                return
+                return false
             }
 
             def maxRows = reportsConfigurationService.maxResultRows
@@ -325,7 +362,7 @@ class DefaultReportExecutionService implements ReportExecutionService {
 
                 resourceResolver.commit()
 
-                return
+                return false
             }
 
             def valueMap = resource.adaptTo(ModifiableValueMap)
@@ -344,6 +381,59 @@ class DefaultReportExecutionService implements ReportExecutionService {
             resultStore.save(resourceResolver, resource, reportData)
 
             resourceResolver.commit()
+
+            true
+        }
+
+        if (distributable && distributionTargets) {
+            applyDistributions(getExecution(executionId), reportData, distributionTargets)
+        }
+    }
+
+    // Apply each distribution target to a successful result. Failures are recorded on the execution but never
+    // fail the run — the report itself succeeded.
+    private void applyDistributions(ReportExecution execution, ReportData reportData,
+                                    List<ReportDistributionTarget> distributionTargets) {
+        // distribution disabled globally (OSGi): the single sink for both the scheduled and manual paths, so this
+        // guard blocks every distribution regardless of how it was triggered
+        if (!reportsConfigurationService.distributionEnabled) {
+            LOG.info("distribution is disabled; skipping {} distribution target(s)", distributionTargets.size())
+
+            return
+        }
+
+        def errors = []
+
+        distributionTargets.each { target ->
+            try {
+                def distributor = distributorRegistry.getDistributor(target.distributorId)
+
+                if (!distributor) {
+                    errors.add("no distributor registered for '${target.distributorId}'" as String)
+
+                    return
+                }
+
+                distributor.distribute(execution, reportData, target)
+
+                LOG.info("distributed execution {} via {}", execution.id, target.distributorId)
+            } catch (Exception e) {
+                LOG.error("distribution via {} failed for execution {}", target.distributorId, execution.id, e)
+
+                errors.add("${target.distributorId}: ${e.message}" as String)
+            }
+        }
+
+        if (errors) {
+            withResourceResolver { ResourceResolver resourceResolver ->
+                def resource = getExecutionResource(resourceResolver, execution.id)
+
+                if (resource) {
+                    resource.adaptTo(ModifiableValueMap).put(PROPERTY_DISTRIBUTION_ERRORS, errors as String[])
+
+                    resourceResolver.commit()
+                }
+            }
         }
     }
 

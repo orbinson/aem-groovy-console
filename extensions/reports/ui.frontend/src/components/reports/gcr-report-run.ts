@@ -3,11 +3,13 @@ import { customElement, property, query, state } from 'lit/decorators.js';
 import { ApiError } from '@console/api/client';
 import {
   deleteExecution,
+  distributeExecution,
   executeReport,
   exportUrl,
   getExecution,
   getExecutions,
   getReport,
+  getReportsConfig,
   getResultPage,
   listChildPaths,
   resolveDynamicOptions,
@@ -61,6 +63,9 @@ export class GcrReportRun extends LitElement {
   @state() private loadingPage = false;
   @state() private executions: ReportExecution[] = [];
   @state() private pageSize = 0;
+  @state() private distributing = false;
+  // global OSGi flag; when false the "Distribute now" action is hidden
+  @state() private distributionFeatureEnabled = true;
   /** Repository-path autocomplete suggestions per PATH parameter, keyed by parameter name. */
   @state() private pathSuggestions: Record<string, string[]> = {};
   /** Validation messages for required parameters left empty, keyed by parameter name. */
@@ -90,6 +95,9 @@ export class GcrReportRun extends LitElement {
   connectedCallback(): void {
     super.connectedCallback();
     this.disposed = false;
+    void getReportsConfig().then((config) => {
+      this.distributionFeatureEnabled = config.distributionEnabled;
+    });
   }
 
   disconnectedCallback(): void {
@@ -277,6 +285,30 @@ export class GcrReportRun extends LitElement {
 
     if (execution.status === 'SUCCESS') {
       await this.loadPage(execution.executionId, 1);
+    }
+  }
+
+  /** Distribute the current execution using the report's configured distribution targets. */
+  private async distributeNow(executionId: string): Promise<void> {
+    if (this.distributing || !this.definition?.distributions.length) {
+      return;
+    }
+
+    this.distributing = true;
+
+    try {
+      const execution = await distributeExecution(executionId, this.definition.distributions);
+      this.execution = execution;
+
+      if (execution.distributionErrors?.length) {
+        toast(this, `Distribution completed with errors: ${execution.distributionErrors.join('; ')}`, 'negative');
+      } else {
+        toast(this, 'Distribution complete.', 'positive');
+      }
+    } catch (error) {
+      toast(this, error instanceof ApiError ? error.message : 'Could not distribute the report.', 'negative');
+    } finally {
+      this.distributing = false;
     }
   }
 
@@ -725,6 +757,18 @@ export class GcrReportRun extends LitElement {
                 </sp-button>
               `,
             )}
+            ${this.distributionFeatureEnabled && definition.canEdit && definition.distributions.length
+              ? html`
+                  <sp-button
+                    size="s"
+                    variant="secondary"
+                    ?disabled=${this.distributing}
+                    @click=${() => void this.distributeNow(execution.executionId)}
+                  >
+                    ${this.distributing ? 'Distributing…' : 'Distribute now'}
+                  </sp-button>
+                `
+              : nothing}
             ${definition.canEdit
               ? html`
                   <sp-action-button

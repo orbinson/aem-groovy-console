@@ -40,4 +40,7 @@ class ReportExecution {
     String output
 
     String exceptionStackTrace
+
+    /** Distribution failures recorded after a successful run (empty when all distributions succeeded). */
+    List<String> distributionErrors = []
 }

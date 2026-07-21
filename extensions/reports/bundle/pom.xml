@@ -31,12 +31,16 @@
                             <goal>bnd-process</goal>
                         </goals>
                         <configuration>
-                            <!-- Both packages are consumed only through optionally-registered / AEM-gated
+                            <!-- These packages are consumed only through optionally-registered / AEM-gated
                                  components, so mark them optional: the query-audit SPI (used only when the
-                                 query-audit extension is installed) and com.day.cq.* (the tag picker's AEM
-                                 TagManager, inactive on plain Sling) — the bundle still resolves without either. -->
+                                 query-audit extension is installed), com.day.cq.* (the tag picker's AEM
+                                 TagManager and the email distributor's mailer, inactive on plain Sling) and
+                                 org.apache.commons.mail (email distributor). DynamicImport-Package keeps the
+                                 email distributor's javax.mail usage resolvable on AEM without failing the
+                                 bundle on plain Sling where it is inactive. -->
                             <bnd><![CDATA[
-                                Import-Package: be.orbinson.aem.groovy.console.queryaudit.spi;resolution:=optional,com.day.cq.*;resolution:=optional,*
+                                Import-Package: be.orbinson.aem.groovy.console.queryaudit.spi;resolution:=optional,com.day.cq.*;resolution:=optional,org.apache.commons.mail;resolution:=optional,*
+                                DynamicImport-Package: *
                                 ]]></bnd>
                         </configuration>
                     </execution>
@@ -117,6 +121,16 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
+        </dependency>
+
+        <!-- Mail (email distributor); provided at runtime by AEM, optional imports for Sling -->
+        <dependency>
+            <groupId>javax.mail</groupId>
+            <artifactId>mail</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-email</artifactId>
         </dependency>
 
         <!-- Groovy -->

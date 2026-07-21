@@ -6,20 +6,26 @@ import {
   auditReportQueries,
   deleteReport,
   getReport,
+  getReportsConfig,
   isQueryAuditAvailable,
+  listDistributors,
   previewReport,
   resolveDynamicOptionsForScript,
   saveReport,
 } from '../../api/reports-api';
 import type {
   BrowseType,
+  DistributionTarget,
+  Distributor,
   DynamicOption,
+  ExportFormat,
   PathType,
   ReportParameter,
   ReportParameterType,
   ReportParameterValue,
   ReportPreviewResponse,
   ReportQueryAuditResponse,
+  ReportSchedule,
   SaveReportRequest,
 } from '../../api/reports-types';
 import { toast } from './gcr-app';
@@ -27,8 +33,19 @@ import type { GcrCodeEditor } from './gcr-code-editor';
 import type { GcrPathBrowser } from './gcr-path-browser';
 import { mutePlaceholders } from '@console/util/mute-placeholders';
 import { renderMultifield } from './multifield';
+import './gcr-parameter-fields';
 import { renderResultTable } from './result-cell';
 import { validateRequired } from './validate-parameters';
+import {
+  buildCron,
+  type CronMode,
+  type CronParts,
+  DEFAULT_CRON_PARTS,
+  describeCron,
+  parseCron,
+  validateCron,
+  WEEKDAYS,
+} from '../../util/cron';
 
 const PARAMETER_TYPES: ReportParameterType[] = [
   'STRING',
@@ -100,6 +117,26 @@ export class GcrReportEditor extends LitElement {
   /** Whether the user may edit the executable Groovy; metadata/parameters stay editable regardless. */
   @state() private canEditScript = true;
 
+  // global OSGi feature flags (default on until the definition loads); hide the sections when disabled
+  @state() private schedulingFeatureEnabled = true;
+  @state() private distributionFeatureEnabled = true;
+
+  // schedule state
+  @state() private scheduleEnabled = false;
+  @state() private cronExpression = '';
+  @state() private cronMode: CronMode = DEFAULT_CRON_PARTS.mode;
+  @state() private cronHour = DEFAULT_CRON_PARTS.hour;
+  @state() private cronMinute = DEFAULT_CRON_PARTS.minute;
+  @state() private cronWeekday = DEFAULT_CRON_PARTS.weekday;
+  @state() private cronDayOfMonth = DEFAULT_CRON_PARTS.dayOfMonth;
+  @state() private scheduledBy: string | null = null;
+  @state() private scheduleValues: Record<string, ReportParameterValue> = {};
+
+  // distribution state
+  @state() private distributions: DistributionTarget[] = [];
+  @state() private distributors: Distributor[] = [];
+  @state() private distributionFormats: ExportFormat[] = [];
+
   // "try out" run state
   @state() private testValues: Record<string, string | string[]> = {};
   @state() private preview: ReportPreviewResponse | null = null;
@@ -133,10 +170,28 @@ export class GcrReportEditor extends LitElement {
     // Lazy-load the Monaco-based editor component (and Monaco itself) only when the editor view
     // is actually opened; the list and run views stay lightweight.
     void import('./gcr-code-editor');
+    void this.loadDistributors();
+    // Global feature flags decide whether the scheduling / distribution sections are shown at all.
+    void getReportsConfig().then((config) => {
+      this.schedulingFeatureEnabled = config.schedulingEnabled;
+      this.distributionFeatureEnabled = config.distributionEnabled;
+    });
     // Offer the "Audit queries" action only where the optional query-audit extension is installed.
     void isQueryAuditAvailable().then((available) => {
       this.queryAuditAvailable = available;
     });
+  }
+
+  private async loadDistributors(): Promise<void> {
+    try {
+      const response = await listDistributors();
+      this.distributors = response.distributors;
+      this.distributionFormats = response.formats;
+    } catch {
+      // distribution is optional; leave the pickers empty if the endpoint is unavailable
+      this.distributors = [];
+      this.distributionFormats = [];
+    }
   }
 
   protected willUpdate(changed: Map<string, unknown>): void {
@@ -174,6 +229,15 @@ export class GcrReportEditor extends LitElement {
         ...parameter,
         options: parameter.options.join(', '),
         _key: nextParameterKey++,
+      }));
+      this.scheduleEnabled = definition.schedule?.enabled ?? false;
+      this.cronExpression = definition.schedule?.cronExpression ?? '';
+      this.applyCronParts(parseCron(this.cronExpression));
+      this.scheduledBy = definition.schedule?.scheduledBy ?? null;
+      this.scheduleValues = { ...(definition.schedule?.parameterValues ?? {}) };
+      this.distributions = (definition.distributions ?? []).map((target) => ({
+        ...target,
+        config: { ...target.config },
       }));
     } catch (error) {
       this.error = error instanceof ApiError ? error.message : 'Could not load report.';
@@ -293,6 +357,24 @@ export class GcrReportEditor extends LitElement {
         optionsScript: parameter.type === 'DYNAMIC' ? parameter.optionsScript || undefined : undefined,
         order: index,
       })),
+      schedule: this.buildSchedule(),
+      distributions: this.distributions.filter((target) => target.distributorId && target.format),
+    };
+  }
+
+  /** Build the schedule payload, or null to remove any existing schedule. runAs and scheduledBy are set
+   *  server-side (a UI schedule always runs as its author), so they are not sent from here. */
+  private buildSchedule(): ReportSchedule | null {
+    const cron = this.cronExpression.trim();
+
+    if (!this.scheduleEnabled && !cron && Object.keys(this.scheduleValues).length === 0) {
+      return null;
+    }
+
+    return {
+      enabled: this.scheduleEnabled,
+      cronExpression: cron || null,
+      parameterValues: this.scheduleValues,
     };
   }
 
@@ -609,8 +691,372 @@ export class GcrReportEditor extends LitElement {
               </sp-help-text>`
             : nothing}
         </section>
+
+        ${this.renderSchedule()} ${this.renderDistribution()}
       </div>
     `;
+  }
+
+  private renderSchedule() {
+    // hidden entirely when scheduling is disabled globally (OSGi)
+    if (!this.schedulingFeatureEnabled) {
+      return nothing;
+    }
+    return html`
+      <section class="gcr-panel">
+        <div class="gcr-panel-header">
+          <h3>Schedule</h3>
+          <sp-switch
+            ?checked=${this.scheduleEnabled}
+            @change=${(event: Event) => (this.scheduleEnabled = (event.target as HTMLInputElement).checked)}
+          >
+            Run on a schedule
+          </sp-switch>
+        </div>
+
+        ${this.scheduleEnabled
+          ? html`
+              ${this.renderCronBuilder()}
+              <sp-help-text size="s">
+                The scheduled report runs as you — with your permissions — so it sees exactly what you can see.
+                ${this.scheduledBy
+                  ? html`Currently scheduled by <code>${this.scheduledBy}</code>.`
+                  : nothing}
+              </sp-help-text>
+              ${this.parameters.length
+                ? html`
+                    <h4 class="gcr-subhead">Scheduled parameter values</h4>
+                    <gcr-parameter-fields
+                      .parameters=${this.toReportParameters()}
+                      .values=${this.scheduleValues}
+                      .reportName=${this.reportName}
+                      @gcr-values-change=${(event: CustomEvent<Record<string, ReportParameterValue>>) =>
+                        (this.scheduleValues = event.detail)}
+                    ></gcr-parameter-fields>
+                  `
+                : nothing}
+            `
+          : html`<sp-help-text size="s">The report only runs on demand.</sp-help-text>`}
+      </section>
+    `;
+  }
+
+  private renderCronBuilder() {
+    const modes: Array<{ value: CronMode; label: string }> = [
+      { value: 'daily', label: 'Every day' },
+      { value: 'weekday', label: 'Every weekday (Mon–Fri)' },
+      { value: 'weekly', label: 'Every week' },
+      { value: 'monthly', label: 'Every month' },
+      { value: 'custom', label: 'Custom cron expression' },
+    ];
+    const cronError = this.cronMode === 'custom' ? validateCron(this.cronExpression) : null;
+    const description = describeCron(this.cronExpression);
+
+    return html`
+      <div class="gcr-form-grid">
+        <div class="gcr-field">
+          <sp-field-label for="schedule-frequency">Frequency</sp-field-label>
+          <sp-picker
+            id="schedule-frequency"
+            value=${this.cronMode}
+            @change=${(event: Event) => this.setCronMode((event.target as HTMLInputElement).value as CronMode)}
+          >
+            ${modes.map((mode) => html`<sp-menu-item value=${mode.value}>${mode.label}</sp-menu-item>`)}
+          </sp-picker>
+        </div>
+
+        ${this.cronMode === 'weekly'
+          ? html`<div class="gcr-field">
+              <sp-field-label for="schedule-weekday">Day of week</sp-field-label>
+              <sp-picker
+                id="schedule-weekday"
+                value=${this.cronWeekday}
+                @change=${(event: Event) => {
+                  this.cronWeekday = (event.target as HTMLInputElement).value;
+                  this.syncCronFromParts();
+                }}
+              >
+                ${WEEKDAYS.map((day) => html`<sp-menu-item value=${day.value}>${day.label}</sp-menu-item>`)}
+              </sp-picker>
+            </div>`
+          : nothing}
+        ${this.cronMode === 'monthly'
+          ? html`<div class="gcr-field">
+              <sp-field-label for="schedule-day-of-month">Day of month</sp-field-label>
+              <sp-textfield
+                id="schedule-day-of-month"
+                type="number"
+                min="1"
+                max="31"
+                value=${String(this.cronDayOfMonth)}
+                @input=${(event: Event) =>
+                  this.updateCronNumber('cronDayOfMonth', (event.target as HTMLInputElement).value, 1, 31)}
+              ></sp-textfield>
+              <sp-help-text size="s">1–31. Months without this day are skipped.</sp-help-text>
+            </div>`
+          : nothing}
+        ${this.cronMode === 'custom'
+          ? html`<div class="gcr-field gcr-field-wide">
+              <sp-field-label for="schedule-cron" required>Cron expression</sp-field-label>
+              <sp-textfield
+                id="schedule-cron"
+                value=${this.cronExpression}
+                placeholder="0 0 6 * * ?"
+                @input=${(event: Event) => (this.cronExpression = (event.target as HTMLInputElement).value)}
+              ></sp-textfield>
+              <sp-help-text size="s" variant=${cronError ? 'negative' : 'neutral'}>
+                ${cronError ??
+                'Quartz-style cron: seconds minutes hours day-of-month month day-of-week [year].'}
+              </sp-help-text>
+            </div>`
+          : html`
+              <div class="gcr-field">
+                <sp-field-label for="schedule-hour">Hour (0–23)</sp-field-label>
+                <sp-textfield
+                  id="schedule-hour"
+                  type="number"
+                  min="0"
+                  max="23"
+                  value=${String(this.cronHour)}
+                  @input=${(event: Event) =>
+                    this.updateCronNumber('cronHour', (event.target as HTMLInputElement).value, 0, 23)}
+                ></sp-textfield>
+              </div>
+              <div class="gcr-field">
+                <sp-field-label for="schedule-minute">Minute (0–59)</sp-field-label>
+                <sp-textfield
+                  id="schedule-minute"
+                  type="number"
+                  min="0"
+                  max="59"
+                  value=${String(this.cronMinute)}
+                  @input=${(event: Event) =>
+                    this.updateCronNumber('cronMinute', (event.target as HTMLInputElement).value, 0, 59)}
+                ></sp-textfield>
+              </div>
+            `}
+      </div>
+      ${description || this.cronExpression
+        ? html`<sp-help-text size="s">
+            ${description ? html`${description} ` : nothing}Cron:
+            <code>${this.cronExpression || '—'}</code>
+          </sp-help-text>`
+        : nothing}
+    `;
+  }
+
+  private applyCronParts(parts: CronParts): void {
+    this.cronMode = parts.mode;
+    this.cronHour = parts.hour;
+    this.cronMinute = parts.minute;
+    this.cronWeekday = parts.weekday;
+    this.cronDayOfMonth = parts.dayOfMonth;
+  }
+
+  private setCronMode(mode: CronMode): void {
+    this.cronMode = mode;
+
+    // a preset owns the expression; custom mode leaves the current expression for the user to edit
+    if (mode !== 'custom') {
+      this.syncCronFromParts();
+    }
+  }
+
+  private updateCronNumber(
+    field: 'cronHour' | 'cronMinute' | 'cronDayOfMonth',
+    raw: string,
+    min: number,
+    max: number,
+  ): void {
+    const parsed = Number.parseInt(raw, 10);
+    this[field] = Number.isNaN(parsed) ? min : Math.min(max, Math.max(min, parsed));
+    this.syncCronFromParts();
+  }
+
+  private syncCronFromParts(): void {
+    this.cronExpression = buildCron({
+      mode: this.cronMode,
+      hour: this.cronHour,
+      minute: this.cronMinute,
+      weekday: this.cronWeekday,
+      dayOfMonth: this.cronDayOfMonth,
+    });
+  }
+
+  /** Map the editor's parameter rows to the API parameter shape the shared fields component consumes. */
+  private toReportParameters(): ReportParameter[] {
+    return this.parameters.map((parameter, index) => ({
+      name: parameter.name.trim(),
+      label: parameter.label.trim() || parameter.name.trim(),
+      type: parameter.type,
+      defaultValue: parameter.defaultValue || undefined,
+      required: parameter.required,
+      multiple: parameter.multiple,
+      options: parameter.options
+        .split(',')
+        .map((option) => option.trim())
+        .filter(Boolean),
+      pathType: parameter.type === 'PATH' ? parameter.pathType || 'NODE' : undefined,
+      rootPath: parameter.type === 'PATH' || parameter.type === 'TAG' ? parameter.rootPath || undefined : undefined,
+      optionsScript: parameter.type === 'DYNAMIC' ? parameter.optionsScript || undefined : undefined,
+      order: index,
+    }));
+  }
+
+  private renderDistribution() {
+    // hidden entirely when distribution is disabled globally (OSGi)
+    if (!this.distributionFeatureEnabled) {
+      return nothing;
+    }
+    return html`
+      <section class="gcr-panel">
+        <div class="gcr-panel-header">
+          <h3>Distribution</h3>
+          <sp-action-button
+            size="s"
+            ?disabled=${this.distributors.length === 0}
+            @click=${() => this.addDistribution()}
+          >
+            Add distribution
+          </sp-action-button>
+        </div>
+
+        ${this.distributors.length === 0
+          ? html`<sp-help-text size="s">No distributors are available.</sp-help-text>`
+          : this.distributions.length === 0
+            ? html`<div class="gcr-empty">
+                No distributions. The result is only stored and available for download.
+              </div>`
+            : this.distributions.map((target, index) => this.renderDistributionRow(target, index))}
+      </section>
+    `;
+  }
+
+  private renderDistributionRow(target: DistributionTarget, index: number) {
+    return html`
+      <div class="gcr-distribution" role="group" aria-label="Distribution ${index + 1}">
+        <div class="gcr-distribution-header">
+          <h4 class="gcr-subhead">Distribution ${index + 1}</h4>
+          <sp-action-button
+            size="s"
+            quiet
+            @click=${() => this.removeDistribution(index)}
+            aria-label="Remove distribution ${index + 1}"
+          >
+            <sp-icon-close slot="icon"></sp-icon-close>
+          </sp-action-button>
+        </div>
+        <div class="gcr-form-grid">
+          <div class="gcr-field">
+            <sp-field-label for="dist-${index}-destination">Destination</sp-field-label>
+            <sp-picker
+              id="dist-${index}-destination"
+              value=${target.distributorId}
+              @change=${(event: Event) =>
+                this.updateDistribution(index, { distributorId: (event.target as HTMLInputElement).value })}
+            >
+              ${this.distributors.map(
+                (distributor) => html`<sp-menu-item value=${distributor.id}>${distributor.name}</sp-menu-item>`,
+              )}
+            </sp-picker>
+          </div>
+          <div class="gcr-field">
+            <sp-field-label for="dist-${index}-format">Export format</sp-field-label>
+            <sp-picker
+              id="dist-${index}-format"
+              value=${target.format}
+              @change=${(event: Event) =>
+                this.updateDistribution(index, { format: (event.target as HTMLInputElement).value })}
+            >
+              ${this.distributionFormats.map(
+                (format) => html`<sp-menu-item value=${format.format}>${format.format.toUpperCase()}</sp-menu-item>`,
+              )}
+            </sp-picker>
+          </div>
+          ${this.renderDistributionConfig(target, index)}
+        </div>
+      </div>
+    `;
+  }
+
+  private renderDistributionConfig(target: DistributionTarget, index: number) {
+    const setConfig = (key: string) => (event: Event) =>
+      this.updateDistributionConfig(index, key, (event.target as HTMLInputElement).value);
+    const value = (key: string) => (target.config[key] as string) ?? '';
+
+    if (target.distributorId === 'email') {
+      return html`
+        <div class="gcr-field gcr-field-wide">
+          <sp-field-label for="dist-${index}-recipients" required>Recipients</sp-field-label>
+          <sp-textfield
+            id="dist-${index}-recipients"
+            value=${value('recipients')}
+            placeholder="jane@example.com, team@example.com"
+            @input=${setConfig('recipients')}
+          ></sp-textfield>
+          <sp-help-text size="s">One or more email addresses, separated by commas or semicolons.</sp-help-text>
+        </div>
+        <div class="gcr-field gcr-field-wide">
+          <sp-field-label for="dist-${index}-subject">Subject</sp-field-label>
+          <sp-textfield
+            id="dist-${index}-subject"
+            value=${value('subject')}
+            placeholder="Weekly traffic report"
+            @input=${setConfig('subject')}
+          ></sp-textfield>
+          <sp-help-text size="s">Optional. Falls back to a default subject when empty.</sp-help-text>
+        </div>
+      `;
+    }
+
+    if (target.distributorId === 'filesystem') {
+      return html`
+        <div class="gcr-field">
+          <sp-field-label for="dist-${index}-directory" required>Directory</sp-field-label>
+          <sp-textfield
+            id="dist-${index}-directory"
+            value=${value('directory')}
+            placeholder="reports/daily"
+            @input=${setConfig('directory')}
+          ></sp-textfield>
+          <sp-help-text size="s">
+            Target folder, resolved inside the allowed root directory configured on the filesystem distributor.
+          </sp-help-text>
+        </div>
+        <div class="gcr-field">
+          <sp-field-label for="dist-${index}-filename">File name</sp-field-label>
+          <sp-textfield
+            id="dist-${index}-filename"
+            value=${value('filename')}
+            placeholder="traffic.csv"
+            @input=${setConfig('filename')}
+          ></sp-textfield>
+          <sp-help-text size="s">Optional. Defaults to <code>&lt;report&gt;-&lt;timestamp&gt;.&lt;ext&gt;</code>.</sp-help-text>
+        </div>
+      `;
+    }
+
+    return nothing;
+  }
+
+  private addDistribution(): void {
+    const distributorId = this.distributors[0]?.id ?? '';
+    const format = this.distributionFormats[0]?.format ?? '';
+    this.distributions = [...this.distributions, { distributorId, format, config: {} }];
+  }
+
+  private updateDistribution(index: number, patch: Partial<DistributionTarget>): void {
+    this.distributions = this.distributions.map((target, i) => (i === index ? { ...target, ...patch } : target));
+  }
+
+  private updateDistributionConfig(index: number, key: string, value: string): void {
+    this.distributions = this.distributions.map((target, i) =>
+      i === index ? { ...target, config: { ...target.config, [key]: value } } : target,
+    );
+  }
+
+  private removeDistribution(index: number): void {
+    this.distributions = this.distributions.filter((_, i) => i !== index);
   }
 
   private renderTryOut() {

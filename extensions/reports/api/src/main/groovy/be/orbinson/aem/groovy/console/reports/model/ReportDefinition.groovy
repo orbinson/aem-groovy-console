@@ -11,6 +11,9 @@ class ReportDefinition {
     /** Unique report name (node name, URL-safe). */
     String name
 
+    /** Full repository path of the definition node; identifies the schedule and its trust origin (/conf vs /apps). */
+    String path
+
     /** Display title. */
     String title
 
@@ -28,6 +31,12 @@ class ReportDefinition {
 
     /** Declared parameters. */
     List<ReportParameter> parameters = []
+
+    /** Optional cron schedule; null or disabled means the report only runs on demand. */
+    ReportSchedule schedule
+
+    /** Distribution targets applied to the result when the report finishes (scheduled or on demand). */
+    List<ReportDistributionTarget> distributions = []
 
     Calendar created
 

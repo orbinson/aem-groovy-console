@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static org.awaitility.Awaitility.await;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -38,17 +39,24 @@ class MigrationIndexAuditIT {
     private static final String AUTH_HEADER =
             "Basic " + Base64.encodeBase64String("admin:admin".getBytes(StandardCharsets.UTF_8));
 
-    // A migration script under the migration extension's default scripts base path.
-    private static final String SCRIPT_NAME = "it-index-audit.groovy";
+    // A migration script under the migration extension's default scripts base path. The ".always." token makes it
+    // re-run on every migration run, so the run this test triggers always executes and audits it even if a
+    // concurrent/background migration run (from another suite test still draining) executed it first.
+    private static final String SCRIPT_NAME = "it-index-audit.always.groovy";
     private static final String SCRIPT_PATH = "/conf/groovyconsole/scripts/migration/" + SCRIPT_NAME;
 
     private static CloseableHttpClient httpClient;
 
     @BeforeAll
-    static void setUp() throws IOException {
+    static void setUp() {
         httpClient = HttpClients.createDefault();
         waitForReadiness(300);
-        deployMigrationScript();
+        // The migration scripts base (/conf/groovyconsole/scripts/migration) is provisioned asynchronously, and can
+        // still be missing when the console endpoint first reports ready — the deploy then 404s. Retry until it lands.
+        await().atMost(120, TimeUnit.SECONDS)
+                .pollInterval(2, TimeUnit.SECONDS)
+                .ignoreExceptions()
+                .untilAsserted(MigrationIndexAuditIT::deployMigrationScript);
     }
 
     @AfterAll
@@ -61,8 +69,13 @@ class MigrationIndexAuditIT {
 
     @Test
     void migrationRunReportsIndexUsagePerScript() throws Exception {
-        JsonObject run = post("/bin/groovyconsole/migration",
-                param("measureIndexUsage", "true"));
+        // A migration run is rejected with 409 while another run is in progress or queued (the service serialises
+        // runs). Other migration tests in the suite may still be draining an async run, so retry until our run is
+        // accepted rather than failing on that transient conflict.
+        JsonObject run = await().atMost(120, TimeUnit.SECONDS)
+                .pollInterval(2, TimeUnit.SECONDS)
+                .ignoreExceptions()
+                .until(() -> post("/bin/groovyconsole/migration", param("measureIndexUsage", "true")), notNullValue());
         assertNotNull(run, "no response from migration run");
 
         JsonArray results = run.getAsJsonArray("results");

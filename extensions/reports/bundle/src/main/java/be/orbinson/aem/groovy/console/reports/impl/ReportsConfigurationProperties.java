@@ -17,4 +17,14 @@ public @interface ReportsConfigurationProperties {
         description = "Maximum number of result rows persisted per execution.  A run that produces more is "
             + "failed instead of storing an oversized result.  0 means unlimited.")
     int maxResultRows() default 0;
+
+    @AttributeDefinition(name = "Enable Scheduled Reports",
+        description = "When disabled, reports cannot run on a schedule: existing schedules are unregistered on "
+            + "startup, any scheduled run that still fires is skipped, and the scheduling UI is hidden.")
+    boolean schedulingEnabled() default true;
+
+    @AttributeDefinition(name = "Enable Report Distribution",
+        description = "When disabled, report results are never distributed: configured distributions are skipped "
+            + "for both scheduled and manual runs, and the distribution UI is hidden.")
+    boolean distributionEnabled() default true;
 }

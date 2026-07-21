@@ -9,4 +9,10 @@ interface ReportsConfigurationService {
 
     /** Maximum result rows persisted per execution; 0 means unlimited. */
     int getMaxResultRows()
+
+    /** Whether reports may run on a schedule. */
+    boolean isSchedulingEnabled()
+
+    /** Whether report results may be distributed (scheduled or manual). */
+    boolean isDistributionEnabled()
 }
