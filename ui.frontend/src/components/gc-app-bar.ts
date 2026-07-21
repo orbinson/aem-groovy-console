@@ -65,7 +65,7 @@ export class GcAppBar extends LitElement {
         </span>
 
         <div class="gc-app-bar-actions">
-          <div class="gc-run-group">
+          <div class="gc-run-group ${this.runActions.length ? 'gc-run-group--split' : ''}">
             <sp-button variant="accent" size="m" ?disabled=${running} @click=${() => this.emit('gc-run')}>
               ${running
                 ? html`<sp-progress-circle indeterminate size="s" slot="icon"></sp-progress-circle> Running…`

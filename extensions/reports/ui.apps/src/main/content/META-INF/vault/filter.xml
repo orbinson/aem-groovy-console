@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <workspaceFilter version="1.0">
     <!-- AEM Tools > General entry so business users can reach the reports UI (overlay; AEM-only).
-         Fine-grained includes so other entries under the shared nav nodes are left untouched. -->
-    <filter root="/apps/cq/core/content/nav">
+         merge mode: add this entry without replacing the shared nav folders, so it never wipes the core
+         console's or the migration extension's sibling entries (and they never wipe this one). -->
+    <filter root="/apps/cq/core/content/nav" mode="merge">
         <include pattern="/apps/cq/core/content/nav"/>
         <include pattern="/apps/cq/core/content/nav/tools"/>
         <include pattern="/apps/cq/core/content/nav/tools/general"/>

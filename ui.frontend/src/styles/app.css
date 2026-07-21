@@ -129,8 +129,13 @@ body {
   background: rgba(0, 0, 0, 0.35);
 }
 
-/* direct child only: the chevron sits nested inside .gc-overflow and must not pick up the left rounding */
+/* a lone Run button is a full pill; only when the split chevron is present is its right edge squared so the two
+   segments join (direct child only — the chevron sits nested inside .gc-overflow) */
 .gc-run-group > sp-button {
+  --mod-button-border-radius: 16px;
+}
+
+.gc-run-group--split > sp-button {
   --mod-button-border-radius: 16px 0 0 16px;
 }
 
