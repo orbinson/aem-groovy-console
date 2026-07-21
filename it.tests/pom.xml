@@ -1,15 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project
-        xmlns="http://maven.apache.org/POM/4.0.0"
-        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
         <groupId>be.orbinson.aem</groupId>
         <artifactId>aem-groovy-console</artifactId>
-        <version>19.1.0</version>
+        <version>19.2.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>aem-groovy-console-it-tests</artifactId>
@@ -17,9 +14,127 @@
 
     <properties>
         <maven.deploy.skip>true</maven.deploy.skip>
+        <http.port>8080</http.port>
+        <jmx.port>7199</jmx.port>
     </properties>
 
     <build>
+        <pluginManagement>
+            <plugins>
+                <!-- Shared Sling feature build for the `it` and `run` profiles. -->
+                <plugin>
+                    <groupId>org.apache.sling</groupId>
+                    <artifactId>sling-feature-converter-maven-plugin</artifactId>
+                    <version>1.0.14</version>
+                    <configuration>
+                        <contentPackages>
+                            <contentPackage>
+                                <groupId>${project.groupId}</groupId>
+                                <artifactId>aem-groovy-console-all</artifactId>
+                            </contentPackage>
+                            <contentPackage>
+                                <groupId>${project.groupId}</groupId>
+                                <artifactId>aem-groovy-console-reports-all</artifactId>
+                            </contentPackage>
+                            <contentPackage>
+                                <groupId>${project.groupId}</groupId>
+                                <artifactId>aem-groovy-console-migration-all</artifactId>
+                            </contentPackage>
+                        </contentPackages>
+                        <fmOutput>${project.build.directory}/cp-conversion/fm.out</fmOutput>
+                        <bundleStartOrder>20</bundleStartOrder>
+                        <installConvertedCP>true</installConvertedCP>
+                        <mergeConfigurations>true</mergeConfigurations>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <id>convert-cp-to-fm</id>
+                            <phase>initialize</phase>
+                            <goals>
+                                <goal>convert-cp</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <!-- Aggregate Sling Starter + the converted features into one launchable feature.
+                         osgiBsnCollisionDetection + *:*:HIGHEST de-dupes overlapping bundles (Starter Groovy
+                         4.0.10 vs our 5.0.6).-->
+                    <groupId>org.apache.sling</groupId>
+                    <artifactId>slingfeature-maven-plugin</artifactId>
+                    <version>1.9.6</version>
+                    <extensions>true</extensions>
+                    <configuration>
+                        <replacePropertyVariables>project.version</replacePropertyVariables>
+                        <aggregates>
+                            <aggregate>
+                                <classifier>it</classifier>
+                                <attach>false</attach>
+                                <includeArtifact>
+                                    <groupId>org.apache.sling</groupId>
+                                    <artifactId>org.apache.sling.starter</artifactId>
+                                    <classifier>oak_tar</classifier>
+                                    <type>slingosgifeature</type>
+                                    <version>14</version>
+                                </includeArtifact>
+                                <filesInclude>*.json</filesInclude>
+                                <additionalFeatureFiles>
+                                    <additionalFeatureFile>${project.build.directory}/cp-conversion/fm.out/aem-groovy-console-all.json</additionalFeatureFile>
+                                    <additionalFeatureFile>${project.build.directory}/cp-conversion/fm.out/aem-groovy-console-reports-all.json</additionalFeatureFile>
+                                    <additionalFeatureFile>${project.build.directory}/cp-conversion/fm.out/aem-groovy-console-migration-all.json</additionalFeatureFile>
+                                </additionalFeatureFiles>
+                                <artifactsOverrides>
+                                    <artifactsOverride>*:*:HIGHEST</artifactsOverride>
+                                </artifactsOverrides>
+                                <osgiBsnCollisionDetection>true</osgiBsnCollisionDetection>
+                            </aggregate>
+                        </aggregates>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <id>aggregate-it-feature</id>
+                            <phase>generate-resources</phase>
+                            <goals>
+                                <goal>aggregate-features</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.sling</groupId>
+                    <artifactId>feature-launcher-maven-plugin</artifactId>
+                    <version>1.0.4</version>
+                    <configuration>
+                        <featureLauncherVersion>1.3.6</featureLauncherVersion>
+                        <launches>
+                            <launch>
+                                <id>model</id>
+                                <skip>${skipTests}</skip>
+                                <!-- Single aggregated feature produced by slingfeature-maven-plugin above. -->
+                                <featureFile>${project.build.directory}/slingfeature-tmp/feature-it.json</featureFile>
+                                <launcherArguments>
+                                    <frameworkProperties>
+                                        <org.osgi.service.http.port>${http.port}</org.osgi.service.http.port>
+                                    </frameworkProperties>
+                                    <!-- Expose the launched instance's platform MBeanServer over local, unauthenticated
+                                         RMI so IT tests can exercise MBeans (e.g. the migration JMX bean) via a real
+                                         JMX connection instead of only through HTTP/unit-test mocks. -->
+                                    <vmOptions>
+                                        <vmOption>-Dcom.sun.management.jmxremote</vmOption>
+                                        <vmOption>-Dcom.sun.management.jmxremote.port=${jmx.port}</vmOption>
+                                        <vmOption>-Dcom.sun.management.jmxremote.rmi.port=${jmx.port}</vmOption>
+                                        <vmOption>-Dcom.sun.management.jmxremote.authenticate=false</vmOption>
+                                        <vmOption>-Dcom.sun.management.jmxremote.ssl=false</vmOption>
+                                        <vmOption>-Djava.rmi.server.hostname=localhost</vmOption>
+                                    </vmOptions>
+                                </launcherArguments>
+                                <startTimeoutSeconds>180</startTimeoutSeconds>
+                            </launch>
+                        </launches>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
         <plugins>
             <plugin>
                 <groupId>biz.aQute.bnd</groupId>
@@ -41,6 +156,7 @@
     </build>
 
     <profiles>
+        <!-- Automated integration tests: random port, launch, run failsafe, tear down. -->
         <profile>
             <id>it</id>
             <build>
@@ -59,6 +175,7 @@
                                 <configuration>
                                     <portNames>
                                         <portName>http.port</portName>
+                                        <portName>jmx.port</portName>
                                     </portNames>
                                 </configuration>
                             </execution>
@@ -66,70 +183,19 @@
                     </plugin>
                     <plugin>
                         <groupId>org.apache.sling</groupId>
+                        <artifactId>sling-feature-converter-maven-plugin</artifactId>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.sling</groupId>
                         <artifactId>slingfeature-maven-plugin</artifactId>
-                        <version>1.9.4</version>
                         <extensions>true</extensions>
-                        <executions>
-                            <execution>
-                                <id>aggregate-features</id>
-                                <goals>
-                                    <goal>aggregate-features</goal>
-                                </goals>
-                                <configuration>
-                                    <aggregates>
-                                        <aggregate>
-                                            <includeArtifact>
-                                                <groupId>org.apache.sling</groupId>
-                                                <artifactId>org.apache.sling.starter</artifactId>
-                                                <classifier>oak_tar</classifier>
-                                                <type>slingosgifeature</type>
-                                                <version>14</version>
-                                            </includeArtifact>
-                                            <filesInclude>*.json</filesInclude>
-                                        </aggregate>
-                                    </aggregates>
-                                    <replacePropertyVariables>project.version</replacePropertyVariables>
-                                </configuration>
-                            </execution>
-                            <execution>
-                                <goals>
-                                    <goal>attach-features</goal>
-                                </goals>
-                                <id>attach-features</id>
-                            </execution>
-                        </executions>
                     </plugin>
                     <plugin>
                         <groupId>org.apache.sling</groupId>
                         <artifactId>feature-launcher-maven-plugin</artifactId>
-                        <version>1.0.4</version>
-                        <configuration>
-                            <launches>
-                                <launch>
-                                    <id>model</id>
-                                    <skip>${skipTests}</skip>
-                                    <feature>
-                                        <groupId>${project.groupId}</groupId>
-                                        <artifactId>${project.artifactId}</artifactId>
-                                        <version>${project.version}</version>
-                                        <type>slingosgifeature</type>
-                                    </feature>
-
-                                    <launcherArguments>
-                                        <frameworkProperties>
-                                            <org.osgi.service.http.port>${http.port}</org.osgi.service.http.port>
-                                        </frameworkProperties>
-                                        <!-- Uncomment to enable debugging of IT tests -->
-                                        <!--<vmOptions>-->
-                                        <!--    <value>-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5000</value>-->
-                                        <!--</vmOptions>-->
-                                    </launcherArguments>
-                                    <startTimeoutSeconds>180</startTimeoutSeconds>
-                                </launch>
-                            </launches>
-                        </configuration>
                         <executions>
                             <execution>
+                                <id>start-stop-console</id>
                                 <goals>
                                     <goal>start</goal>
                                     <goal>stop</goal>
@@ -144,6 +210,7 @@
                         <configuration>
                             <systemPropertyVariables>
                                 <HTTP_PORT>${http.port}</HTTP_PORT>
+                                <JMX_PORT>${jmx.port}</JMX_PORT>
                             </systemPropertyVariables>
                         </configuration>
                         <executions>
@@ -158,9 +225,94 @@
                 </plugins>
             </build>
         </profile>
+
+        <!-- Manual instance on a fixed port (foreground, tails the log; Ctrl+C to stop):
+             mvn clean install && mvn verify -Prun -pl it.tests   (override -Dhttp.port). -->
+        <profile>
+            <id>run</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.sling</groupId>
+                        <artifactId>sling-feature-converter-maven-plugin</artifactId>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.sling</groupId>
+                        <artifactId>slingfeature-maven-plugin</artifactId>
+                        <extensions>true</extensions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.sling</groupId>
+                        <artifactId>feature-launcher-maven-plugin</artifactId>
+                        <executions>
+                            <!-- start only; the foreground tail below keeps the build (and instance) alive -->
+                            <execution>
+                                <id>start-console</id>
+                                <phase>pre-integration-test</phase>
+                                <goals>
+                                    <goal>start</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <version>3.1.0</version>
+                        <executions>
+                            <!-- block in the foreground streaming the log; Ctrl+C stops Maven and the instance -->
+                            <execution>
+                                <id>tail-console-log</id>
+                                <phase>integration-test</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>tail</executable>
+                                    <arguments>
+                                        <argument>-F</argument>
+                                        <argument>${project.build.directory}/launchers/model/logs/error.log</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
     </profiles>
 
     <dependencies>
+        <!-- Resolved by sling-feature-converter-maven-plugin (convert-cp) at build time; the dependencies
+             also enforce reactor ordering so the all-packages are built before this module. -->
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>aem-groovy-console-all</artifactId>
+            <version>${project.version}</version>
+            <type>zip</type>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>aem-groovy-console-reports-all</artifactId>
+            <version>${project.version}</version>
+            <type>zip</type>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>aem-groovy-console-migration-all</artifactId>
+            <version>${project.version}</version>
+            <type>zip</type>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>aem-groovy-console-query-audit</artifactId>
+            <version>${project.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
         <!-- Testing -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -177,6 +329,12 @@
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
+            <version>4.5.14</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpmime</artifactId>
             <version>4.5.14</version>
             <scope>test</scope>
         </dependency>

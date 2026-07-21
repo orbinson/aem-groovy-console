@@ -7,6 +7,76 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Modern UI** — a new IDE-style console built with the Monaco editor and Spectrum Web Components (`ui.frontend`
+  module), with no AEM Granite/Coral dependency, so it runs on AEM and plain Sling. Resizable editor/output split,
+  tabbed output (Log/Result/Table/Trace), slide-out drawers for History, Scheduled Jobs and Help, and clickable
+  stack traces that jump to the offending line. It is now the default at `/groovyconsole` (the classic UI stays
+  available at `/apps/groovyconsole.classic.html`).
+- **Code assistance** in the modern editor — class, member and method completion (including Groovy GDK methods and
+  OSGi service names), auto-import, hover documentation and live compile-error diagnostics, via new
+  `/bin/groovyconsole/assist/*` endpoints.
+- **Streaming script output** — run scripts asynchronously and stream their output while they execute
+  (`POST /bin/groovyconsole/post.json?async=true` then poll `/bin/groovyconsole/stream.json`). Backwards compatible:
+  existing clients that don't opt in behave exactly as before.
+- **Extension mechanism** — optional features ship as their own content packages, kept out of the core `all` package.
+  The console has no dependency on them and integrates only through public SPIs, including the new
+  `ConsoleUiExtensionProvider`, which lets an extension contribute a panel to the modern UI.
+- **Reports extension** — business-facing reports backed by Groovy scripts: named report definitions with typed
+  parameters, asynchronous execution with persisted, paginated results, CSV/XLSX export, and a dedicated business UI.
+  Access is governed by JCR permissions on `/conf/groovyconsole/reports`.
+- **Migration extension** (`aem-groovy-console-migration-all`) — run-once deployment migrations replacing the
+  deprecated AEM Easy Content Upgrade (AECU) project. Groovy scripts deployed below
+  `/conf/groovyconsole/scripts/migration` execute with checksum-based run-once semantics in deterministic path
+  order with fail-fast behavior (failed/skipped scripts stay pending and are retried on the next trigger).
+  Supports `.always.groovy` re-run scripts and `author`/`publish` run-mode file name tokens. Triggered via
+  `POST /bin/groovyconsole/migration` (sync, `async=true` with `runId` polling, or `dryRun=true`), a JMX MBean
+  (`be.orbinson.aem.groovyconsole:type=Migration`, mirroring `AecuServiceMBean`), an opt-in debounced resource
+  listener on script deployments, and a history UI at `/apps/groovyconsole/migrations.html`
+  (also linked from the AEM Tools console). A run can be scoped to a single script or folder via `path=...`
+  (instead of the configured scripts base path), and `data=...` (JSON or plain string, mirroring
+  `AecuService.execute(path, data)`) is made available to every script in the run as the `data` binding
+  variable. Run history and the per-script registry are persisted below `/var/groovyconsole/migration`.
+  Two Felix Health Checks (tag `migration`) report the last run's outcome and the extension's own service
+  user/repository setup, mirroring AECU's `LastRunHealthCheck`/`SelfCheckHealthCheck`.
+  Installed as its own content package on top of the console; see `extensions/migration/README.md`.
+  `MigrationIT` covers the API on Sling.
+- **Script unit-testing support** — a new `aem-groovy-console-test-support` module: a JUnit 5 / AEM Mocks harness to
+  unit-test Groovy Console scripts in a few lines (add a context plugin, run a script, assert on the result). A
+  JCR-backed mock is only needed for scripts that actually touch the repository.
+- **Query-audit extension** — an optional debugging tool that reports, for every JCR query a Groovy script runs,
+  whether the live Oak instance has an index that covers it, so you can catch un-indexed queries in migration/report
+  scripts before shipping. Callable via `POST /bin/groovyconsole/query-audit` or, in the modern console, via
+  **Run with query audit** in the Run button's options menu — the per-query verdicts (with the Oak plan) appear in a
+  **Query audit** tab in the output dock. The `AuditQueryIndexes` sample script demonstrates it with an indexed and an
+  un-indexed query. When installed alongside the migration extension, a migration run started with
+  `measureIndexUsage=true` reports per-script index usage (handy for validating migrations in CI). When installed
+  alongside the reports extension, the report editor's *Try it out* panel gains an **Audit queries** button that
+  flags any of the report's JCR queries that need an index (a report is, in practice, an often-run query). Both
+  consumers reference query-audit only through a local bridge, so they load and work with or without it installed.
+  Ships as its own bundle, outside the core `all` package.
+- The modern console's UI extension contract now supports run actions (`GroovyConsole.registerRunAction`, shown in a
+  split-button menu next to Run) and output-dock result tabs (`GroovyConsole.registerRunResultTab`), in addition to
+  activity-rail panels.
+
+### Changed
+
+- **BREAKING:** Upgraded Groovy from 4.0.31 to 5.0.6.
+- **BREAKING:** Dropped Java 8 support — the minimum is now Java 11 (required by Groovy 5.x).
+- Bumped exported API package versions to 20.0.0.
+- The classic UI now also works on plain Sling — its Open/Save dialogs no longer depend on AEM-only client libraries.
+
+### Security
+
+- Hardened access control across the audit, script save/download, scheduled-jobs and services endpoints: the console
+  permission is now enforced consistently, and users can only read or delete their own audit records. Previously an
+  authenticated user could access another user's records.
+
+### Fixed
+
+- `ScheduledJobsServlet` threw a `NullPointerException` when a scheduled job had no next execution date.
+
 ## [19.1.0] - 2026-05-04
 
 ### Changed

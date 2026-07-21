@@ -37,10 +37,33 @@ class GroovyConsoleServiceIT {
     static void setUp() {
         httpClient = HttpClients.createDefault();
 
-        // Wait for the Sling Starter and the Groovy Console content package to be fully installed
-        await().atMost(120, TimeUnit.SECONDS)
+        // All bundles/content are pre-converted into the launch feature (cp-converter), so there is no
+        // post-startup content-package install cascade to wait out here -- a single successful check
+        // against the actual servlet is sufficient (see GroovyConsoleReportsIT).
+        await().atMost(180, TimeUnit.SECONDS)
                 .pollInterval(5, TimeUnit.SECONDS)
-                .untilAsserted(() -> assertTrue(isHealthy(), "System not healthy"));
+                .untilAsserted(() -> assertTrue(isGroovyConsoleReady(), "Groovy Console not ready"));
+    }
+
+    private static boolean isGroovyConsoleReady() {
+        try (CloseableHttpClient client = HttpClients.createDefault()) {
+            HttpPost post = new HttpPost(BASE_URL + "/bin/groovyconsole/post");
+            List<BasicNameValuePair> params = new ArrayList<>();
+            params.add(new BasicNameValuePair("script", "return 'ready'"));
+            post.setEntity(new UrlEncodedFormEntity(params, StandardCharsets.UTF_8));
+            post.addHeader("Authorization", AUTH_HEADER);
+            post.addHeader("Connection", "close");
+            try (CloseableHttpResponse response = client.execute(post)) {
+                if (response.getStatusLine().getStatusCode() != 200) {
+                    return false;
+                }
+                String body = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
+                JsonObject json = JsonParser.parseString(body).getAsJsonObject();
+                return "ready".equals(json.get("result").getAsString());
+            }
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     @AfterAll
@@ -221,20 +244,6 @@ class GroovyConsoleServiceIT {
         assertEquals("", response.get("exceptionStackTrace").getAsString(),
                 "groovy-xml fragment extensions not registered");
         assertEquals("1", response.get("result").getAsString());
-    }
-
-    private static boolean isHealthy() {
-        try {
-            HttpGet healthCheck = new HttpGet(BASE_URL + "/system/health.json?tags=systemalive,groovyconsole");
-            healthCheck.addHeader("Authorization", AUTH_HEADER);
-            try (CloseableHttpResponse response = httpClient.execute(healthCheck)) {
-                String body = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
-                JsonObject jsonResponse = JsonParser.parseString(body).getAsJsonObject();
-                return "OK".equals(jsonResponse.get("overallResult").getAsString());
-            }
-        } catch (Exception e) {
-            return false;
-        }
     }
 
     private static JsonObject doGet(String path) throws IOException {

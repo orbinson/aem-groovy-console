@@ -8,7 +8,7 @@
     <groupId>be.orbinson.aem</groupId>
     <artifactId>aem-groovy-console</artifactId>
     <packaging>pom</packaging>
-    <version>19.1.0</version>
+    <version>19.2.0-SNAPSHOT</version>
 
     <name>AEM Groovy Console</name>
     <description>
@@ -21,11 +21,14 @@
         <module>all</module>
         <module>api</module>
         <module>bundle</module>
+        <module>test-support</module>
         <module>groovy</module>
+        <module>ui.frontend</module>
         <module>ui.apps</module>
         <module>ui.apps.aem</module>
         <module>ui.config</module>
         <module>ui.content</module>
+        <module>extensions</module>
         <module>it.tests</module>
     </modules>
 
@@ -93,8 +96,8 @@
         <!-- Versions -->
         <bnd.version>6.4.0</bnd.version>
         <aem.version>6.5.10</aem.version>
-        <groovy.version>4.0.31</groovy.version>
-        <asm.version>9.7</asm.version>
+        <groovy.version>4.0.32</groovy.version>
+        <asm.version>9.10.1</asm.version>
         <njord.version>0.9.4</njord.version>
 
         <!-- SonarCloud -->
@@ -235,7 +238,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
-                    <version>2.22.1</version>
+                    <version>3.5.2</version>
                     <configuration>
                         <trimStackTrace>false</trimStackTrace>
                         <useSystemClassLoader>false</useSystemClassLoader>
@@ -545,6 +548,12 @@
                 <scope>provided</scope>
             </dependency>
             <dependency>
+                <groupId>org.apache.felix</groupId>
+                <artifactId>org.apache.felix.healthcheck.api</artifactId>
+                <version>2.0.4</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-api</artifactId>
                 <version>1.7.25</version>
@@ -617,32 +626,44 @@
             <dependency>
                 <groupId>org.junit</groupId>
                 <artifactId>junit-bom</artifactId>
-                <version>5.8.2</version>
+                <version>5.11.4</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
             <dependency>
                 <groupId>org.mockito</groupId>
-                <artifactId>mockito-inline</artifactId>
-                <version>4.1.0</version>
+                <artifactId>mockito-core</artifactId>
+                <version>5.21.0</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.mockito</groupId>
                 <artifactId>mockito-junit-jupiter</artifactId>
-                <version>4.1.0</version>
+                <version>5.21.0</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>io.wcm</groupId>
                 <artifactId>io.wcm.testing.aem-mock.junit5</artifactId>
-                <version>5.1.2</version>
+                <version>5.7.4</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.apache.sling</groupId>
                 <artifactId>org.apache.sling.testing.sling-mock-oak</artifactId>
-                <version>3.1.4-1.40.0</version>
+                <version>4.1.0-1.86.0</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.sling</groupId>
+                <artifactId>org.apache.sling.testing.sling-mock.junit5</artifactId>
+                <version>3.6.2</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.sling</groupId>
+                <artifactId>org.apache.sling.event.api</artifactId>
+                <version>1.0.0</version>
                 <scope>test</scope>
             </dependency>
 

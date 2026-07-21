@@ -9,3 +9,14 @@
 target/
 dependency-reduced-pom.xml
 .mvn
+
+# Frontend build
+node_modules/
+ui.frontend/dist/
+ui.apps/src/main/content/jcr_root/apps/groovyconsole/spa/
+extensions/reports/ui.apps/src/main/content/jcr_root/apps/groovyconsole-reports/spa/
+extensions/migration/ui.apps/src/main/content/jcr_root/apps/groovyconsole-migration/spa/
+
+# Playwright
+ui.tests/playwright-report/
+ui.tests/test-results/

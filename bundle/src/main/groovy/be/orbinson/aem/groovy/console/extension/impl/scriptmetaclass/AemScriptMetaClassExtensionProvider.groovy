@@ -8,25 +8,31 @@ import com.day.cq.replication.Replicator
 import com.day.cq.search.PredicateGroup
 import com.day.cq.search.QueryBuilder
 import com.day.cq.wcm.api.PageManager
+import com.day.cq.wcm.api.PageManagerFactory
 import org.apache.sling.distribution.DistributionRequest
-import org.apache.sling.distribution.Distributor
 import org.apache.sling.distribution.DistributionRequestType
+import org.apache.sling.distribution.Distributor
 import org.apache.sling.distribution.SimpleDistributionRequest
 import org.osgi.service.component.annotations.Component
 import org.osgi.service.component.annotations.Reference
+import org.osgi.service.component.annotations.ReferenceCardinality
 
 import javax.jcr.Session
 
 @Component(service = ScriptMetaClassExtensionProvider, immediate = true)
 class AemScriptMetaClassExtensionProvider implements ScriptMetaClassExtensionProvider {
 
+    // Reference to make sure that this class does not become active when running in Sling instead of AEM
     @Reference
+    private PageManagerFactory pageManagerFactory
+
+    @Reference(cardinality = ReferenceCardinality.OPTIONAL)
     private Replicator replicator
 
-    @Reference
+    @Reference(cardinality = ReferenceCardinality.OPTIONAL)
     private QueryBuilder queryBuilder
 
-    @Reference
+    @Reference(cardinality = ReferenceCardinality.OPTIONAL)
     private Distributor distributor;
 
     @Override
@@ -42,29 +48,29 @@ class AemScriptMetaClassExtensionProvider implements ScriptMetaClassExtensionPro
             }
 
             delegate.activate = { String path, ReplicationOptions options = null ->
-                replicator.replicate(session, ReplicationActionType.ACTIVATE, path, options)
+                requireReplicator().replicate(session, ReplicationActionType.ACTIVATE, path, options)
             }
 
             delegate.deactivate = { String path, ReplicationOptions options = null ->
-                replicator.replicate(session, ReplicationActionType.DEACTIVATE, path, options)
+                requireReplicator().replicate(session, ReplicationActionType.DEACTIVATE, path, options)
             }
 
             delegate.delete { String path, ReplicationOptions options = null ->
-                replicator.replicate(session, ReplicationActionType.DELETE, path, options)
+                requireReplicator().replicate(session, ReplicationActionType.DELETE, path, options)
             }
 
             delegate.distribute { String path, String agentId = "publish", boolean isDeep = false ->
                 DistributionRequest distributionRequest = new SimpleDistributionRequest(DistributionRequestType.ADD, isDeep, path);
-                distributor.distribute(agentId, resourceResolver, distributionRequest);
+                requireDistributor().distribute(agentId, resourceResolver, distributionRequest);
             }
 
             delegate.invalidate { String path, String agentId = "publish", boolean isDeep = false ->
                 DistributionRequest distributionRequest = new SimpleDistributionRequest(DistributionRequestType.INVALIDATE, isDeep, path);
-                distributor.distribute(agentId, resourceResolver, distributionRequest);
+                requireDistributor().distribute(agentId, resourceResolver, distributionRequest);
             }
 
             delegate.createQuery { Map predicates ->
-                queryBuilder.createQuery(PredicateGroup.create(predicates), session)
+                requireQueryBuilder().createQuery(PredicateGroup.create(predicates), session)
             }
 
         }
@@ -72,4 +78,26 @@ class AemScriptMetaClassExtensionProvider implements ScriptMetaClassExtensionPro
         closure
     }
 
+    private Replicator requireReplicator() {
+        if (replicator == null) {
+            throw new IllegalStateException("No Replicator service available: activate/deactivate/delete require AEM's replication API.")
+        }
+        replicator
+    }
+
+    private QueryBuilder requireQueryBuilder() {
+        if (queryBuilder == null) {
+            throw new IllegalStateException("No QueryBuilder service available: createQuery requires AEM's query API.")
+        }
+        queryBuilder
+    }
+
+    private Distributor requireDistributor() {
+        if (distributor == null) {
+            throw new IllegalStateException("No Distributor service available: distribute/invalidate require Sling Content Distribution.")
+        }
+        distributor
+    }
+
 }
+

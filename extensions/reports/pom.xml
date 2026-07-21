@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>be.orbinson.aem</groupId>
+        <artifactId>aem-groovy-console-extensions</artifactId>
+        <version>19.2.0-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>aem-groovy-console-reports</artifactId>
+    <packaging>pom</packaging>
+    <name>AEM Groovy Console - Reports</name>
+    <description>
+        Reporting extension for the AEM Groovy Console. Provides business-facing reports backed by Groovy
+        scripts with per-report access control, persisted paginated results and pluggable exports (CSV, XLSX).
+        Deployed as a separate content package on top of the Groovy Console.
+    </description>
+
+    <modules>
+        <module>api</module>
+        <module>bundle</module>
+        <module>exporter-xlsx</module>
+        <module>ui.config</module>
+        <module>ui.frontend</module>
+        <module>ui.apps</module>
+        <module>ui.content</module>
+        <module>all</module>
+    </modules>
+
+</project>

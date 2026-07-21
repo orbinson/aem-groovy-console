@@ -25,7 +25,7 @@ class ScriptDownloadServlet extends SlingSafeMethodsServlet {
         def userId = request.getParameter(GroovyConsoleConstants.USER_ID)
         def script = request.getParameter(GroovyConsoleConstants.SCRIPT)
 
-        def auditRecord = auditService.getAuditRecord(userId, script)
+        def auditRecord = auditService.getAuditRecord(request, userId, script)
 
         if (auditRecord) {
             response.setHeader("Content-Disposition", "attachment; filename=${auditRecord.outputFileName}")

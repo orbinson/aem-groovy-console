@@ -3,7 +3,9 @@ package be.orbinson.aem.groovy.console.servlets
 import be.orbinson.aem.groovy.console.GroovyConsoleService
 import be.orbinson.aem.groovy.console.api.context.ScriptContext
 import be.orbinson.aem.groovy.console.api.context.impl.RequestScriptContext
+import be.orbinson.aem.groovy.console.streaming.impl.AsyncScriptContext
 import be.orbinson.aem.groovy.console.configuration.ConfigurationService
+import be.orbinson.aem.groovy.console.streaming.ExecutionRegistry
 import groovy.util.logging.Slf4j
 import org.apache.jackrabbit.JcrConstants
 import org.apache.sling.api.SlingHttpServletRequest
@@ -25,17 +27,45 @@ import static javax.servlet.http.HttpServletResponse.SC_FORBIDDEN
 @Slf4j("LOG")
 class ScriptPostServlet extends AbstractJsonResponseServlet {
 
+    /** Opt-in parameter for asynchronous (streaming) execution; default remains synchronous. */
+    private static final String PARAMETER_ASYNC = "async"
+
     @Reference
     private ConfigurationService configurationService
 
     @Reference
     private GroovyConsoleService consoleService
 
+    @Reference
+    private ExecutionRegistry executionRegistry
+
     @Override
     protected void doPost(SlingHttpServletRequest request, SlingHttpServletResponse response) throws
             ServletException, IOException {
         if (configurationService.hasPermission(request)) {
             def scriptPaths = request.getParameterValues(SCRIPT_PATHS)
+
+            if (!scriptPaths && Boolean.parseBoolean(request.getParameter(PARAMETER_ASYNC))) {
+                // streaming execution: respond immediately with an execution id for polling
+                def script = Objects.requireNonNull(getScript(request, request.getParameter(SCRIPT_PATH)),
+                        "Script cannot be empty.")
+                def resourceResolver = request.resourceResolver.clone(null)
+                def outputStream = new ByteArrayOutputStream()
+
+                def scriptContext = new AsyncScriptContext(
+                        resourceResolver: resourceResolver,
+                        outputStream: outputStream,
+                        printStream: new PrintStream(outputStream, true, StandardCharsets.UTF_8.name()),
+                        script: script,
+                        data: request.getParameter(DATA),
+                        userId: resourceResolver.userID
+                )
+
+                def executionId = executionRegistry.start(scriptContext)
+
+                writeJsonResponse(response, [executionId: executionId])
+                return
+            }
 
             if (scriptPaths) {
                 LOG.debug("running scripts for paths : {}", scriptPaths)

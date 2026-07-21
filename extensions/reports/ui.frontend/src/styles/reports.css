@@ -1,0 +1,916 @@
+@import '@console/styles/tokens.css';
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+}
+
+.gcr-root-theme {
+  display: block;
+  min-height: 100vh;
+  background-color: var(--spectrum-gray-100);
+  color: var(--spectrum-gray-800);
+  font-family: var(--spectrum-sans-font-family-stack);
+}
+
+.gcr-frame {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* ---- app bar ---- */
+
+.gcr-app-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 24px;
+  border-bottom: 1px solid var(--spectrum-gray-300);
+  background: var(--spectrum-gray-50);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.gcr-brand {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--spectrum-gray-800);
+  text-decoration: none;
+}
+
+.gcr-brand-context,
+.gcr-brand-sep {
+  font-weight: 400;
+  font-size: 14px;
+  color: var(--spectrum-gray-600);
+}
+
+.gcr-app-bar-actions {
+  margin-inline-start: auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* ---- page layout ---- */
+
+.gcr-main {
+  flex: 1;
+}
+
+.gcr-page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.gcr-breadcrumbs {
+  font-size: 13px;
+  color: var(--spectrum-gray-600);
+  margin-bottom: 8px;
+}
+
+.gcr-breadcrumbs a {
+  color: var(--spectrum-blue-900);
+  text-decoration: none;
+}
+
+.gcr-breadcrumbs a:hover {
+  text-decoration: underline;
+}
+
+.gcr-page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.gcr-page-header h1 {
+  margin: 0;
+  font-size: 24px;
+}
+
+.gcr-page-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.gcr-description {
+  margin: 4px 0 0;
+  color: var(--spectrum-gray-600);
+  max-width: 720px;
+}
+
+.gcr-loading {
+  display: flex;
+  justify-content: center;
+  padding: 64px 0;
+}
+
+.gcr-empty {
+  padding: 32px;
+  text-align: center;
+  color: var(--spectrum-gray-600);
+}
+
+/* screen-reader-only: keep content in the a11y tree but visually hidden (live regions, labels) */
+.gcr-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ---- report cards ---- */
+
+.gcr-category {
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--spectrum-gray-600);
+  margin: 24px 0 12px;
+}
+
+.gcr-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.gcr-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  background: var(--spectrum-gray-50);
+  border: 1px solid var(--spectrum-gray-300);
+  border-radius: 8px;
+  color: inherit;
+  text-decoration: none;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.gcr-card:hover {
+  border-color: var(--spectrum-blue-800);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.gcr-card:focus-visible,
+.gcr-list-row:focus-visible {
+  outline: 2px solid var(--spectrum-blue-800, #1473e6);
+  outline-offset: -2px;
+}
+
+.gcr-card-title {
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.gcr-card-description {
+  font-size: 13px;
+  color: var(--spectrum-gray-600);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.gcr-card-footer {
+  margin-top: auto;
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* ---- view toggle ---- */
+
+.gcr-view-toggle {
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
+.gcr-view-toggle sp-action-button:first-child {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.gcr-view-toggle sp-action-button:last-child {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  margin-left: -1px;
+}
+
+/* ---- report list (compact view) ---- */
+
+.gcr-list {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--spectrum-gray-300);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.gcr-list-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 16px;
+  background: var(--spectrum-gray-50);
+  border-bottom: 1px solid var(--spectrum-gray-200);
+  color: inherit;
+  text-decoration: none;
+}
+
+.gcr-list-row:last-child {
+  border-bottom: none;
+}
+
+.gcr-list-row:hover {
+  background: var(--spectrum-gray-100);
+}
+
+.gcr-list-title {
+  font-weight: 600;
+  flex: 0 0 30%;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gcr-list-description {
+  flex: 1;
+  min-width: 0;
+  color: var(--spectrum-gray-600);
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gcr-list-actions {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* ---- path browser modal ---- */
+
+.gcr-browser-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.gcr-browser {
+  display: flex;
+  flex-direction: column;
+  width: min(560px, 92vw);
+  max-height: 80vh;
+  background: var(--spectrum-gray-50);
+  border: 1px solid var(--spectrum-gray-300);
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.24);
+  overflow: hidden;
+}
+
+.gcr-browser-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--spectrum-gray-200);
+}
+
+.gcr-browser-header h2 {
+  margin: 0;
+  font-size: 15px;
+}
+
+.gcr-browser-tree {
+  flex: 1;
+  overflow: auto;
+  padding: 8px 0;
+  min-height: 200px;
+}
+
+.gcr-browser-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px 5px 8px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.gcr-browser-row:hover {
+  background: var(--spectrum-gray-100);
+}
+
+.gcr-browser-row.is-selected {
+  background: var(--spectrum-blue-100, #e0f2ff);
+}
+
+.gcr-browser-row:focus-visible {
+  outline: 2px solid var(--spectrum-blue-800, #1473e6);
+  outline-offset: -2px;
+}
+
+.gcr-browser-truncated {
+  padding-top: 6px;
+  padding-bottom: 6px;
+  color: var(--spectrum-gray-500);
+  font-size: 12px;
+  font-style: italic;
+}
+
+.gcr-browser-row:not(.is-selectable) {
+  cursor: default;
+}
+
+.gcr-browser-twisty {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  width: 14px;
+  flex-shrink: 0;
+  color: var(--spectrum-gray-600);
+}
+
+.gcr-browser-twisty sp-icon-chevron-right {
+  transition: transform 130ms ease-out;
+}
+
+.gcr-browser-twisty.is-expanded sp-icon-chevron-right {
+  transform: rotate(90deg);
+}
+
+.gcr-browser-twisty:not(.is-leaf) {
+  cursor: pointer;
+}
+
+.gcr-browser-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gcr-browser-subtle {
+  color: var(--spectrum-gray-500);
+  font-size: 12px;
+}
+
+.gcr-browser-loading,
+.gcr-browser-empty {
+  padding: 12px;
+  color: var(--spectrum-gray-600);
+}
+
+.gcr-browser-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--spectrum-gray-200);
+}
+
+.gcr-browser-selected {
+  font-family: var(--spectrum-code-font-family-stack);
+  font-size: 12px;
+  color: var(--spectrum-gray-700);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gcr-browser-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* PATH parameter field: textfield + browse button on one row */
+.gcr-path-field {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.gcr-path-field .gcr-path-input,
+.gcr-path-field > sp-textfield {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* the browse button keeps its full label ("Browse…") and never shrinks/truncates */
+.gcr-path-field sp-action-button {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+/* ---- panels & forms ---- */
+
+.gcr-panel {
+  background: var(--spectrum-gray-50);
+  border: 1px solid var(--spectrum-gray-300);
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin-bottom: 16px;
+}
+
+.gcr-panel h3 {
+  margin: 0 0 12px;
+  font-size: 15px;
+}
+
+.gcr-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.gcr-panel-header h3 {
+  margin: 0;
+}
+
+.gcr-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px 24px;
+  margin-bottom: 12px;
+}
+
+.gcr-field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.gcr-field sp-textfield,
+.gcr-field sp-picker {
+  width: 100%;
+}
+
+.gcr-field-wide {
+  grid-column: 1 / -1;
+}
+
+.gcr-date-input,
+.gcr-path-input {
+  font: inherit;
+  font-size: 13px;
+  padding: 6px 10px;
+  border: 1px solid var(--spectrum-gray-400);
+  border-radius: 4px;
+  background: var(--spectrum-gray-50);
+  color: var(--spectrum-gray-800);
+}
+
+.gcr-path-input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.gcr-path-input::placeholder {
+  color: var(--spectrum-gray-500);
+  font-style: italic;
+}
+
+.gcr-run-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.gcr-history-picker {
+  margin-inline-start: auto;
+  min-width: 280px;
+}
+
+/* ---- results ---- */
+
+.gcr-result-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.gcr-result-summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--spectrum-gray-600);
+}
+
+.gcr-result-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.gcr-table-wrapper {
+  overflow-x: auto;
+  border: 1px solid var(--spectrum-gray-300);
+  border-radius: 6px;
+}
+
+.gcr-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.gcr-table th,
+.gcr-table td {
+  text-align: left;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--spectrum-gray-200);
+  white-space: nowrap;
+}
+
+.gcr-table th {
+  position: sticky;
+  top: 0;
+  background: var(--spectrum-gray-200);
+  font-weight: 600;
+}
+
+.gcr-table tbody tr:hover {
+  background: var(--spectrum-gray-100);
+}
+
+.gcr-table .gcr-cell-number {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.gcr-table .gcr-cell-boolean {
+  text-align: center;
+}
+
+.gcr-cell-empty {
+  color: var(--spectrum-gray-500);
+}
+
+.gcr-table a {
+  color: var(--spectrum-blue-900);
+}
+
+.gcr-pagination {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.gcr-pagination-info {
+  font-size: 13px;
+  color: var(--spectrum-gray-600);
+  margin-inline-end: auto;
+}
+
+.gcr-page-size {
+  min-width: 130px;
+}
+
+/* ---- output & errors ---- */
+
+.gcr-output-details {
+  margin-bottom: 12px;
+}
+
+.gcr-output-details summary {
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--spectrum-gray-600);
+}
+
+.gcr-output,
+.gcr-stacktrace {
+  font-family: var(--spectrum-code-font-family-stack);
+  font-size: 12px;
+  background: var(--spectrum-gray-200);
+  border-radius: 6px;
+  padding: 12px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.gcr-error-panel h3 {
+  color: var(--spectrum-red-900);
+}
+
+/* ---- editor view ---- */
+
+.gcr-script-mode {
+  margin-bottom: 12px;
+}
+
+.gcr-editor-frame {
+  border: 1px solid var(--spectrum-gray-300);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.gcr-editor-container {
+  height: 360px;
+}
+
+/* distribution target card: a bordered group of labelled fields */
+.gcr-distribution {
+  border: 1px solid var(--spectrum-gray-300);
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin-bottom: 12px;
+}
+
+.gcr-distribution-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.gcr-distribution-header .gcr-subhead {
+  margin: 0;
+}
+
+.gcr-parameter-row {
+  display: flex;
+  align-items: center;
+  gap: 8px 6px;
+  padding: 6px 0;
+  /* wrap to multiple lines when the viewport is too narrow instead of shrinking/overflowing the fixed-width
+     common fields, so rows stay responsive while keeping identical field widths on desktop */
+  flex-wrap: wrap;
+}
+
+/* allow Spectrum fields to shrink below their intrinsic width so the row stays on one line */
+.gcr-parameter-row sp-textfield,
+.gcr-parameter-row sp-picker {
+  min-width: 0;
+}
+
+/* common fields have a fixed width and neither grow nor shrink, so name/label/type/default line up identically
+   across every parameter row regardless of the type-specific config fields; only the config area (which does
+   grow AND shrink) absorbs the difference */
+.gcr-parameter-name {
+  flex: 0 0 150px;
+}
+
+.gcr-parameter-label {
+  flex: 0 0 160px;
+}
+
+.gcr-parameter-type {
+  flex: 0 0 120px;
+}
+
+.gcr-parameter-default {
+  flex: 0 0 150px;
+}
+
+.gcr-parameter-options,
+.gcr-parameter-pathtype,
+.gcr-parameter-rootpath {
+  flex: 1 1 120px;
+  min-width: 0;
+}
+
+/* keep the trailing controls from shrinking/wrapping */
+.gcr-parameter-row sp-checkbox,
+.gcr-parameter-row sp-action-button {
+  flex: 0 0 auto;
+}
+
+/* ---- query audit ---- */
+
+.gcr-tryout-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.gcr-audit {
+  margin-top: 12px;
+}
+
+.gcr-audit-summary {
+  font-size: 13px;
+  color: var(--spectrum-gray-700);
+  margin-bottom: 8px;
+}
+
+.gcr-audit-flag {
+  color: var(--spectrum-red-900);
+  font-weight: 600;
+}
+
+.gcr-audit-ok {
+  color: var(--spectrum-green-900, #007a4d);
+  font-weight: 600;
+}
+
+.gcr-audit-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.gcr-audit-item {
+  border: 1px solid var(--spectrum-gray-300);
+  border-radius: 6px;
+  padding: 10px 12px;
+  background: var(--spectrum-gray-50);
+}
+
+.gcr-audit-item--warn {
+  border-color: var(--spectrum-red-400, #f7a19a);
+  background: var(--spectrum-red-100, #fbeceb);
+}
+
+.gcr-audit-item-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.gcr-audit-statement {
+  font-family: var(--spectrum-code-font-family-stack);
+  font-size: 12px;
+  color: var(--spectrum-gray-800);
+  word-break: break-word;
+}
+
+.gcr-badge {
+  flex: 0 0 auto;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 2px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.gcr-badge--warn {
+  background: var(--spectrum-red-800, #d31510);
+  color: #fff;
+}
+
+.gcr-badge--ok {
+  background: var(--spectrum-green-800, #007a4d);
+  color: #fff;
+}
+
+.gcr-audit-plan-details {
+  margin-top: 8px;
+}
+
+.gcr-audit-plan-details summary {
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--spectrum-gray-600);
+}
+
+.gcr-audit-plan {
+  font-family: var(--spectrum-code-font-family-stack);
+  font-size: 12px;
+  background: var(--spectrum-gray-200);
+  border-radius: 6px;
+  padding: 12px;
+  margin-top: 6px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* trailing controls (Multiple / Required / remove) pinned right so they align across all rows,
+   regardless of the type-specific config fields in the middle */
+.gcr-parameter-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+  flex: 0 0 auto;
+}
+
+/* read-only parameter summary (shown to users without console permission) */
+.gcr-parameter-summary {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 6px 0;
+}
+
+/* dynamic-parameter options script editor */
+.gcr-options-script-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 4px 0 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--spectrum-gray-300);
+  border-radius: 6px;
+  background: var(--spectrum-gray-75);
+}
+
+.gcr-options-script-field .gcr-options-script-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* the dynamic-options editor is a Monaco instance (Groovy highlighting + autocomplete), shorter than the main
+   report script editor */
+.gcr-options-editor .gcr-editor-container {
+  height: 220px;
+}
+
+/* wide modal for the "Test options" result / error so a full stack trace is readable */
+.gcr-test-modal {
+  width: min(900px, 92vw);
+}
+
+.gcr-test-modal-body {
+  padding: 16px 20px;
+  overflow: auto;
+}
+
+.gcr-options-preview {
+  margin: 8px 0 0;
+  padding-left: 18px;
+}
+
+.gcr-options-preview li {
+  margin: 2px 0;
+}
+
+.gcr-options-preview code {
+  font-family: var(--spectrum-code-font-family-stack);
+}
+
+/* ---- multifield: repeatable values with add / remove ---- */
+.gcr-multifield {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.gcr-multifield-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* the value control (textfield, path/tag field, picker…) takes the remaining width */
+.gcr-multifield-row > :first-child {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.gcr-multifield-remove {
+  flex: 0 0 auto;
+}
+
+.gcr-multifield-add {
+  align-self: flex-start;
+  margin-top: 2px;
+}
+
+/* ---- toast ---- */
+
+.gcr-toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 500;
+}

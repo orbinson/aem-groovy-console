@@ -15,7 +15,6 @@ import be.orbinson.aem.groovy.console.response.SaveScriptResponse
 import be.orbinson.aem.groovy.console.response.impl.DefaultRunScriptResponse
 import be.orbinson.aem.groovy.console.response.impl.DefaultSaveScriptResponse
 import groovy.transform.Synchronized
-import groovy.transform.TimedInterrupt
 import groovy.util.logging.Slf4j
 import org.apache.jackrabbit.JcrConstants
 import org.apache.jackrabbit.util.Text
@@ -25,10 +24,7 @@ import org.apache.sling.api.resource.ResourceResolver
 import org.apache.sling.api.resource.ResourceUtil
 import org.apache.sling.event.jobs.JobManager
 import org.apache.sling.jcr.resource.api.JcrResourceConstants
-import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
-import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
-import org.codehaus.groovy.control.customizers.CompilationCustomizer
 import org.osgi.service.component.annotations.Component
 import org.osgi.service.component.annotations.Reference
 import org.osgi.service.component.annotations.ReferenceCardinality
@@ -57,14 +53,17 @@ class DefaultGroovyConsoleService implements GroovyConsoleService {
     @Reference
     private JobManager jobManager
 
+    @Reference
+    private GroovyShellFactory groovyShellFactory
+
     @Override
     RunScriptResponse runScript(ScriptContext scriptContext) {
-        def binding = getBinding(scriptContext)
+        def binding = groovyShellFactory.createBinding(scriptContext)
 
         def runScriptResponse = null
 
         try {
-            def script = new GroovyShell(binding, configuration).parse(scriptContext.script)
+            def script = new GroovyShell(binding, groovyShellFactory.createConfiguration()).parse(scriptContext.script)
 
             extensionService.getScriptMetaClasses(scriptContext).each { meta ->
                 script.metaClass(meta)
@@ -88,6 +87,8 @@ class DefaultGroovyConsoleService implements GroovyConsoleService {
 
             runScriptResponse = DefaultRunScriptResponse.fromException(scriptContext,
                     scriptContext.outputStream.toString(CHARSET), e)
+
+            auditAndNotify(runScriptResponse)
         } catch (Throwable t) {
             LOG.error("error running script", t)
 
@@ -107,9 +108,18 @@ class DefaultGroovyConsoleService implements GroovyConsoleService {
     SaveScriptResponse saveScript(ScriptData scriptData) {
         def resourceResolver = scriptData.resourceResolver
 
-        def folderResource = ResourceUtil.getOrCreateResource(resourceResolver, PATH_SCRIPTS_FOLDER, JcrResourceConstants.NT_SLING_FOLDER, JcrResourceConstants.NT_SLING_FOLDER, true);
+        // the file name may contain relative folder segments ("migration/test.groovy"); the file is
+        // saved into that folder below the scripts root, creating intermediate folders as needed
+        def segments = scriptData.fileName.tokenize('/')
 
-        def fileName = scriptData.fileName
+        if (!segments || segments.any { it == '.' || it == '..' }) {
+            throw new IllegalArgumentException("invalid script file name: ${scriptData.fileName}")
+        }
+
+        def fileName = segments[-1]
+        def folderPath = ([PATH_SCRIPTS_FOLDER] + segments[0..<segments.size() - 1]).join('/')
+
+        def folderResource = ResourceUtil.getOrCreateResource(resourceResolver, folderPath, JcrResourceConstants.NT_SLING_FOLDER, JcrResourceConstants.NT_SLING_FOLDER, true);
 
         if (folderResource.getChild(fileName)) {
             resourceResolver.delete(folderResource.getChild(fileName))
@@ -118,7 +128,7 @@ class DefaultGroovyConsoleService implements GroovyConsoleService {
 
         saveFile(resourceResolver, folderResource, scriptData.script, fileName, new Date(), "application/octet-stream")
 
-        new DefaultSaveScriptResponse(fileName)
+        new DefaultSaveScriptResponse(segments.join('/'))
     }
 
     @Override
@@ -170,28 +180,6 @@ class DefaultGroovyConsoleService implements GroovyConsoleService {
         notificationServices.each { notificationService ->
             notificationService.notify(response)
         }
-    }
-
-    private Binding getBinding(ScriptContext scriptContext) {
-        def binding = new Binding()
-
-        extensionService.getBindingVariables(scriptContext).each { name, variable ->
-            binding.setVariable(name, variable.value)
-        }
-
-        binding
-    }
-
-    private CompilerConfiguration getConfiguration() {
-        def configuration = new CompilerConfiguration()
-
-        if (configurationService.threadTimeout > 0) {
-            // add timed interrupt using configured timeout value
-            configuration.addCompilationCustomizers(new ASTTransformationCustomizer(value: configurationService.threadTimeout, TimedInterrupt))
-        }
-
-        configuration.addCompilationCustomizers(extensionService.compilationCustomizers
-                as CompilationCustomizer[])
     }
 
     private void saveFile(ResourceResolver resourceResolver, Resource folderResource, String script, String fileName, Date date,
