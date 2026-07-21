@@ -442,7 +442,8 @@ class DefaultReportService implements ReportService {
                 cronExpression: properties.get(PROPERTY_CRON_EXPRESSION, String),
                 runAs: properties.get(PROPERTY_RUN_AS, String),
                 scheduledBy: properties.get(PROPERTY_SCHEDULED_BY, String),
-                parameterValues: toStringMap(properties.get(PROPERTY_PARAMETER_VALUES, String))
+                // preserve arrays for `multiple` parameters (do not flatten to String)
+                parameterValues: toObjectMap(properties.get(PROPERTY_PARAMETER_VALUES, String))
         )
     }
 

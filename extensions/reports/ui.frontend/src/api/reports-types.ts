@@ -85,8 +85,8 @@ export interface ReportSchedule {
   runAs?: string | null;
   /** Set server-side to the user that saved the schedule; read-only in the UI. */
   scheduledBy?: string | null;
-  /** Fixed parameter values used for scheduled runs. */
-  parameterValues: Record<string, string>;
+  /** Fixed parameter values used for scheduled runs (a scalar, or a list for a `multiple` parameter). */
+  parameterValues: Record<string, ReportParameterValue>;
 }
 
 /** A configured distribution target: which distributor, which export format, and its config. */

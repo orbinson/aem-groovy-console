@@ -26,6 +26,7 @@ class ReportSchedule {
     /** User id that configured the schedule; the run-as authorization is checked against this principal. */
     String scheduledBy
 
-    /** Fixed raw (string) parameter values used for scheduled runs (there is no interactive form). */
-    Map<String, String> parameterValues = [:]
+    /** Fixed parameter values used for scheduled runs: a String, or a List of Strings for a {@code multiple}
+     *  parameter (matching how the coercer and run form treat values). */
+    Map<String, Object> parameterValues = [:]
 }

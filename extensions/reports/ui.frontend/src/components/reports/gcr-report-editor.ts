@@ -32,6 +32,7 @@ import type { GcrCodeEditor } from './gcr-code-editor';
 import type { GcrPathBrowser } from './gcr-path-browser';
 import { mutePlaceholders } from '@console/util/mute-placeholders';
 import { renderMultifield } from './multifield';
+import './gcr-parameter-fields';
 import { renderResultTable } from './result-cell';
 import { validateRequired } from './validate-parameters';
 import {
@@ -124,7 +125,7 @@ export class GcrReportEditor extends LitElement {
   @state() private cronWeekday = DEFAULT_CRON_PARTS.weekday;
   @state() private cronDayOfMonth = DEFAULT_CRON_PARTS.dayOfMonth;
   @state() private scheduledBy: string | null = null;
-  @state() private scheduleValues: Record<string, string> = {};
+  @state() private scheduleValues: Record<string, ReportParameterValue> = {};
 
   // distribution state
   @state() private distributions: DistributionTarget[] = [];
@@ -711,9 +712,13 @@ export class GcrReportEditor extends LitElement {
               ${this.parameters.length
                 ? html`
                     <h4 class="gcr-subhead">Scheduled parameter values</h4>
-                    <div class="gcr-form-grid">
-                      ${this.parameters.map((parameter) => this.renderScheduleValue(parameter))}
-                    </div>
+                    <gcr-parameter-fields
+                      .parameters=${this.toReportParameters()}
+                      .values=${this.scheduleValues}
+                      .reportName=${this.reportName}
+                      @gcr-values-change=${(event: CustomEvent<Record<string, ReportParameterValue>>) =>
+                        (this.scheduleValues = event.detail)}
+                    ></gcr-parameter-fields>
                   `
                 : nothing}
             `
@@ -864,23 +869,24 @@ export class GcrReportEditor extends LitElement {
     });
   }
 
-  private renderScheduleValue(parameter: ParameterRow) {
-    const label = parameter.label || parameter.name || '(unnamed)';
-    const current = this.scheduleValues[parameter.name] ?? parameter.defaultValue ?? '';
-    const onInput = (event: Event) => {
-      this.scheduleValues = { ...this.scheduleValues, [parameter.name]: (event.target as HTMLInputElement).value };
-    };
-    return html`
-      <div class="gcr-field">
-        <sp-field-label for="schedule-value-${parameter.name}" ?required=${parameter.required}>${label}</sp-field-label>
-        <sp-textfield
-          id="schedule-value-${parameter.name}"
-          type=${parameter.type === 'NUMBER' ? 'number' : 'text'}
-          value=${current}
-          @input=${onInput}
-        ></sp-textfield>
-      </div>
-    `;
+  /** Map the editor's parameter rows to the API parameter shape the shared fields component consumes. */
+  private toReportParameters(): ReportParameter[] {
+    return this.parameters.map((parameter, index) => ({
+      name: parameter.name.trim(),
+      label: parameter.label.trim() || parameter.name.trim(),
+      type: parameter.type,
+      defaultValue: parameter.defaultValue || undefined,
+      required: parameter.required,
+      multiple: parameter.multiple,
+      options: parameter.options
+        .split(',')
+        .map((option) => option.trim())
+        .filter(Boolean),
+      pathType: parameter.type === 'PATH' ? parameter.pathType || 'NODE' : undefined,
+      rootPath: parameter.type === 'PATH' || parameter.type === 'TAG' ? parameter.rootPath || undefined : undefined,
+      optionsScript: parameter.type === 'DYNAMIC' ? parameter.optionsScript || undefined : undefined,
+      order: index,
+    }));
   }
 
   private renderDistribution() {

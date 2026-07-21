@@ -200,9 +200,10 @@ class ReportsServlet extends AbstractReportsServlet {
         new ReportSchedule(
                 enabled: Boolean.TRUE == schedule["enabled"],
                 cronExpression: schedule["cronExpression"] as String,
+                // keep each value as sent: a String, or a List of Strings for a `multiple` parameter
                 parameterValues: (schedule["parameterValues"] as Map ?: [:]).collectEntries { key, value ->
-                    [(key as String): value == null ? null : value as String]
-                } as Map<String, String>
+                    [(key as String): value instanceof List ? value.collect { it as String } : (value == null ? null : value as String)]
+                } as Map<String, Object>
         )
     }
 
