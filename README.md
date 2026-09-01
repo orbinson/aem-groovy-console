@@ -373,7 +373,7 @@ conventions (`.always.groovy`, `author`/`publish` run-mode tokens), the HTTP API
 #### Migrating from AECU
 
 If you need to run AECU and this migration extension **on the same AEM instance** during a transition — e.g.
-moving scripts over gradually instead of in one cutover — start on **19.2.0**: AECU hard-depends on Groovy 4.x,
+moving scripts over gradually instead of in one cutover — start on **19.3.0**: AECU hard-depends on Groovy 4.x,
 so it cannot coexist with the 20.x line's Groovy 5.x runtime. Once every script has moved over and AECU is
 uninstalled, you can upgrade to the 20.x line in a second phase to pick up the modern UI, streaming execution,
 code assistance and the reports extension.
