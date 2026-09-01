@@ -151,6 +151,11 @@
                                 </goals>
                                 <phase>process-resources</phase>
                                 <configuration>
+                                    <!-- Stay out of the OS ephemeral range: a port reserved from there can be
+                                         handed to a transient connection between the reservation and Jetty's
+                                         bind, which fails the launch with "Failed to bind to 0.0.0.0:<port>". -->
+                                    <minPortNumber>8100</minPortNumber>
+                                    <maxPortNumber>8999</maxPortNumber>
                                     <portNames>
                                         <portName>http.port</portName>
                                     </portNames>
