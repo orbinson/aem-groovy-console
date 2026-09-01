@@ -31,16 +31,21 @@ class GroovyConsoleServiceIT {
     private static final String BASE_URL = "http://localhost:" + SLING_PORT;
     private static final String AUTH_HEADER = "Basic " + Base64.encodeBase64String("admin:admin".getBytes(StandardCharsets.UTF_8));
 
+    private static final int CONSECUTIVE_READY_PROBES = 3;
+
     private static CloseableHttpClient httpClient;
 
     @BeforeAll
     static void setUp() {
         httpClient = HttpClients.createDefault();
 
-        // Wait for the Sling Starter and the Groovy Console content package to be fully installed
-        await().atMost(120, TimeUnit.SECONDS)
+        // The all package is installed after startup, so the health check can report OK while the
+        // content-package cascade is still refreshing bundles and unwiring the console again.
+        // Probe the servlet itself, and require it to answer repeatedly, so the tests do not race
+        // that refresh and see 404/409 from Sling's default POST servlet.
+        await().atMost(180, TimeUnit.SECONDS)
                 .pollInterval(5, TimeUnit.SECONDS)
-                .untilAsserted(() -> assertTrue(isHealthy(), "System not healthy"));
+                .untilAsserted(() -> assertTrue(isGroovyConsoleReady(), "Groovy Console not ready"));
     }
 
     @AfterAll
@@ -223,6 +228,42 @@ class GroovyConsoleServiceIT {
         assertEquals("1", response.get("result").getAsString());
     }
 
+    private static boolean isGroovyConsoleReady() throws InterruptedException {
+        for (int attempt = 0; attempt < CONSECUTIVE_READY_PROBES; attempt++) {
+            if (!isHealthy() || !consoleAnswers()) {
+                return false;
+            }
+
+            if (attempt < CONSECUTIVE_READY_PROBES - 1) {
+                TimeUnit.SECONDS.sleep(2);
+            }
+        }
+
+        return true;
+    }
+
+    private static boolean consoleAnswers() {
+        try {
+            HttpPost post = new HttpPost(BASE_URL + "/bin/groovyconsole/post");
+            List<BasicNameValuePair> params = new ArrayList<>();
+            params.add(new BasicNameValuePair("script", "return 'ready'"));
+            post.setEntity(new UrlEncodedFormEntity(params, StandardCharsets.UTF_8));
+            post.addHeader("Authorization", AUTH_HEADER);
+
+            try (CloseableHttpResponse response = httpClient.execute(post)) {
+                String body = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
+
+                if (response.getStatusLine().getStatusCode() != 200) {
+                    return false;
+                }
+
+                return "ready".equals(JsonParser.parseString(body).getAsJsonObject().get("result").getAsString());
+            }
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     private static boolean isHealthy() {
         try {
             HttpGet healthCheck = new HttpGet(BASE_URL + "/system/health.json?tags=systemalive,groovyconsole");
@@ -257,7 +298,7 @@ class GroovyConsoleServiceIT {
 
     private static JsonObject executeScript(String script) throws IOException {
         HttpPost post = new HttpPost(BASE_URL + "/bin/groovyconsole/post");
-        List<BasicNameValuePair> params = new java.util.ArrayList<>();
+        List<BasicNameValuePair> params = new ArrayList<>();
         params.add(new BasicNameValuePair("script", script));
         post.setEntity(new UrlEncodedFormEntity(params, StandardCharsets.UTF_8));
         post.addHeader("Authorization", AUTH_HEADER);
