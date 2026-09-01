@@ -31,6 +31,8 @@ class GroovyConsoleServiceIT {
     private static final String BASE_URL = "http://localhost:" + SLING_PORT;
     private static final String AUTH_HEADER = "Basic " + Base64.encodeBase64String("admin:admin".getBytes(StandardCharsets.UTF_8));
 
+    // The console has been observed to answer once and then disappear again while the
+    // instance is still settling, so require several consecutive good answers.
     private static final int CONSECUTIVE_READY_PROBES = 3;
 
     private static CloseableHttpClient httpClient;
@@ -39,13 +41,47 @@ class GroovyConsoleServiceIT {
     static void setUp() {
         httpClient = HttpClients.createDefault();
 
-        // The all package is installed after startup, so the health check can report OK while the
-        // content-package cascade is still refreshing bundles and unwiring the console again.
-        // Probe the servlet itself, and require it to answer repeatedly, so the tests do not race
-        // that refresh and see 404/409 from Sling's default POST servlet.
+        // All bundles/content are pre-converted into the launch feature (cp-converter), so there is no
+        // content-package install cascade to wait out here -- but the instance can still settle for a
+        // moment, so check the actual servlet rather than a health check tag.
         await().atMost(180, TimeUnit.SECONDS)
                 .pollInterval(5, TimeUnit.SECONDS)
                 .untilAsserted(() -> assertTrue(isGroovyConsoleReady(), "Groovy Console not ready"));
+    }
+
+    private static boolean isGroovyConsoleReady() throws InterruptedException {
+        for (int attempt = 0; attempt < CONSECUTIVE_READY_PROBES; attempt++) {
+            if (!consoleAnswers()) {
+                return false;
+            }
+
+            if (attempt < CONSECUTIVE_READY_PROBES - 1) {
+                TimeUnit.SECONDS.sleep(2);
+            }
+        }
+
+        return true;
+    }
+
+    private static boolean consoleAnswers() {
+        try (CloseableHttpClient client = HttpClients.createDefault()) {
+            HttpPost post = new HttpPost(BASE_URL + "/bin/groovyconsole/post");
+            List<BasicNameValuePair> params = new ArrayList<>();
+            params.add(new BasicNameValuePair("script", "return 'ready'"));
+            post.setEntity(new UrlEncodedFormEntity(params, StandardCharsets.UTF_8));
+            post.addHeader("Authorization", AUTH_HEADER);
+            post.addHeader("Connection", "close");
+            try (CloseableHttpResponse response = client.execute(post)) {
+                if (response.getStatusLine().getStatusCode() != 200) {
+                    return false;
+                }
+                String body = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
+                JsonObject json = JsonParser.parseString(body).getAsJsonObject();
+                return "ready".equals(json.get("result").getAsString());
+            }
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     @AfterAll
@@ -226,56 +262,6 @@ class GroovyConsoleServiceIT {
         assertEquals("", response.get("exceptionStackTrace").getAsString(),
                 "groovy-xml fragment extensions not registered");
         assertEquals("1", response.get("result").getAsString());
-    }
-
-    private static boolean isGroovyConsoleReady() throws InterruptedException {
-        for (int attempt = 0; attempt < CONSECUTIVE_READY_PROBES; attempt++) {
-            if (!isHealthy() || !consoleAnswers()) {
-                return false;
-            }
-
-            if (attempt < CONSECUTIVE_READY_PROBES - 1) {
-                TimeUnit.SECONDS.sleep(2);
-            }
-        }
-
-        return true;
-    }
-
-    private static boolean consoleAnswers() {
-        try {
-            HttpPost post = new HttpPost(BASE_URL + "/bin/groovyconsole/post");
-            List<BasicNameValuePair> params = new ArrayList<>();
-            params.add(new BasicNameValuePair("script", "return 'ready'"));
-            post.setEntity(new UrlEncodedFormEntity(params, StandardCharsets.UTF_8));
-            post.addHeader("Authorization", AUTH_HEADER);
-
-            try (CloseableHttpResponse response = httpClient.execute(post)) {
-                String body = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
-
-                if (response.getStatusLine().getStatusCode() != 200) {
-                    return false;
-                }
-
-                return "ready".equals(JsonParser.parseString(body).getAsJsonObject().get("result").getAsString());
-            }
-        } catch (Exception e) {
-            return false;
-        }
-    }
-
-    private static boolean isHealthy() {
-        try {
-            HttpGet healthCheck = new HttpGet(BASE_URL + "/system/health.json?tags=systemalive,groovyconsole");
-            healthCheck.addHeader("Authorization", AUTH_HEADER);
-            try (CloseableHttpResponse response = httpClient.execute(healthCheck)) {
-                String body = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
-                JsonObject jsonResponse = JsonParser.parseString(body).getAsJsonObject();
-                return "OK".equals(jsonResponse.get("overallResult").getAsString());
-            }
-        } catch (Exception e) {
-            return false;
-        }
     }
 
     private static JsonObject doGet(String path) throws IOException {

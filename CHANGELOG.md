@@ -19,7 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - `AuditRecord.getPath()`/`getResponse()` are now explicit non-final getters. Groovy generates a `final` accessor for a `final` field, and this toolchain has been observed to flip that across otherwise identical rebuilds, which `bnd-baseline` reports as a MAJOR break against the released 19.1.0 artifact. `be.orbinson.aem.groovy.console.audit` moves to 19.1.1 for the (non-breaking) loss of the `@Generated` marker on those two methods.
-- Integration tests now wait for the console servlet itself to answer, instead of only for the health check. The `all` package installs after startup, so the health check went green while the content-package cascade was still refreshing bundles, and the tests raced it and saw 404/409 from Sling's default POST servlet — CI on `19.x` had been failing this way since July.
+- Integration tests now launch a single aggregated Sling feature — the `all` package is converted up front with `sling-feature-converter-maven-plugin` instead of being installed as a content package after startup — and wait for the console servlet itself to answer rather than for a health check tag. The old setup let the health check go green while the install cascade was still refreshing bundles, so the tests raced it and got 404/409 from Sling's default POST servlet; CI on `19.x` had been failing this way since July. Ported from the 19.3.0 line.
+- New `run` profile for a manual IT instance on a fixed port: `mvn clean install && mvn verify -Prun -pl it.tests`.
 
 ## [19.1.0] - 2026-05-04
 
