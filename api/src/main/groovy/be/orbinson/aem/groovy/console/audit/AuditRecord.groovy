@@ -11,14 +11,22 @@ class AuditRecord implements RunScriptResponse {
 
     private static final Integer DEPTH_RELATIVE_PATH = 3
 
-    final String path
+    private final String path
 
     @Delegate
-    final RunScriptResponse response
+    private final RunScriptResponse response
 
     AuditRecord(Resource resource) {
         path = resource.path
         response = DefaultRunScriptResponse.fromAuditRecordResource(resource)
+    }
+
+    String getPath() {
+        path
+    }
+
+    RunScriptResponse getResponse() {
+        response
     }
 
     String getDownloadUrl() {

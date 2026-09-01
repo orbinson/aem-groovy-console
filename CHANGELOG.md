@@ -16,6 +16,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Java 25 to the CI build matrix
 
+### Fixed
+
+- `AuditRecord.getPath()`/`getResponse()` are now explicit non-final getters. Groovy generates a `final` accessor for a `final` field, and this toolchain has been observed to flip that across otherwise identical rebuilds, which `bnd-baseline` reports as a MAJOR break against the released 19.1.0 artifact. `be.orbinson.aem.groovy.console.audit` moves to 19.1.1 for the (non-breaking) loss of the `@Generated` marker on those two methods.
+
 ## [19.1.0] - 2026-05-04
 
 ### Changed
