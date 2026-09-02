@@ -31,36 +31,19 @@ class GroovyConsoleServiceIT {
     private static final String BASE_URL = "http://localhost:" + SLING_PORT;
     private static final String AUTH_HEADER = "Basic " + Base64.encodeBase64String("admin:admin".getBytes(StandardCharsets.UTF_8));
 
-    // The console has been observed to answer once and then disappear again while the
-    // instance is still settling, so require several consecutive good answers.
-    private static final int CONSECUTIVE_READY_PROBES = 3;
-
     private static CloseableHttpClient httpClient;
 
     @BeforeAll
     static void setUp() {
         httpClient = HttpClients.createDefault();
 
-        // All bundles/content are pre-converted into the launch feature (cp-converter), so there is no
-        // content-package install cascade to wait out here -- but the instance can still settle for a
-        // moment, so check the actual servlet rather than a health check tag.
+        // Check the servlet itself rather than a health check tag, and use during() so it has to keep
+        // answering: while the instance settles it has been seen answering once and then briefly
+        // disappearing again, which let the tests start too early.
         await().atMost(180, TimeUnit.SECONDS)
-                .pollInterval(5, TimeUnit.SECONDS)
-                .untilAsserted(() -> assertTrue(isGroovyConsoleReady(), "Groovy Console not ready"));
-    }
-
-    private static boolean isGroovyConsoleReady() throws InterruptedException {
-        for (int attempt = 0; attempt < CONSECUTIVE_READY_PROBES; attempt++) {
-            if (!consoleAnswers()) {
-                return false;
-            }
-
-            if (attempt < CONSECUTIVE_READY_PROBES - 1) {
-                TimeUnit.SECONDS.sleep(2);
-            }
-        }
-
-        return true;
+                .pollInterval(2, TimeUnit.SECONDS)
+                .during(6, TimeUnit.SECONDS)
+                .untilAsserted(() -> assertTrue(consoleAnswers(), "Groovy Console not ready"));
     }
 
     private static boolean consoleAnswers() {
