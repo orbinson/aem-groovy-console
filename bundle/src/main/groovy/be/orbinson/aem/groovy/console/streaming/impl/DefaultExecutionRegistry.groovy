@@ -32,6 +32,9 @@ class DefaultExecutionRegistry implements ExecutionRegistry {
 
     private volatile ExecutorService executor
 
+    /** Private monitor, so callers cannot block executor() by locking the service itself. */
+    private final Object executorLock = new Object()
+
     @Activate
     void activate() {
         executor = Executors.newCachedThreadPool()
@@ -43,12 +46,14 @@ class DefaultExecutionRegistry implements ExecutionRegistry {
         executions.clear()
     }
 
-    private synchronized ExecutorService executor() {
-        if (executor == null || executor.shutdown) {
-            executor = Executors.newCachedThreadPool()
-        }
+    private ExecutorService executor() {
+        synchronized (executorLock) {
+            if (executor == null || executor.shutdown) {
+                executor = Executors.newCachedThreadPool()
+            }
 
-        executor
+            return executor
+        }
     }
 
     @Override
