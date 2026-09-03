@@ -10,7 +10,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Upgrade ASM from 9.7 to 9.10.1 so the console runs on Java 25 [#81](https://github.com/orbinson/aem-groovy-console/issues/81). ASM 9.7 rejects class files with major version 69 (`Unsupported class file major version 69`), which breaks SpiFly's weaving hook as soon as any bundle on the platform is compiled for Java 25.
-- The embedded Groovy version stays on 4.0.31; its shaded ASM already understands Java 25/26 class files
 
 ### Added
 
