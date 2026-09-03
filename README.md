@@ -37,7 +37,8 @@ and adds the modern UI, streaming execution, code assistance and the reports ext
 
 Projects still on Java 8, or that need to stay on Groovy 4.x — for example to run this migration extension
 alongside AECU during a transition, see [Migrating from AECU](#migrating-from-aecu) below — should use the 19.x
-line instead: it's the maintenance line, and embeds Groovy 4.x.
+line instead: it's the maintenance line, it embeds Groovy 4.x (currently 4.0.32) and runs on Java 8, 11, 17, 21
+& 25.
 
 Supported versions:
 

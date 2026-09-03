@@ -37,15 +37,16 @@ class GroovyConsoleServiceIT {
     static void setUp() {
         httpClient = HttpClients.createDefault();
 
-        // All bundles/content are pre-converted into the launch feature (cp-converter), so there is no
-        // post-startup content-package install cascade to wait out here -- a single successful check
-        // against the actual servlet is sufficient (see GroovyConsoleReportsIT).
+        // Check the servlet itself rather than a health check tag, and use during() so it has to keep
+        // answering: while the instance settles it has been seen answering once and then briefly
+        // disappearing again, which let the tests start too early.
         await().atMost(180, TimeUnit.SECONDS)
-                .pollInterval(5, TimeUnit.SECONDS)
-                .untilAsserted(() -> assertTrue(isGroovyConsoleReady(), "Groovy Console not ready"));
+                .pollInterval(2, TimeUnit.SECONDS)
+                .during(6, TimeUnit.SECONDS)
+                .untilAsserted(() -> assertTrue(consoleAnswers(), "Groovy Console not ready"));
     }
 
-    private static boolean isGroovyConsoleReady() {
+    private static boolean consoleAnswers() {
         try (CloseableHttpClient client = HttpClients.createDefault()) {
             HttpPost post = new HttpPost(BASE_URL + "/bin/groovyconsole/post");
             List<BasicNameValuePair> params = new ArrayList<>();
@@ -266,7 +267,7 @@ class GroovyConsoleServiceIT {
 
     private static JsonObject executeScript(String script) throws IOException {
         HttpPost post = new HttpPost(BASE_URL + "/bin/groovyconsole/post");
-        List<BasicNameValuePair> params = new java.util.ArrayList<>();
+        List<BasicNameValuePair> params = new ArrayList<>();
         params.add(new BasicNameValuePair("script", script));
         post.setEntity(new UrlEncodedFormEntity(params, StandardCharsets.UTF_8));
         post.addHeader("Authorization", AUTH_HEADER);

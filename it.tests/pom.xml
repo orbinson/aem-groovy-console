@@ -57,9 +57,10 @@
                     </executions>
                 </plugin>
                 <plugin>
-                    <!-- Aggregate Sling Starter + the converted features into one launchable feature.
-                         osgiBsnCollisionDetection + *:*:HIGHEST de-dupes overlapping bundles (Starter Groovy
-                         4.0.10 vs our 5.0.6).-->
+                    <!-- Aggregate Sling Starter + the converted features into one launchable feature, so
+                         everything is present at startup instead of being installed as a content package
+                         afterwards. osgiBsnCollisionDetection + *:*:HIGHEST de-dupes overlapping bundles
+                         (Starter Groovy 4.0.10 vs our 4.0.32). -->
                     <groupId>org.apache.sling</groupId>
                     <artifactId>slingfeature-maven-plugin</artifactId>
                     <version>1.9.6</version>
@@ -173,6 +174,11 @@
                                 </goals>
                                 <phase>process-resources</phase>
                                 <configuration>
+                                    <!-- Stay out of the OS ephemeral range: a port reserved from there can be
+                                         handed to a transient connection between the reservation and Jetty's
+                                         bind, which fails the launch with "Failed to bind to 0.0.0.0:<port>". -->
+                                    <minPortNumber>8100</minPortNumber>
+                                    <maxPortNumber>8999</maxPortNumber>
                                     <portNames>
                                         <portName>http.port</portName>
                                         <portName>jmx.port</portName>
