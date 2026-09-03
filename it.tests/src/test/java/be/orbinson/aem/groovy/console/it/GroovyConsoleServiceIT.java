@@ -37,10 +37,34 @@ class GroovyConsoleServiceIT {
     static void setUp() {
         httpClient = HttpClients.createDefault();
 
-        // Wait for the Sling Starter and the Groovy Console content package to be fully installed
-        await().atMost(120, TimeUnit.SECONDS)
-                .pollInterval(5, TimeUnit.SECONDS)
-                .untilAsserted(() -> assertTrue(isHealthy(), "System not healthy"));
+        // Check the servlet itself rather than a health check tag, and use during() so it has to keep
+        // answering: while the instance settles it has been seen answering once and then briefly
+        // disappearing again, which let the tests start too early.
+        await().atMost(180, TimeUnit.SECONDS)
+                .pollInterval(2, TimeUnit.SECONDS)
+                .during(6, TimeUnit.SECONDS)
+                .untilAsserted(() -> assertTrue(consoleAnswers(), "Groovy Console not ready"));
+    }
+
+    private static boolean consoleAnswers() {
+        try (CloseableHttpClient client = HttpClients.createDefault()) {
+            HttpPost post = new HttpPost(BASE_URL + "/bin/groovyconsole/post");
+            List<BasicNameValuePair> params = new ArrayList<>();
+            params.add(new BasicNameValuePair("script", "return 'ready'"));
+            post.setEntity(new UrlEncodedFormEntity(params, StandardCharsets.UTF_8));
+            post.addHeader("Authorization", AUTH_HEADER);
+            post.addHeader("Connection", "close");
+            try (CloseableHttpResponse response = client.execute(post)) {
+                if (response.getStatusLine().getStatusCode() != 200) {
+                    return false;
+                }
+                String body = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
+                JsonObject json = JsonParser.parseString(body).getAsJsonObject();
+                return "ready".equals(json.get("result").getAsString());
+            }
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     @AfterAll
@@ -223,20 +247,6 @@ class GroovyConsoleServiceIT {
         assertEquals("1", response.get("result").getAsString());
     }
 
-    private static boolean isHealthy() {
-        try {
-            HttpGet healthCheck = new HttpGet(BASE_URL + "/system/health.json?tags=systemalive,groovyconsole");
-            healthCheck.addHeader("Authorization", AUTH_HEADER);
-            try (CloseableHttpResponse response = httpClient.execute(healthCheck)) {
-                String body = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
-                JsonObject jsonResponse = JsonParser.parseString(body).getAsJsonObject();
-                return "OK".equals(jsonResponse.get("overallResult").getAsString());
-            }
-        } catch (Exception e) {
-            return false;
-        }
-    }
-
     private static JsonObject doGet(String path) throws IOException {
         HttpGet get = new HttpGet(BASE_URL + path);
         get.addHeader("Authorization", AUTH_HEADER);
@@ -257,7 +267,7 @@ class GroovyConsoleServiceIT {
 
     private static JsonObject executeScript(String script) throws IOException {
         HttpPost post = new HttpPost(BASE_URL + "/bin/groovyconsole/post");
-        List<BasicNameValuePair> params = new java.util.ArrayList<>();
+        List<BasicNameValuePair> params = new ArrayList<>();
         params.add(new BasicNameValuePair("script", script));
         post.setEntity(new UrlEncodedFormEntity(params, StandardCharsets.UTF_8));
         post.addHeader("Authorization", AUTH_HEADER);

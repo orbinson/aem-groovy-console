@@ -22,7 +22,7 @@ in the package for reference.
 
 ## Compatibility
 
-AEM Groovy Console 19.0.8+ runs on Java 8, 11, 17 & 21 with an embedded Groovy version of 4.0.22
+AEM Groovy Console 19.2.0+ runs on Java 8, 11, 17, 21 & 25 with an embedded Groovy version of 4.0.31
 
 Supported versions:
 
