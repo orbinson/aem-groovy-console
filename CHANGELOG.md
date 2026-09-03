@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [19.2.0] - 2026-09-03
+
 ### Changed
 
 - Upgrade ASM from 9.7 to 9.10.1 so the console runs on Java 25 [#81](https://github.com/orbinson/aem-groovy-console/issues/81). ASM 9.7 rejects class files with major version 69 (`Unsupported class file major version 69`), which breaks SpiFly's weaving hook as soon as any bundle on the platform is compiled for Java 25.
@@ -166,7 +168,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Last version released by [CID15](https://github.com/CID15/aem-groovy-console)
 
-[unreleased]: https://github.com/orbinson/aem-groovy-console/compare/19.1.0...HEAD
+[unreleased]: https://github.com/orbinson/aem-groovy-console/compare/19.2.0...HEAD
+[19.2.0]: https://github.com/orbinson/aem-groovy-console/compare/19.1.0...19.2.0
 [19.1.0]: https://github.com/orbinson/aem-groovy-console/compare/19.0.9...19.1.0
 [19.0.9]: https://github.com/orbinson/aem-groovy-console/compare/19.0.8...19.0.9
 [19.0.8]: https://github.com/orbinson/aem-groovy-console/compare/19.0.7...19.0.8
