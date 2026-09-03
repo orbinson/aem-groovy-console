@@ -16,6 +16,7 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicLong
 
 @Component(service = ExecutionRegistry, immediate = true)
 @Slf4j("LOG")
@@ -79,7 +80,7 @@ class DefaultExecutionRegistry implements ExecutionRegistry {
                 LOG.error("error running async script execution : {}", executionId, t)
             } finally {
                 // finishedAt first: readers key off done, and must not see it unset
-                execution.finishedAt = System.currentTimeMillis()
+                execution.finishedAt.set(System.currentTimeMillis())
                 execution.done = true
 
                 try {
@@ -123,7 +124,10 @@ class DefaultExecutionRegistry implements ExecutionRegistry {
         def now = System.currentTimeMillis()
 
         executions.entrySet().removeAll { entry ->
-            entry.value.done && entry.value.finishedAt && (now - entry.value.finishedAt) > RETENTION_MILLIS
+            def execution = entry.value
+            def finishedAt = execution.finishedAt.get()
+
+            execution.done && finishedAt && (now - finishedAt) > RETENTION_MILLIS
         }
     }
 
@@ -135,7 +139,8 @@ class DefaultExecutionRegistry implements ExecutionRegistry {
 
         volatile boolean done
 
-        /** 0 until the execution finishes. Primitive, so the volatile write is atomic. */
-        volatile long finishedAt
+        /** 0 until the execution finishes. Atomic rather than a volatile primitive, which
+         *  sonar groovydre:S9373 flags as non-atomic on 32-bit JVMs. */
+        final AtomicLong finishedAt = new AtomicLong()
     }
 }
