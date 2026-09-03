@@ -78,8 +78,9 @@ class DefaultExecutionRegistry implements ExecutionRegistry {
             } catch (Throwable t) {
                 LOG.error("error running async script execution : {}", executionId, t)
             } finally {
-                execution.done = true
+                // finishedAt first: readers key off done, and must not see it unset
                 execution.finishedAt = System.currentTimeMillis()
+                execution.done = true
 
                 try {
                     scriptContext.resourceResolver.close()
@@ -134,6 +135,7 @@ class DefaultExecutionRegistry implements ExecutionRegistry {
 
         volatile boolean done
 
-        volatile Long finishedAt
+        /** 0 until the execution finishes. Primitive, so the volatile write is atomic. */
+        volatile long finishedAt
     }
 }
