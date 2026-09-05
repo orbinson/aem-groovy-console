@@ -50,32 +50,41 @@ class MigrationScriptListener implements ResourceChangeListener {
 
     private ScheduledFuture<?> pendingEnqueue
 
-    @Activate
-    synchronized void activate(MigrationScriptListenerProperties properties) {
-        enabled = properties.enabled()
-        debounceMillis = properties.debounceMillis()
+    /** Private monitor, so callers cannot block the listener by locking the component itself. */
+    private final Object lock = new Object()
 
-        if (enabled && executor == null) {
-            executor = Executors.newSingleThreadScheduledExecutor()
+    @Activate
+    void activate(MigrationScriptListenerProperties properties) {
+        synchronized (lock) {
+            enabled = properties.enabled()
+            debounceMillis = properties.debounceMillis()
+
+            if (enabled && executor == null) {
+                executor = Executors.newSingleThreadScheduledExecutor()
+            }
         }
     }
 
     @Deactivate
-    synchronized void deactivate() {
-        executor?.shutdownNow()
-        executor = null
+    void deactivate() {
+        synchronized (lock) {
+            executor?.shutdownNow()
+            executor = null
+        }
     }
 
     @Override
-    synchronized void onChange(@NotNull List<ResourceChange> changes) {
-        if (enabled && executor != null) {
-            LOG.debug("detected {} migration script change(s), scheduling migration run", changes.size())
+    void onChange(@NotNull List<ResourceChange> changes) {
+        synchronized (lock) {
+            if (enabled && executor != null) {
+                LOG.debug("detected {} migration script change(s), scheduling migration run", changes.size())
 
-            // coalesce event bursts into a single deferred migration run
-            pendingEnqueue?.cancel(false)
+                // coalesce event bursts into a single deferred migration run
+                pendingEnqueue?.cancel(false)
 
-            pendingEnqueue = executor.schedule({ enqueueMigrationRun() } as Runnable, debounceMillis,
-                    TimeUnit.MILLISECONDS)
+                pendingEnqueue = executor.schedule({ enqueueMigrationRun() } as Runnable, debounceMillis,
+                        TimeUnit.MILLISECONDS)
+            }
         }
     }
 

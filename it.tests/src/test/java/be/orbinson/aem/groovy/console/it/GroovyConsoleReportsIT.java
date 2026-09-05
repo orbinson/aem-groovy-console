@@ -63,7 +63,7 @@ class GroovyConsoleReportsIT {
     private static String executionId;
 
     @BeforeAll
-    static void setUp() throws IOException {
+    static void setUp() {
         httpClient = HttpClients.createDefault();
 
         // Wait until the Groovy Console and reports servlets are registered and responding (all bundles are in

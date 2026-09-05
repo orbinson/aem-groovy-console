@@ -38,34 +38,43 @@ class AppsReportDefinitionListener implements ResourceChangeListener {
 
     private ScheduledFuture<?> pendingReconcile
 
+    /** Private monitor, so callers cannot block the listener by locking the component itself. */
+    private final Object lock = new Object()
+
     @Activate
-    synchronized void activate() {
-        executor = Executors.newSingleThreadScheduledExecutor()
+    void activate() {
+        synchronized (lock) {
+            executor = Executors.newSingleThreadScheduledExecutor()
+        }
     }
 
     @Deactivate
-    synchronized void deactivate() {
-        executor?.shutdownNow()
-        executor = null
+    void deactivate() {
+        synchronized (lock) {
+            executor?.shutdownNow()
+            executor = null
+        }
     }
 
     @Override
-    synchronized void onChange(List<ResourceChange> changes) {
-        if (executor == null) {
-            return
-        }
-
-        LOG.debug("detected {} code-deployed report definition change(s), scheduling reconcile", changes.size())
-
-        // coalesce event bursts into a single deferred reconcile
-        pendingReconcile?.cancel(false)
-
-        pendingReconcile = executor.schedule({
-            try {
-                scheduleService.reconcileDeployedReports()
-            } catch (Exception e) {
-                LOG.error("error reconciling code-deployed reports after change", e)
+    void onChange(List<ResourceChange> changes) {
+        synchronized (lock) {
+            if (executor == null) {
+                return
             }
-        } as Runnable, DEBOUNCE_MILLIS, TimeUnit.MILLISECONDS)
+
+            LOG.debug("detected {} code-deployed report definition change(s), scheduling reconcile", changes.size())
+
+            // coalesce event bursts into a single deferred reconcile
+            pendingReconcile?.cancel(false)
+
+            pendingReconcile = executor.schedule({
+                try {
+                    scheduleService.reconcileDeployedReports()
+                } catch (Exception e) {
+                    LOG.error("error reconciling code-deployed reports after change", e)
+                }
+            } as Runnable, DEBOUNCE_MILLIS, TimeUnit.MILLISECONDS)
+        }
     }
 }

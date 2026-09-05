@@ -68,7 +68,7 @@ class MigrationIndexAuditIT {
     }
 
     @Test
-    void migrationRunReportsIndexUsagePerScript() throws Exception {
+    void migrationRunReportsIndexUsagePerScript() {
         // A migration run is rejected with 409 while another run is in progress or queued (the service serialises
         // runs). Other migration tests in the suite may still be draining an async run, so retry until our run is
         // accepted rather than failing on that transient conflict.
