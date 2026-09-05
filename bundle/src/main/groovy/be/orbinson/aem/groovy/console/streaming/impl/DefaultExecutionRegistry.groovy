@@ -16,6 +16,7 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicLong
 
 @Component(service = ExecutionRegistry, immediate = true)
 @Slf4j("LOG")
@@ -31,6 +32,9 @@ class DefaultExecutionRegistry implements ExecutionRegistry {
 
     private volatile ExecutorService executor
 
+    /** Private monitor, so callers cannot block executor() by locking the service itself. */
+    private final Object executorLock = new Object()
+
     @Activate
     void activate() {
         executor = Executors.newCachedThreadPool()
@@ -42,12 +46,14 @@ class DefaultExecutionRegistry implements ExecutionRegistry {
         executions.clear()
     }
 
-    private synchronized ExecutorService executor() {
-        if (executor == null || executor.shutdown) {
-            executor = Executors.newCachedThreadPool()
-        }
+    private ExecutorService executor() {
+        synchronized (executorLock) {
+            if (executor == null || executor.shutdown) {
+                executor = Executors.newCachedThreadPool()
+            }
 
-        executor
+            return executor
+        }
     }
 
     @Override
@@ -78,8 +84,9 @@ class DefaultExecutionRegistry implements ExecutionRegistry {
             } catch (Throwable t) {
                 LOG.error("error running async script execution : {}", executionId, t)
             } finally {
+                // finishedAt first: readers key off done, and must not see it unset
+                execution.finishedAt.set(System.currentTimeMillis())
                 execution.done = true
-                execution.finishedAt = System.currentTimeMillis()
 
                 try {
                     scriptContext.resourceResolver.close()
@@ -122,7 +129,10 @@ class DefaultExecutionRegistry implements ExecutionRegistry {
         def now = System.currentTimeMillis()
 
         executions.entrySet().removeAll { entry ->
-            entry.value.done && entry.value.finishedAt && (now - entry.value.finishedAt) > RETENTION_MILLIS
+            def execution = entry.value
+            def finishedAt = execution.finishedAt.get()
+
+            execution.done && finishedAt && (now - finishedAt) > RETENTION_MILLIS
         }
     }
 
@@ -134,6 +144,8 @@ class DefaultExecutionRegistry implements ExecutionRegistry {
 
         volatile boolean done
 
-        volatile Long finishedAt
+        /** 0 until the execution finishes. Atomic rather than a volatile primitive, which
+         *  sonar groovydre:S9373 flags as non-atomic on 32-bit JVMs. */
+        final AtomicLong finishedAt = new AtomicLong()
     }
 }
