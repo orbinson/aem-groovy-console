@@ -1,6 +1,7 @@
 package be.orbinson.aem.groovy.console.audit
 
 import be.orbinson.aem.groovy.console.response.RunScriptResponse
+import org.apache.sling.api.SlingHttpServletRequest
 import org.osgi.annotation.versioning.ProviderType
 
 @ProviderType
@@ -59,6 +60,31 @@ interface AuditService {
      * @return audit record or null if none exists
      */
     AuditRecord getAuditRecord(String userId, String relativePath)
+
+    /**
+     * Get an audit record for a request, enforcing access control: the record is returned only when the requesting
+     * user is allowed to see it (their own record, a scheduled-job record when they hold the scheduled-job
+     * permission, or any record when "display all audit records" is enabled — and always requiring the console
+     * permission). Returns {@code null} when the record does not exist or the user may not access it, so callers
+     * cannot read another user's records by supplying a different user ID.
+     *
+     * @param request current request
+     * @param userId user that owns the audit record
+     * @param relativePath relative path to audit record from parent audit node
+     * @return audit record, or null if it does not exist or is not accessible to the requesting user
+     */
+    AuditRecord getAuditRecord(SlingHttpServletRequest request, String userId, String relativePath)
+
+    /**
+     * Delete an audit record for a request, enforcing the same access control as
+     * {@link #getAuditRecord(SlingHttpServletRequest, String, String)}. No-op when the user may not access the record.
+     *
+     * @param request current request
+     * @param userId user that owns the audit record
+     * @param relativePath relative path to audit record from parent audit node
+     * @return true if the record was accessible and deletion was attempted, false if access was denied
+     */
+    boolean deleteAuditRecord(SlingHttpServletRequest request, String userId, String relativePath)
 
     /**
      * Get a list of audit records for the given date range.

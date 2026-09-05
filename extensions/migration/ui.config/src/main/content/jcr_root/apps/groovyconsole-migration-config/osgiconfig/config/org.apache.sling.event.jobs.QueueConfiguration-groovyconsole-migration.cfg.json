@@ -1,0 +1,9 @@
+{
+  "queue.name": "Groovy Console Migration Queue",
+  "queue.topics": [
+    "groovyconsole/migration"
+  ],
+  "queue.type": "ORDERED",
+  "queue.maxparallel": 1,
+  "queue.retries": 0
+}

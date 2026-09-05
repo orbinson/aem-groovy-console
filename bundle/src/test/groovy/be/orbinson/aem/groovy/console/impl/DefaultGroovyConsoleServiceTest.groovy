@@ -51,6 +51,7 @@ class DefaultGroovyConsoleServiceTest {
         context.registerInjectActivateService(new SlingBindingExtensionProvider())
         context.registerInjectActivateService(new DefaultExtensionService())
         context.registerInjectActivateService(new SlingScriptMetaClassExtensionProvider())
+        context.registerInjectActivateService(new GroovyShellFactory())
         context.registerInjectActivateService(new DefaultGroovyConsoleService())
     }
 
@@ -93,6 +94,31 @@ class DefaultGroovyConsoleServiceTest {
 
         String script = IOUtils.toString(context.resourceResolver().getResource(PATH_FILE).adaptTo(InputStream.class), StandardCharsets.UTF_8.name());
         assertEquals("println \"BEER\"", script);
+    }
+
+    @Test
+    void saveScriptIntoSubfolder() {
+        def consoleService = context.getService(GroovyConsoleService)
+
+        def request = context.request();
+        request.setParameterMap([(GroovyConsoleConstants.FILE_NAME): "migration/sub/$SCRIPT_NAME".toString(), (SCRIPT): scriptAsString])
+
+        def response = consoleService.saveScript(new RequestScriptData(request))
+
+        assertEquals("migration/sub/$SCRIPT_FILE_NAME".toString(), response.scriptName)
+        assertResourceExists("$PATH_SCRIPTS_FOLDER/migration", JcrResourceConstants.NT_SLING_FOLDER)
+        assertResourceExists("$PATH_SCRIPTS_FOLDER/migration/sub", JcrResourceConstants.NT_SLING_FOLDER)
+        assertResourceExists("$PATH_SCRIPTS_FOLDER/migration/sub/$SCRIPT_FILE_NAME", JcrConstants.NT_FILE)
+    }
+
+    @Test
+    void saveScriptRejectsPathTraversal() {
+        def consoleService = context.getService(GroovyConsoleService)
+
+        def request = context.request();
+        request.setParameterMap([(GroovyConsoleConstants.FILE_NAME): "../outside/$SCRIPT_NAME".toString(), (SCRIPT): scriptAsString])
+
+        assertThrows(IllegalArgumentException) { consoleService.saveScript(new RequestScriptData(request)) }
     }
 
     void assertScriptResult(map) {

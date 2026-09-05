@@ -1,6 +1,18 @@
 name: Build
 
-on: [push, pull_request]
+# Build pushes to the long-lived branches and all pull requests. Restricting push avoids the duplicate run
+# that `on: [push, pull_request]` produces for same-repo PR branches (both events fire).
+on:
+  push:
+    branches:
+      - main
+      - 19.x
+  pull_request:
+
+# Cancel an in-progress run when a newer commit is pushed to the same branch/PR.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:

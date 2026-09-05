@@ -43,6 +43,12 @@ class ScheduledJobsServlet extends AbstractJsonResponseServlet {
     @Override
     protected void doGet(SlingHttpServletRequest request, SlingHttpServletResponse response)
             throws ServletException, IOException {
+        if (!configurationService.hasScheduledJobPermission(request)) {
+            response.status = SC_FORBIDDEN
+
+            return
+        }
+
         def scheduledJob = findScheduledJobById(request)
 
         if (scheduledJob) {
@@ -60,7 +66,7 @@ class ScheduledJobsServlet extends AbstractJsonResponseServlet {
                         def properties = new HashMap<>(scheduledJobInfo.jobProperties)
                         properties.put("downloadUrl", (auditRecords ? auditRecords.last().downloadUrl : null) ?: "")
                         properties.put("scriptPreview", GroovyScriptUtils.getScriptPreview(scheduledJobInfo.jobProperties[SCRIPT] as String))
-                        properties.put("nextExecutionDate", scheduledJobInfo.nextScheduledExecution.format(GroovyConsoleConstants.DATE_FORMAT_DISPLAY))
+                        properties.put("nextExecutionDate", scheduledJobInfo.nextScheduledExecution?.format(GroovyConsoleConstants.DATE_FORMAT_DISPLAY) ?: "")
 
                         properties
                     }

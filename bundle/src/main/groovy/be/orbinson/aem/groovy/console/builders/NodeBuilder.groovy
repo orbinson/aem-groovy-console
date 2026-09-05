@@ -27,7 +27,7 @@ import javax.jcr.Session
 class NodeBuilder extends AbstractContentBuilder {
 
     NodeBuilder(Session session) {
-        super(session, session.rootNode)
+        super(session, { session.rootNode } as Closure<Node>)
     }
 
     NodeBuilder(Session session, Node rootNode) {

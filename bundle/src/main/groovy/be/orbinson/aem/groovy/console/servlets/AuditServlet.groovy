@@ -13,6 +13,8 @@ import org.osgi.service.component.annotations.Reference
 
 import javax.servlet.Servlet
 
+import static javax.servlet.http.HttpServletResponse.SC_FORBIDDEN
+
 @Component(service = Servlet, immediate = true, property = [
         "sling.servlet.paths=/bin/groovyconsole/audit"
 ])
@@ -28,11 +30,17 @@ class AuditServlet extends AbstractJsonResponseServlet {
 
     @Override
     protected void doGet(SlingHttpServletRequest request, SlingHttpServletResponse response) {
+        if (!configurationService.hasPermission(request)) {
+            response.status = SC_FORBIDDEN
+
+            return
+        }
+
         def script = request.getParameter(GroovyConsoleConstants.SCRIPT)
         def userId = request.getParameter(GroovyConsoleConstants.USER_ID)
 
         if (script) {
-            writeJsonResponse(response, auditService.getAuditRecord(userId, script) ?: [:])
+            writeJsonResponse(response, auditService.getAuditRecord(request, userId, script) ?: [:])
         } else {
             writeJsonResponse(response, getAuditRecordsData(request))
         }
@@ -40,11 +48,17 @@ class AuditServlet extends AbstractJsonResponseServlet {
 
     @Override
     protected void doDelete(SlingHttpServletRequest request, SlingHttpServletResponse response) {
+        if (!configurationService.hasPermission(request)) {
+            response.status = SC_FORBIDDEN
+
+            return
+        }
+
         def script = request.getParameter(GroovyConsoleConstants.SCRIPT)
         def userId = request.getParameter(GroovyConsoleConstants.USER_ID)
 
         if (script) {
-            auditService.deleteAuditRecord(userId, script)
+            auditService.deleteAuditRecord(request, userId, script)
         } else {
             auditService.deleteAllAuditRecords(request.resourceResolver.userID)
         }

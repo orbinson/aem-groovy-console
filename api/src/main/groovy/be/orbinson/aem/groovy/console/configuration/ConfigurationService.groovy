@@ -74,4 +74,11 @@ interface ConfigurationService {
      * @return true if the author runmode is present
      */
     boolean isAuthor()
+
+    /**
+     * Get the default console UI ("classic" or "modern") served at the /groovyconsole path.
+     *
+     * @return default UI identifier
+     */
+    String getDefaultUi()
 }

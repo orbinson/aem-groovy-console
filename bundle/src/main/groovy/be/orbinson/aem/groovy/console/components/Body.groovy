@@ -39,7 +39,7 @@ class Body {
         def script = request.getParameter(SCRIPT)
 
         if (script) {
-            auditRecord = auditService.getAuditRecord(userId, script)
+            auditRecord = auditService.getAuditRecord(request, userId, script)
         }
     }
 

@@ -6,7 +6,7 @@
     <parent>
         <groupId>be.orbinson.aem</groupId>
         <artifactId>aem-groovy-console</artifactId>
-        <version>19.2.1-SNAPSHOT</version>
+        <version>19.3.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>aem-groovy-console-it-tests</artifactId>
@@ -15,6 +15,7 @@
     <properties>
         <maven.deploy.skip>true</maven.deploy.skip>
         <http.port>8080</http.port>
+        <jmx.port>7199</jmx.port>
     </properties>
 
     <build>
@@ -30,6 +31,14 @@
                             <contentPackage>
                                 <groupId>${project.groupId}</groupId>
                                 <artifactId>aem-groovy-console-all</artifactId>
+                            </contentPackage>
+                            <contentPackage>
+                                <groupId>${project.groupId}</groupId>
+                                <artifactId>aem-groovy-console-reports-all</artifactId>
+                            </contentPackage>
+                            <contentPackage>
+                                <groupId>${project.groupId}</groupId>
+                                <artifactId>aem-groovy-console-migration-all</artifactId>
                             </contentPackage>
                         </contentPackages>
                         <fmOutput>${project.build.directory}/cp-conversion/fm.out</fmOutput>
@@ -48,10 +57,10 @@
                     </executions>
                 </plugin>
                 <plugin>
-                    <!-- Aggregate Sling Starter + the converted feature into one launchable feature, so
+                    <!-- Aggregate Sling Starter + the converted features into one launchable feature, so
                          everything is present at startup instead of being installed as a content package
                          afterwards. osgiBsnCollisionDetection + *:*:HIGHEST de-dupes overlapping bundles
-                         (Starter Groovy 4.0.10 vs our 4.0.31). -->
+                         (Starter Groovy 4.0.10 vs our 4.0.32). -->
                     <groupId>org.apache.sling</groupId>
                     <artifactId>slingfeature-maven-plugin</artifactId>
                     <version>1.9.6</version>
@@ -69,8 +78,11 @@
                                     <type>slingosgifeature</type>
                                     <version>14</version>
                                 </includeArtifact>
+                                <filesInclude>*.json</filesInclude>
                                 <additionalFeatureFiles>
                                     <additionalFeatureFile>${project.build.directory}/cp-conversion/fm.out/aem-groovy-console-all.json</additionalFeatureFile>
+                                    <additionalFeatureFile>${project.build.directory}/cp-conversion/fm.out/aem-groovy-console-reports-all.json</additionalFeatureFile>
+                                    <additionalFeatureFile>${project.build.directory}/cp-conversion/fm.out/aem-groovy-console-migration-all.json</additionalFeatureFile>
                                 </additionalFeatureFiles>
                                 <artifactsOverrides>
                                     <artifactsOverride>*:*:HIGHEST</artifactsOverride>
@@ -105,6 +117,17 @@
                                     <frameworkProperties>
                                         <org.osgi.service.http.port>${http.port}</org.osgi.service.http.port>
                                     </frameworkProperties>
+                                    <!-- Expose the launched instance's platform MBeanServer over local, unauthenticated
+                                         RMI so IT tests can exercise MBeans (e.g. the migration JMX bean) via a real
+                                         JMX connection instead of only through HTTP/unit-test mocks. -->
+                                    <vmOptions>
+                                        <vmOption>-Dcom.sun.management.jmxremote</vmOption>
+                                        <vmOption>-Dcom.sun.management.jmxremote.port=${jmx.port}</vmOption>
+                                        <vmOption>-Dcom.sun.management.jmxremote.rmi.port=${jmx.port}</vmOption>
+                                        <vmOption>-Dcom.sun.management.jmxremote.authenticate=false</vmOption>
+                                        <vmOption>-Dcom.sun.management.jmxremote.ssl=false</vmOption>
+                                        <vmOption>-Djava.rmi.server.hostname=localhost</vmOption>
+                                    </vmOptions>
                                 </launcherArguments>
                                 <startTimeoutSeconds>180</startTimeoutSeconds>
                             </launch>
@@ -158,6 +181,7 @@
                                     <maxPortNumber>8999</maxPortNumber>
                                     <portNames>
                                         <portName>http.port</portName>
+                                        <portName>jmx.port</portName>
                                     </portNames>
                                 </configuration>
                             </execution>
@@ -192,6 +216,7 @@
                         <configuration>
                             <systemPropertyVariables>
                                 <HTTP_PORT>${http.port}</HTTP_PORT>
+                                <JMX_PORT>${jmx.port}</JMX_PORT>
                             </systemPropertyVariables>
                         </configuration>
                         <executions>
@@ -264,13 +289,33 @@
     </profiles>
 
     <dependencies>
-        <!-- Resolved by sling-feature-converter-maven-plugin (convert-cp) at build time; the dependency
-             also enforces reactor ordering so the all package is built before this module. -->
+        <!-- Resolved by sling-feature-converter-maven-plugin (convert-cp) at build time; the dependencies
+             also enforce reactor ordering so the all-packages are built before this module. -->
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>aem-groovy-console-all</artifactId>
             <version>${project.version}</version>
             <type>zip</type>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>aem-groovy-console-reports-all</artifactId>
+            <version>${project.version}</version>
+            <type>zip</type>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>aem-groovy-console-migration-all</artifactId>
+            <version>${project.version}</version>
+            <type>zip</type>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>aem-groovy-console-query-audit</artifactId>
+            <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>
 
@@ -290,6 +335,12 @@
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
+            <version>4.5.14</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpmime</artifactId>
             <version>4.5.14</version>
             <scope>test</scope>
         </dependency>

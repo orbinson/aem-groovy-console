@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workspaceFilter version="1.0">
+    <filter root="/conf/groovyconsole" mode="merge">
+        <include pattern="/conf/groovyconsole"/>
+        <include pattern="/conf/groovyconsole/scripts"/>
+        <include pattern="/conf/groovyconsole/scripts/migration"/>
+    </filter>
+</workspaceFilter>

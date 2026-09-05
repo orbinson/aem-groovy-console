@@ -2,10 +2,14 @@
 <workspaceFilter version="1.0">
     <filter root="/apps/groovyconsole-aem"/>
 
-    <filter root="/apps/cq/core/content/nav">
+    <!-- merge the shared AEM Tools > General nav folders: create them if missing but never replace them, so
+         installing this package never removes the reports/migration extensions' sibling entries -->
+    <filter root="/apps/cq/core/content/nav" mode="merge">
         <include pattern="/apps/cq/core/content/nav"/>
         <include pattern="/apps/cq/core/content/nav/tools"/>
         <include pattern="/apps/cq/core/content/nav/tools/general"/>
-        <include pattern="/apps/cq/core/content/nav/tools/general/groovyconsole(.*)?"/>
     </filter>
+    <!-- own only this leaf entry, so it is always (re)created even under a pre-existing shared folder and never
+         touches sibling entries -->
+    <filter root="/apps/cq/core/content/nav/tools/general/groovyconsole"/>
 </workspaceFilter>

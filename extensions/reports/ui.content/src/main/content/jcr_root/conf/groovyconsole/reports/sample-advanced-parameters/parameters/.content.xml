@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jcr:root xmlns:jcr="http://www.jcp.org/jcr/1.0"
+          jcr:primaryType="nt:unstructured">
+    <names
+        jcr:primaryType="nt:unstructured"
+        name="names"
+        label="Names"
+        type="STRING"
+        multiple="{Boolean}true"
+        order="{Long}0"/>
+    <tags
+        jcr:primaryType="nt:unstructured"
+        name="tags"
+        label="Tags"
+        type="TAG"
+        multiple="{Boolean}true"
+        rootPath="/content/cq:tags"
+        order="{Long}1"/>
+</jcr:root>
