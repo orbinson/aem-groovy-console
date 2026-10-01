@@ -7,6 +7,7 @@ import org.apache.jackrabbit.api.JackrabbitSession
 import org.apache.jackrabbit.api.security.user.User
 import org.apache.sling.api.SlingHttpServletRequest
 import org.apache.sling.api.resource.ResourceResolverFactory
+import org.apache.sling.serviceusermapping.ServiceUserMapped
 import org.osgi.framework.BundleContext
 import org.osgi.service.component.annotations.Activate
 import org.osgi.service.component.annotations.Component
@@ -23,6 +24,9 @@ class DefaultConfigurationService implements ConfigurationService {
 
     @Reference
     private ResourceResolverFactory resourceResolverFactory
+
+    @Reference(target = "(!(subServiceName=*))")
+    private ServiceUserMapped serviceUserMapped
 
     private boolean emailEnabled
 
@@ -109,6 +113,14 @@ class DefaultConfigurationService implements ConfigurationService {
         defaultUi = properties.defaultUi() ?: "modern"
         if (bundleContext.getProperty("sling.run.modes") != null) {
             author = bundleContext.getProperty("sling.run.modes").contains("author")
+        }
+        if (properties.addAemCloudProductAdministrators()) {
+            def aemCloudAdministrators = System.getenv("aemCloudAdministrators")
+            if (aemCloudAdministrators) {
+                LOG.debug("Adding AEM Cloud product administrators group '{}' to allowed groups", aemCloudAdministrators)
+                allowedGroups = allowedGroups + [aemCloudAdministrators] as Set
+                allowedScheduledJobsGroups = allowedScheduledJobsGroups + [aemCloudAdministrators] as Set
+            }
         }
     }
 
