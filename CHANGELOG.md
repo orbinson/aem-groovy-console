@@ -75,6 +75,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- The `aem-groovy-console-all` zip is attached to GitHub releases again (new `Attach release assets` workflow, also
+  usable to backfill older tags).
 - `ScheduledJobsServlet` threw a `NullPointerException` when a scheduled job had no next execution date.
 
 ## [19.1.0] - 2026-05-04

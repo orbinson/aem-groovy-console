@@ -1,0 +1,44 @@
+name: Attach release assets
+
+# Attaches the aem-groovy-console-all zip (published to Maven Central) to a GitHub release.
+# Runs after "Create release"; run manually with a tag to backfill older releases.
+on:
+  workflow_run:
+    workflows: [ "Create release" ]
+    types: [ completed ]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag to attach the zip to (e.g. 19.2.0)'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  attach:
+    name: Attach all zip
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Resolve release tag
+        run: |
+          TAG="${{ inputs.tag }}"
+          if [ -z "$TAG" ]; then
+            TAG=$(gh release list --repo "$GITHUB_REPOSITORY" --limit 1 --json tagName -q '.[0].tagName')
+          fi
+          echo "TAG=$TAG" >> "$GITHUB_ENV"
+
+      - name: Download zip from Maven Central
+        run: |
+          FILE="aem-groovy-console-all-${TAG}.zip"
+          URL="https://repo1.maven.org/maven2/be/orbinson/aem/aem-groovy-console-all/${TAG}/${FILE}"
+          # Central sync can lag behind the release by a few minutes
+          curl --fail --silent --show-error --location --retry 10 --retry-delay 30 --retry-all-errors -o "$FILE" "$URL"
+          echo "FILE=$FILE" >> "$GITHUB_ENV"
+
+      - name: Upload to GitHub release
+        run: gh release upload "$TAG" "$FILE" --clobber --repo "$GITHUB_REPOSITORY"

@@ -53,10 +53,10 @@ project [aem-groovy-console](https://github.com/CID15/aem-groovy-console)
 
 ### Manual
 
-1. Download the
-   console [aem-groovy-console-all](https://github.com/orbinson/aem-groovy-console/releases/download/19.0.3/aem-groovy-console-all-19.0.3.zip)
-   content package and install with [PackMgr](http://localhost:4502/crx/packmgr). For previous versions you can search
-   on the [Maven Central repository](https://search.maven.org/search?q=a:aem-groovy-console).
+1. Download the `aem-groovy-console-all` content package from the
+   [latest release](https://github.com/orbinson/aem-groovy-console/releases/latest) (or from
+   [Maven Central](https://central.sonatype.com/artifact/be.orbinson.aem/aem-groovy-console-all)) and install it with
+   [PackMgr](http://localhost:4502/crx/packmgr).
 
 2. Navigate to the [groovyconsole](http://localhost:4502/groovyconsole) page.
 
