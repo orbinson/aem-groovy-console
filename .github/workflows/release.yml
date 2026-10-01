@@ -27,6 +27,7 @@ jobs:
       github: ${{ inputs.github }}
       push: ${{ inputs.push }}
       java-version: 17
+      files: all/target/aem-groovy-console-all-*.zip
     secrets:
       username: ${{ secrets.SONATYPE_CENTRAL_PORTAL_TOKEN_USER }}
       password: ${{ secrets.SONATYPE_CENTRAL_PORTAL_TOKEN_PASSWORD }}
