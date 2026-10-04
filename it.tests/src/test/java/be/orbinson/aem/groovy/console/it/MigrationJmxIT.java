@@ -60,9 +60,7 @@ class MigrationJmxIT {
         httpClient = HttpClients.createDefault();
         migrationMBean = new ObjectName("be.orbinson.aem.groovyconsole:type=Migration");
 
-        // same "single successful probe" readiness approach as MigrationIT/GroovyConsoleReportsIT -- all
-        // bundles/content are pre-converted into the launch feature (cp-converter), so there is no post-startup
-        // content-package install cascade to wait out here.
+        // Provisioning (installer + servlet stability) is awaited once by InstanceReadinessExtension; this is a sanity probe.
         await().atMost(180, TimeUnit.SECONDS)
                 .pollInterval(5, TimeUnit.SECONDS)
                 .untilAsserted(() -> assertTrue(isConsoleReady(), "Groovy Console not ready"));
