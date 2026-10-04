@@ -43,9 +43,7 @@ class StreamingIT {
     static void setUp() {
         httpClient = HttpClients.createDefault();
 
-        // All bundles/content are pre-converted into the launch feature (cp-converter), so there is no
-        // post-startup content-package install cascade to wait out here -- a single successful check
-        // against the actual servlet is sufficient (see GroovyConsoleReportsIT).
+        // Provisioning (installer + servlet stability) is awaited once by InstanceReadinessExtension; this is a sanity probe.
         await().atMost(180, TimeUnit.SECONDS)
                 .pollInterval(5, TimeUnit.SECONDS)
                 .untilAsserted(() -> assertTrue(isGroovyConsoleReady(), "Groovy Console not ready"));

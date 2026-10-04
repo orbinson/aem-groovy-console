@@ -215,6 +215,7 @@
                             <systemPropertyVariables>
                                 <HTTP_PORT>${http.port}</HTTP_PORT>
                                 <JMX_PORT>${jmx.port}</JMX_PORT>
+                                <IT_FEATURE_FILE>${project.build.directory}/slingfeature-tmp/feature-it.json</IT_FEATURE_FILE>
                             </systemPropertyVariables>
                         </configuration>
                         <executions>

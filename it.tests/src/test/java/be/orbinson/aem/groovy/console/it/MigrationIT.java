@@ -46,10 +46,7 @@ class MigrationIT {
     static void setUp() {
         httpClient = HttpClients.createDefault();
 
-        // All bundles/content are pre-converted into the launch feature (cp-converter), so there is no
-        // post-startup content-package install cascade to wait out here, unlike the older jetty12-1.1.8-era
-        // whiteboard-corruption workaround this used to carry -- a single successful check once the health
-        // check reports OK and the endpoints are actually reachable is sufficient (see GroovyConsoleReportsIT).
+        // Provisioning (installer + servlet stability) is awaited once by InstanceReadinessExtension; this is a sanity probe.
         await().atMost(180, TimeUnit.SECONDS)
                 .pollInterval(5, TimeUnit.SECONDS)
                 .untilAsserted(() -> {
