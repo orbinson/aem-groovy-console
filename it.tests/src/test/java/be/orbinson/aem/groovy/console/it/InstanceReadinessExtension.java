@@ -58,11 +58,11 @@ public class InstanceReadinessExtension implements BeforeAllCallback {
                 .pollInterval(Duration.ofSeconds(1))
                 .until(InstanceReadinessExtension::installerIdle);
 
-        await("console and reports servlets stable")
+        await("console servlet stable")
                 .atMost(Duration.ofSeconds(120))
                 .pollInterval(Duration.ofMillis(500))
                 .during(STABLE_FOR)
-                .until(InstanceReadinessExtension::servletsAnswer);
+                .until(InstanceReadinessExtension::consoleAnswers);
     }
 
     static boolean installerIdle() {
@@ -116,11 +116,7 @@ public class InstanceReadinessExtension implements BeforeAllCallback {
         }
     }
 
-    static boolean servletsAnswer() {
-        String reports = get("/bin/groovyconsole/reports.json");
-        if (reports == null || !reports.contains("\"reports\"")) {
-            return false;
-        }
+    static boolean consoleAnswers() {
         try (CloseableHttpClient client = HttpClients.createDefault()) {
             HttpPost post = new HttpPost(BASE_URL + "/bin/groovyconsole/post");
             post.setEntity(new StringEntity("script=return 'ready'", ContentType.APPLICATION_FORM_URLENCODED));
