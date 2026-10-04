@@ -41,8 +41,6 @@ public class InstanceReadinessExtension implements BeforeAllCallback {
     // IGNORED: ui.apps.aem needs AEM node types and can never install on Sling.
     private static final Pattern TERMINAL_STATE = Pattern.compile("<td>(?:INSTALLED|UNINSTALLED|IGNORED)\\b");
 
-    private static final Duration STABLE_FOR = Duration.ofSeconds(5);
-
     @Override
     public void beforeAll(ExtensionContext context) {
         context.getRoot().getStore(ExtensionContext.Namespace.GLOBAL)
@@ -58,10 +56,9 @@ public class InstanceReadinessExtension implements BeforeAllCallback {
                 .pollInterval(Duration.ofSeconds(1))
                 .until(InstanceReadinessExtension::installerIdle);
 
-        await("console servlet stable")
+        await("console servlet answering")
                 .atMost(Duration.ofSeconds(120))
                 .pollInterval(Duration.ofMillis(500))
-                .during(STABLE_FOR)
                 .until(InstanceReadinessExtension::consoleAnswers);
     }
 
