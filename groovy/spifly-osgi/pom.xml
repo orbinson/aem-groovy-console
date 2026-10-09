@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>be.orbinson.aem</groupId>
+        <artifactId>aem-groovy-console</artifactId>
+        <version>19.3.0-SNAPSHOT</version>
+        <relativePath>../../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>spifly-osgi</artifactId>
+    <name>SpiFly OSGI</name>
+
+    <description>SpiFly with ASM embedded privately</description>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>biz.aQute.bnd</groupId>
+                <artifactId>bnd-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>bnd-process</id>
+                        <goals>
+                            <goal>bnd-process</goal>
+                        </goals>
+                        <configuration>
+                            <bnd><![CDATA[
+Bundle-SymbolicName: be.orbinson.aem.spifly-osgi
+Bundle-Activator: org.apache.aries.spifly.dynamic.DynamicWeavingActivator
+# clear the parent's -exportcontents, which bnd-maven-plugin inherits and which would add a second org.apache.aries.spifly export
+-exportcontents:
+Export-Package: org.apache.aries.spifly.*;version=${spifly.version}
+# embed only the ASM (and bnd helper) classes SpiFly uses, privately: never export ASM
+-conditionalpackage: org.objectweb.asm.*, aQute.*
+Import-Package: !org.objectweb.asm.*, !org.apache.aries.spifly.*, org.osgi.framework;version="[1.7,2)", org.osgi.framework.hooks.weaving;version="[1.0,2)", org.osgi.framework.wiring;version="[1.1,2)", org.osgi.util.tracker;version="[1.5,2)", *
+Provide-Capability: osgi.extender;osgi.extender="osgi.serviceloader.registrar";version:Version="1.0",osgi.extender;osgi.extender="osgi.serviceloader.processor";version:Version="1.0";uses:="org.apache.aries.spifly"
+-noextraheaders: true
+-snapshot: SNAPSHOT
+]]></bnd>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.apache.aries.spifly</groupId>
+            <artifactId>org.apache.aries.spifly.dynamic.bundle</artifactId>
+            <version>${spifly.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.ow2.asm</groupId>
+            <artifactId>asm</artifactId>
+            <version>${asm.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.ow2.asm</groupId>
+            <artifactId>asm-analysis</artifactId>
+            <version>${asm.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.ow2.asm</groupId>
+            <artifactId>asm-commons</artifactId>
+            <version>${asm.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.ow2.asm</groupId>
+            <artifactId>asm-util</artifactId>
+            <version>${asm.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.ow2.asm</groupId>
+            <artifactId>asm-tree</artifactId>
+            <version>${asm.version}</version>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
+
+</project>

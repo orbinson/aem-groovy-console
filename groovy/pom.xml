@@ -19,6 +19,7 @@
 
     <modules>
         <module>groovy-osgi</module>
+        <module>spifly-osgi</module>
     </modules>
 
 </project>
