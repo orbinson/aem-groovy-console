@@ -1,5 +1,7 @@
 # Bindings and Methods
 
+<!-- markdownlint-disable MD060 -->
+
 The AEM Groovy Console provides a set of default binding variables and methods that are available in every script. These
 are provided by the built-in extension providers and can be supplemented by custom extensions (see the
 [Extensions](../README.md#extensions) section in the README).
@@ -74,6 +76,8 @@ functions in any script.
 |--------|-------------|
 | `getResource(String path)` | Returns the `Resource` at the given path, or `null` if not found. |
 | `getModel(String path, Class type)` | Adapts the resource at the given path to the specified Sling Model class. |
+| `distribute(String path, String agentId = "publish", boolean isDeep = false)` | Distributes content via Sling Content Distribution, when available. |
+| `invalidate(String path, String agentId = "publish", boolean isDeep = false)` | Invalidates content via Sling Content Distribution, when available. |
 | `table { ... }` | Creates a formatted table for output. See [Table Output](#table-output) below. |
 
 ### AEM Methods
@@ -84,8 +88,6 @@ functions in any script.
 | `activate(String path, ReplicationOptions options = null)` | Activates (replicates) the node at the given path. Optionally accepts `ReplicationOptions`. |
 | `deactivate(String path, ReplicationOptions options = null)` | Deactivates the node at the given path. Optionally accepts `ReplicationOptions`. |
 | `delete(String path, ReplicationOptions options = null)` | Deletes the node at the given path via replication. Optionally accepts `ReplicationOptions`. |
-| `distribute(String path, String agentId = "publish", boolean isDeep = false)` | Distributes content via Sling Content Distribution (AEMaaCS). |
-| `invalidate(String path, String agentId = "publish", boolean isDeep = false)` | Invalidates content via Sling Content Distribution (AEMaaCS). |
 | `createQuery(Map predicates)` | Creates a QueryBuilder `Query` from a predicates map. |
 
 ## Builders
