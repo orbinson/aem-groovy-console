@@ -9,10 +9,6 @@ import com.day.cq.search.PredicateGroup
 import com.day.cq.search.QueryBuilder
 import com.day.cq.wcm.api.PageManager
 import com.day.cq.wcm.api.PageManagerFactory
-import org.apache.sling.distribution.DistributionRequest
-import org.apache.sling.distribution.DistributionRequestType
-import org.apache.sling.distribution.Distributor
-import org.apache.sling.distribution.SimpleDistributionRequest
 import org.osgi.service.component.annotations.Component
 import org.osgi.service.component.annotations.Reference
 import org.osgi.service.component.annotations.ReferenceCardinality
@@ -31,9 +27,6 @@ class AemScriptMetaClassExtensionProvider implements ScriptMetaClassExtensionPro
 
     @Reference(cardinality = ReferenceCardinality.OPTIONAL)
     private QueryBuilder queryBuilder
-
-    @Reference(cardinality = ReferenceCardinality.OPTIONAL)
-    private Distributor distributor;
 
     @Override
     Closure getScriptMetaClass(ScriptContext scriptContext) {
@@ -59,16 +52,6 @@ class AemScriptMetaClassExtensionProvider implements ScriptMetaClassExtensionPro
                 requireReplicator().replicate(session, ReplicationActionType.DELETE, path, options)
             }
 
-            delegate.distribute { String path, String agentId = "publish", boolean isDeep = false ->
-                DistributionRequest distributionRequest = new SimpleDistributionRequest(DistributionRequestType.ADD, isDeep, path);
-                requireDistributor().distribute(agentId, resourceResolver, distributionRequest);
-            }
-
-            delegate.invalidate { String path, String agentId = "publish", boolean isDeep = false ->
-                DistributionRequest distributionRequest = new SimpleDistributionRequest(DistributionRequestType.INVALIDATE, isDeep, path);
-                requireDistributor().distribute(agentId, resourceResolver, distributionRequest);
-            }
-
             delegate.createQuery { Map predicates ->
                 requireQueryBuilder().createQuery(PredicateGroup.create(predicates), session)
             }
@@ -92,12 +75,4 @@ class AemScriptMetaClassExtensionProvider implements ScriptMetaClassExtensionPro
         queryBuilder
     }
 
-    private Distributor requireDistributor() {
-        if (distributor == null) {
-            throw new IllegalStateException("No Distributor service available: distribute/invalidate require Sling Content Distribution.")
-        }
-        distributor
-    }
-
 }
-
