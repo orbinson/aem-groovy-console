@@ -1,7 +1,5 @@
 # Bindings and Methods
 
-<!-- markdownlint-disable MD060 -->
-
 The AEM Groovy Console provides a set of default binding variables and methods that are available in every script. These
 are provided by the built-in extension providers and can be supplemented by custom extensions (see the
 [Extensions](../README.md#extensions) section in the README).
