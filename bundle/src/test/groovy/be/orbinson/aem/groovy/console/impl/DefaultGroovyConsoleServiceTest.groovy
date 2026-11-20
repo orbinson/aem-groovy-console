@@ -8,6 +8,7 @@ import be.orbinson.aem.groovy.console.configuration.ConfigurationService
 import be.orbinson.aem.groovy.console.constants.GroovyConsoleConstants
 import be.orbinson.aem.groovy.console.extension.impl.DefaultExtensionService
 import be.orbinson.aem.groovy.console.extension.impl.binding.SlingBindingExtensionProvider
+import be.orbinson.aem.groovy.console.extension.impl.scriptmetaclass.AemScriptMetaClassExtensionProvider
 import be.orbinson.aem.groovy.console.extension.impl.scriptmetaclass.SlingScriptMetaClassExtensionProvider
 import com.day.cq.replication.Replicator
 import com.day.cq.search.QueryBuilder
@@ -73,6 +74,27 @@ class DefaultGroovyConsoleServiceTest {
 
         def map = consoleService.runScript(scriptContext)
         assertScriptResult(map)
+    }
+
+    @Test
+    void aemMethodsRemainAvailableWithoutDistributor() {
+        context.registerInjectActivateService(new AemScriptMetaClassExtensionProvider())
+        context.create().page("/content/test-page")
+
+        def consoleService = context.getService(GroovyConsoleService)
+        def outputStream = new ByteArrayOutputStream()
+        def scriptContext = new RequestScriptContext(
+                request: context.request(),
+                response: context.response(),
+                outputStream: outputStream,
+                printStream: new PrintStream(outputStream, true, StandardCharsets.UTF_8.name()),
+                script: "return getPage('/content/test-page').path"
+        )
+
+        def response = consoleService.runScript(scriptContext)
+
+        assertEquals("/content/test-page", response.result)
+        assertEquals("", response.exceptionStackTrace)
     }
 
     @Test
