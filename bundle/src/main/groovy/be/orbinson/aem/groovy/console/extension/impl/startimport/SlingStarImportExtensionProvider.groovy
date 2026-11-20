@@ -14,7 +14,7 @@ class SlingStarImportExtensionProvider implements StarImportExtensionProvider {
     private static final Set<StarImport> IMPORTS = [
             new StarImport("org.apache.sling.api", "$SLING_JAVADOC_PREFIX/org/apache/sling/api/$JAVADOC_SUFFIX"),
             new StarImport("org.apache.sling.api.resource", "$SLING_JAVADOC_PREFIX/org/apache/sling/api/resource/$JAVADOC_SUFFIX"),
-            new StarImport("org.apache.sling.distribution", "$SLING_JAVADOC_PREFIX/org/apache/sling/api/distribution/$JAVADOC_SUFFIX")
+            new StarImport("org.apache.sling.distribution", "https://www.javadoc.io/doc/org.apache.sling/org.apache.sling.distribution.api/latest/org/apache/sling/distribution/$JAVADOC_SUFFIX")
     ] as Set
 
     @Override

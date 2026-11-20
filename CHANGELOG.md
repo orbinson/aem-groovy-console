@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Keep `getPage` available when Sling Content Distribution is not installed by registering `distribute` and
+  `invalidate` from a separate extension [#106](https://github.com/orbinson/aem-groovy-console/issues/106).
+
 ### Added
 
 - **Modern UI** — a new IDE-style console built with the Monaco editor and Spectrum Web Components (`ui.frontend`
