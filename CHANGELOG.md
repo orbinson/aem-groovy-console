@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [19.2.1] - 2026-11-20
+
 ### Fixed
 
 - Keep `getPage` available when Sling Content Distribution is not installed by registering `distribute` and
@@ -173,7 +175,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Last version released by [CID15](https://github.com/CID15/aem-groovy-console)
 
-[unreleased]: https://github.com/orbinson/aem-groovy-console/compare/19.2.0...HEAD
+[unreleased]: https://github.com/orbinson/aem-groovy-console/compare/19.2.1...HEAD
+[19.2.1]: https://github.com/orbinson/aem-groovy-console/compare/19.2.0...19.2.1
 [19.2.0]: https://github.com/orbinson/aem-groovy-console/compare/19.1.0...19.2.0
 [19.1.0]: https://github.com/orbinson/aem-groovy-console/compare/19.0.9...19.1.0
 [19.0.9]: https://github.com/orbinson/aem-groovy-console/compare/19.0.8...19.0.9
