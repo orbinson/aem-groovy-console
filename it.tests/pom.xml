@@ -261,6 +261,69 @@
                 </plugins>
             </build>
         </profile>
+        <profile>
+            <id>ui-tests</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <version>3.1.0</version>
+                        <executions>
+                            <execution>
+                                <id>npm-ci</id>
+                                <phase>process-resources</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>npm</executable>
+                                    <arguments>
+                                        <argument>ci</argument>
+                                    </arguments>
+                                    <workingDirectory>${project.basedir}/../ui.tests</workingDirectory>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>playwright-install</id>
+                                <phase>process-resources</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>npx</executable>
+                                    <arguments>
+                                        <argument>playwright</argument>
+                                        <argument>install</argument>
+                                        <argument>chromium</argument>
+                                    </arguments>
+                                    <workingDirectory>${project.basedir}/../ui.tests</workingDirectory>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>playwright-test</id>
+                                <phase>integration-test</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>npx</executable>
+                                    <arguments>
+                                        <argument>playwright</argument>
+                                        <argument>test</argument>
+                                        <argument>--config=playwright.19.config.ts</argument>
+                                    </arguments>
+                                    <workingDirectory>${project.basedir}/../ui.tests</workingDirectory>
+                                    <environmentVariables>
+                                        <GC_BASE_URL>http://localhost:${http.port}</GC_BASE_URL>
+                                    </environmentVariables>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
     </profiles>
 
     <dependencies>
