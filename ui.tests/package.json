@@ -1,0 +1,12 @@
+{
+  "name": "aem-groovy-console-19x-ui-tests",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "test": "playwright test --config=playwright.19.config.ts"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.65.1"
+  }
+}

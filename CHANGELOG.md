@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Playwright coverage for running a script in the classic UI, wired into CI, so the `19.x` branch is tested on UI as well as IT.
+
 ## [19.2.0] - 2026-09-03
 
 ### Changed

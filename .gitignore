@@ -9,3 +9,5 @@
 target/
 dependency-reduced-pom.xml
 .mvn
+ui.tests/node_modules/
+ui.tests/test-results/
